@@ -1,0 +1,160 @@
+<html>
+	<head>
+		<script src='lib/inherits.js' type='text/javascript'></script>
+		<script src='node_modules/eventemitter2/lib/eventemitter2.js' type='text/javascript'></script>
+		<script src='tomes.js' type='text/javascript'></script>
+		<script type='text/javascript'>
+var b = Tome.create();
+console.log('b',b);
+
+b.on('signal', function (val) {
+	console.log('b:signal',val);
+});
+
+b.on('add', function (key, val) {
+	console.log('b:add',key,val);
+});
+
+b.on('del', function (key) {
+	console.log('b:del',key);
+	console.log('');
+});
+
+b.set('arrayofnumbers', [1,2,3,4]);
+console.log('b.arrayofnumbers',b.arrayofnumbers);
+console.log('');
+
+b.arrayofnumbers.on('add', function (key, val) {
+	console.log('b.arrayofnumbers:add',key,val);
+	console.log('');
+});
+
+b.arrayofnumbers.on('del', function (key) {
+	console.log('b.arrayofnumbers:del',key);
+	console.log('');
+});
+
+b.set('arrayofstrings', ['a','b','c','d']);
+console.log('b.arrayofstrings',b.arrayofstrings);
+console.log('');
+
+b.set('boolean', true);
+console.log('b.boolean',b.boolean);
+console.log('');
+
+b.set('number', 2);
+console.log('b.number = 2;');
+console.log('');
+
+b.number.assign(4);
+console.log('b.number = 4;');
+console.log('');
+
+b.number.inc(6);
+console.log('b.number += 6;');
+console.log('');
+
+b.set('object', { banana: 'delicious' });
+console.log('b.object = { banana: \'delicious\' };');
+console.log('');
+
+b.set('string', 'foo');
+console.log('b.string',b.string);
+console.log('');
+
+b.string.assign('bar');
+console.log('b.string',b.string);
+
+b.set('array2', [1,2,3,4]);
+b.array2.set('string2', 'ride a bike.');
+b.array2.string2.set('string3', 'believe in yourself.');
+console.log('b.array2',b.array2);
+
+b.string.on('signal', function (value) {console.log('b.string:signal', value); });
+
+var sTome;
+
+document.addEventListener("DOMContentLoaded", contentLoaded);
+
+function contentLoaded() {
+	var survivorReport = { stupid: { dave: { deaths: 0, score: [0, 0, 0] }, john: { deaths: 0 }, harry: { deaths: 0 } }, angry: 0, hungry: 0, infected: 0, wounded: 0, survivors: [ 'bill', 'bob', 'steve', 'john', 'jim', 'larry', 'dave' ], bar: 'asdf' };
+
+	sTome = Tome.create(survivorReport);
+
+	sTome.angry.on('signal', function angryonsignal(value) {
+		document.getElementById('angry').innerText = value;
+	});
+
+	sTome.hungry.on('signal', function hungryonsignal(value) {
+		document.getElementById('hungry').innerText = value;
+	});
+
+	sTome.infected.on('signal', function infectedonsignal(value) {
+		document.getElementById('infected').innerText = value;
+	});
+
+	sTome.wounded.on('signal', function woundedonsignal(value) {
+		document.getElementById('wounded').innerText = value;
+	});
+
+	sTome.stupid.on('signal', function stupidonsignal(value) {
+		document.getElementById('stupid').innerText = JSON.stringify(value);
+	});
+
+	sTome.survivors.on('signal', function survivorsonsignal(value) {
+		document.getElementById('survivors').innerText = JSON.stringify(value);
+	});
+
+	sTome.bar.on('signal', function barsignal(value) {
+		document.getElementById('bar').innerText = JSON.stringify(value);
+	});
+
+	var names = [ 'bill', 'bob', 'steve', 'john', 'jim', 'larry', 'dave', 'ron', 'michael', 'mark', 'harry', 'richard', 'aaron', 'william', 'edgar', 'ed', 'al', 'chris' ];
+
+/*	window.setInterval(function randominc() {
+		sTome.wounded.inc(1);
+	}, Math.round(150)); */
+
+	function getRandomElement (array) {
+		return Math.floor(Math.random() * array.length);
+	}
+
+	window.setInterval(function woundedinfectedangryhungrystupid() {
+		var JSONDiff = [];
+
+		JSONDiff.push({ "_stupid": { "_dave": { "_deaths": { "inc": 1}, "_score": { "_1": { "inc": Math.round(Math.random()*100) } } } }, "_infected": { "inc": 1 }, "_angry": { "inc": 1 }, "_hungry": { "inc": 1 } });
+
+		JSONDiff.push({ _survivors: { pop: getRandomElement(sTome.survivors)} });
+
+		for (var i = 0, len = Math.random() * 2; i < len; i++) {
+			JSONDiff.push({ _survivors: { push: names[getRandomElement(names)] } });
+		}
+
+		var temp = { _survivors: {}};
+		temp._survivors['_' + getRandomElement(sTome.survivors)] = { assign: names[getRandomElement(names)] }
+
+		JSONDiff.push(temp);
+
+		sTome.batch(JSONDiff);
+
+	}, Math.round(150));
+
+/*	window.setInterval(function stupid() {
+		sTome.stupid.john.deaths.inc(1);
+		sTome.stupid.harry.deaths.inc(1);
+	}, Math.round(150)); */
+
+}
+
+		</script>
+	</head>
+	<body>
+		<div>Angry: <span id='angry'></span></div>
+		<div>Hungry: <span id='hungry'></span></div>
+		<div>Infected: <span id='infected'></span></div>
+		<div>Wounded: <span id='wounded'></span></div>
+		<div>Stupid: <span id='stupid'></span></div>
+		<div>Survivors: <span id='survivors'></span></div>
+		<div>Bar: <span id='bar'></span></div>
+	</body>
+</html>
