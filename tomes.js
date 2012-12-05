@@ -3,6 +3,7 @@ if (typeof require === 'function') {
 	var inherits = require('util') ? require('util').inherits : inherits;
 }
 
+var exports = exports || {};
 
 //  ________
 // |        \
