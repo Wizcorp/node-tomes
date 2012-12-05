@@ -127,8 +127,6 @@ function UndefinedTome() {
 	Tome.apply(this, arguments);
 }
 
-Tome.prototype.constructor = Tome;
-
 inherits(Tome, EventEmitter);
 
 // Every Tome is an EventEmitter, we can listen for four different events:
@@ -785,8 +783,6 @@ Tome.prototype.consume = function (JSONDiff) {
 //                                          \$$$$$$
 
 
-ArrayTome.prototype.constructor = ArrayTome;
-
 inherits(ArrayTome, Tome);
 
 exports.ArrayTome = ArrayTome;
@@ -1190,8 +1186,6 @@ ArrayTome.prototype.forEach = function () {
 //                     \$$$$$$
 
 
-ObjectTome.prototype.constructor = ObjectTome;
-
 inherits(ObjectTome, Tome);
 
 exports.ObjectTome = ObjectTome;
@@ -1215,8 +1209,6 @@ ObjectTome.prototype.typeOf = function () {
 //  \$$    $$ \$$     \\$$    $$| $$ \$$    $$| $$
 //   \$$$$$$   \$$$$$$$ \$$$$$$$ \$$  \$$$$$$$ \$$
 
-
-ScalarTome.prototype.constructor = ScalarTome;
 
 inherits(ScalarTome, Tome);
 
@@ -1250,8 +1242,6 @@ ScalarTome.prototype.toString = function () {
 //  \$$$$$$$   \$$$$$$   \$$$$$$  \$$  \$$$$$$$  \$$$$$$$ \$$   \$$
 
 
-BooleanTome.prototype.constructor = BooleanTome;
-
 inherits(BooleanTome, ScalarTome);
 
 exports.BooleanTome = BooleanTome;
@@ -1271,8 +1261,6 @@ BooleanTome.isBooleanTome = function (o) {
 // | $$  \$$$ \$$    $$| $$ | $$ | $$| $$    $$ \$$     \| $$
 //  \$$   \$$  \$$$$$$  \$$  \$$  \$$ \$$$$$$$   \$$$$$$$ \$$
 
-
-NumberTome.prototype.constructor = NumberTome;
 
 exports.NumberTome = NumberTome;
 
@@ -1307,8 +1295,6 @@ NumberTome.prototype.inc = function (val) {
 //                                               \$$$$$$
 
 
-StringTome.prototype.constructor = StringTome;
-
 exports.StringTome = StringTome;
 
 StringTome.isStringTome = function (o) {
@@ -1328,7 +1314,6 @@ inherits(StringTome, ScalarTome);
 // | $$  \$$$ \$$    $$| $$| $$
 //  \$$   \$$  \$$$$$$  \$$ \$$
 
-NullTome.prototype.constructor = NullTome;
 
 exports.NullTome = NullTome;
 
@@ -1362,8 +1347,6 @@ NullTome.prototype.typeOf = function () {
 //  \$$    $$| $$  | $$ \$$    $$ \$$     \| $$      | $$| $$  | $$ \$$     \ \$$    $$
 //   \$$$$$$  \$$   \$$  \$$$$$$$  \$$$$$$$ \$$       \$$ \$$   \$$  \$$$$$$$  \$$$$$$$
 
-
-UndefinedTome.prototype.constructor = UndefinedTome;
 
 exports.UndefinedTome = UndefinedTome;
 
