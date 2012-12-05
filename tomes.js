@@ -1,5 +1,7 @@
-var EventEmitter = require('events') ? require('events').EventEmitter : EventEmitter;
-var inherits = require('util') ? require('util').inherits : inherits;
+if (typeof require === 'function') {
+	var EventEmitter = require('events') ? require('events').EventEmitter : EventEmitter;
+	var inherits = require('util') ? require('util').inherits : inherits;
+}
 
 
 //  ________
@@ -127,10 +129,6 @@ function UndefinedTome() {
 	Tome.apply(this, arguments);
 }
 
-
-
-Tome.prototype.constructor = Tome;
-
 inherits(Tome, EventEmitter);
 
 // Every Tome is an EventEmitter, we can listen for four different events:
@@ -148,7 +146,7 @@ inherits(Tome, EventEmitter);
 //             does traverse up the Tome chain. Additionally, the Tome that was
 //             deleted and all of it's children will also emit a destroy event.
 //
-//  - destroy: Emitted when a Tome is destroyed. We use this to tell all
+//  - destroy: Emitted when a Tome has been deleted. We use this to tell all
 //             interested parties that the Tome no longer exists and will not
 //             emit any more events.
 //
@@ -170,12 +168,19 @@ Tome.typeOf = function (v) {
 	// attention to array and null as JavaScript currently considers these
 	// objects. This also works on Tomes.
 
-	var t = Array.isArray(v) ? 'array' : typeof v;
-	t = v === null ? 'null' : t;
-	if (v instanceof Tome) {
-		t = v.typeOf();
+	if (Array.isArray(v)) {
+		return 'array';
 	}
-	return t;
+
+	if (v === null) {
+		return 'null';
+	}
+
+	if (v instanceof Tome) {
+		return v.typeOf();
+	}
+
+	return typeof v;
 };
 
 Tome.scribe = function (val, parent, key) {
@@ -780,8 +785,6 @@ Tome.prototype.consume = function (JSONDiff) {
 //                                          \$$$$$$
 
 
-ArrayTome.prototype.constructor = ArrayTome;
-
 inherits(ArrayTome, Tome);
 
 exports.ArrayTome = ArrayTome;
@@ -1185,8 +1188,6 @@ ArrayTome.prototype.forEach = function () {
 //                     \$$$$$$
 
 
-ObjectTome.prototype.constructor = ObjectTome;
-
 inherits(ObjectTome, Tome);
 
 exports.ObjectTome = ObjectTome;
@@ -1210,8 +1211,6 @@ ObjectTome.prototype.typeOf = function () {
 //  \$$    $$ \$$     \\$$    $$| $$ \$$    $$| $$
 //   \$$$$$$   \$$$$$$$ \$$$$$$$ \$$  \$$$$$$$ \$$
 
-
-ScalarTome.prototype.constructor = ScalarTome;
 
 inherits(ScalarTome, Tome);
 
@@ -1245,8 +1244,6 @@ ScalarTome.prototype.toString = function () {
 //  \$$$$$$$   \$$$$$$   \$$$$$$  \$$  \$$$$$$$  \$$$$$$$ \$$   \$$
 
 
-BooleanTome.prototype.constructor = BooleanTome;
-
 inherits(BooleanTome, ScalarTome);
 
 exports.BooleanTome = BooleanTome;
@@ -1266,8 +1263,6 @@ BooleanTome.isBooleanTome = function (o) {
 // | $$  \$$$ \$$    $$| $$ | $$ | $$| $$    $$ \$$     \| $$
 //  \$$   \$$  \$$$$$$  \$$  \$$  \$$ \$$$$$$$   \$$$$$$$ \$$
 
-
-NumberTome.prototype.constructor = NumberTome;
 
 exports.NumberTome = NumberTome;
 
@@ -1302,8 +1297,6 @@ NumberTome.prototype.inc = function (val) {
 //                                               \$$$$$$
 
 
-StringTome.prototype.constructor = StringTome;
-
 exports.StringTome = StringTome;
 
 StringTome.isStringTome = function (o) {
@@ -1323,7 +1316,6 @@ inherits(StringTome, ScalarTome);
 // | $$  \$$$ \$$    $$| $$| $$
 //  \$$   \$$  \$$$$$$  \$$ \$$
 
-NullTome.prototype.constructor = NullTome;
 
 exports.NullTome = NullTome;
 
@@ -1357,8 +1349,6 @@ NullTome.prototype.typeOf = function () {
 //  \$$    $$| $$  | $$ \$$    $$ \$$     \| $$      | $$| $$  | $$ \$$     \ \$$    $$
 //   \$$$$$$  \$$   \$$  \$$$$$$$  \$$$$$$$ \$$       \$$ \$$   \$$  \$$$$$$$  \$$$$$$$
 
-
-UndefinedTome.prototype.constructor = UndefinedTome;
 
 exports.UndefinedTome = UndefinedTome;
 
