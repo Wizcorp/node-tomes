@@ -1,4 +1,4 @@
-node-tome
+node-tomes
 =========
 
-Evented storage agnostic data API
+Evented Storage Agnostic Data API
