@@ -4,13 +4,13 @@
     "version": "0.0.1",
     "author": "Wizcorp, Inc.",
     "engines": {
-        "node": "0.8.15"
+        "node": ">=0.8"
     },
     "maintainers": [
         { "name": "Bjorn Stromberg", "email": "bstromberg@wizcorp.jp" }
     ],
     "scripts": {
-        "test": "test"
+        "test": "node test"
     },
     "main": "tomes.js",
     "devDependencies": {
