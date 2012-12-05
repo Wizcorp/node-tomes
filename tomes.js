@@ -127,8 +127,6 @@ function UndefinedTome() {
 	Tome.apply(this, arguments);
 }
 
-
-
 Tome.prototype.constructor = Tome;
 
 inherits(Tome, EventEmitter);
@@ -148,7 +146,7 @@ inherits(Tome, EventEmitter);
 //             does traverse up the Tome chain. Additionally, the Tome that was
 //             deleted and all of it's children will also emit a destroy event.
 //
-//  - destroy: Emitted when a Tome is destroyed. We use this to tell all
+//  - destroy: Emitted when a Tome has been deleted. We use this to tell all
 //             interested parties that the Tome no longer exists and will not
 //             emit any more events.
 //
@@ -170,12 +168,19 @@ Tome.typeOf = function (v) {
 	// attention to array and null as JavaScript currently considers these
 	// objects. This also works on Tomes.
 
-	var t = Array.isArray(v) ? 'array' : typeof v;
-	t = v === null ? 'null' : t;
-	if (v instanceof Tome) {
-		t = v.typeOf();
+	if (Array.isArray(v)) {
+		return 'array';
 	}
-	return t;
+
+	if (v === null) {
+		return 'null';
+	}
+
+	if (v instanceof Tome) {
+		return v.typeOf();
+	}
+
+	return typeof v;
 };
 
 Tome.scribe = function (val, parent, key) {
