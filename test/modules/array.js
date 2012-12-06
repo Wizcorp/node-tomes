@@ -161,20 +161,20 @@ exports.testArrayPush = function (test) {
 			test.ok(false, 'unexpected signal ' + JSON.stringify(value));
 		}
 	});
-	test.equal(JSON.stringify(a), JSON.stringify(b), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(b));
+	test.equal(JSON.stringify(a), JSON.stringify(b), 'expected ' + JSON.stringify(a));
 	test.equal(a.push(5), b.push(5), 'expected 5');
-	test.strictEqual(a.length, b.length);
+	test.strictEqual(a.length, b.length, 'expected ' + a.length);
 	test.equal(a.push('asdf'), b.push('asdf'), 'expected 6');
-	test.strictEqual(a.length, b.length);
+	test.strictEqual(a.length, b.length, 'expected ' + a.length);
 	test.equal(a.push(true), b.push(true), 'expected 7');
 	test.equal(a.push({ f: true }), b.push({ f: true }), 'expected 8');
 	test.equal(a.push(null), b.push(null), 'expected 9');
 	test.equal(a.push(undefined), b.push(undefined), 'expected 10');
-	test.strictEqual(a.length, b.length);
+	test.strictEqual(a.length, b.length, 'expected ' + a.length);
 	test.equal(a.push(), b.push(), 'expected 10');
 	test.equal(a.push(), b.push(), 'expected 10');
-	test.equal(JSON.stringify(a), JSON.stringify(b), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(b));
-	test.strictEqual(a.length, b.length);
+	test.equal(JSON.stringify(a), JSON.stringify(b), 'expected ' + JSON.stringify(a));
+	test.strictEqual(a.length, b.length, 'expected ' + a.length);
 	test.done();
 };
 
