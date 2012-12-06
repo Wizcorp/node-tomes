@@ -458,13 +458,14 @@ Tome.prototype.assign = function (val) {
 		}
 
 		// Just like with arrays, we only want to emit add after we are done
-		// assigning values. We use Object.keys to get an array of all the
-		// properties we are going to assign then we can use it again to do the
-		// emission of adds.
+		// assigning values. We used Object.keys to get an array of all the
+		// properties we assigned so we can use it again to do the emission of
+		// adds. We also need to pay special attention when emitting add on
+		// undefined keys.
 
 		for (i = 0; i < len; i += 1) {
 			k = added[i];
-			this.emitAdd(k, this[k].valueOf());
+			this.emitAdd(k, this[k] ? this[k].valueOf() : undefined);
 		}
 
 		break;

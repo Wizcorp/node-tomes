@@ -274,3 +274,19 @@ exports.testObjectToString = function (test) {
 
 	test.done();
 };
+
+exports.testObjectAssignValues = function (test) {
+	test.expect(2);
+
+	var a = 'asdf';
+	var b = Tome.scribe(a);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
+
+	a = { foo: [], bar: undefined, j: Infinity, k: -Infinity, l: (1 / 0), m: -(1 / 0), n: null, o: Number.MAX_VALUE, p: Number.MIN_VALUE, q: '', r: 7, s: '7', t: 0.00001 };
+	b.assign({ foo: [], bar: undefined, j: Infinity, k: -Infinity, l: (1 / 0), m: -(1 / 0), n: null, o: Number.MAX_VALUE, p: Number.MIN_VALUE, q: '', r: 7, s: '7', t: 0.00001 });
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
+
+	test.done();
+};
