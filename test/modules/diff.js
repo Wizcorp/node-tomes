@@ -3,28 +3,45 @@ var tomes = require('../../tomes');
 var Tome = tomes.Tome;
 
 exports.testDiffSimpleString = function (test) {
-	test.expect(6);
+	test.expect(12);
 
+	var bsignalcount = 0;
+	var csignalcount = 0;
 	var a = 'asdf';
 	var b = Tome.scribe(a);
 	var c = Tome.scribe(a);
 
 	b.on('diff', function (diff) {
+		test.deepEqual(diff, { assign: 'fdsa' }, 'expected diff to be { assign: \'fdsa\' }'); // 6
 		c.batch(diff);
 	});
 
-	c.on('signal', function (cVal) {
-		test.strictEqual(JSON.stringify(b), JSON.stringify(cVal)); // 1, 4
+	b.on('signal', function (bVal) {
+		bsignalcount += 1;
+		test.strictEqual(JSON.stringify(a), JSON.stringify(bVal)); // 1, 5
 	});
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
-	test.strictEqual(JSON.stringify(b), JSON.stringify(c)); // 3
+	c.on('signal', function (cVal) {
+		csignalcount += 1;
+		test.strictEqual(JSON.stringify(b), JSON.stringify(cVal)); // 2, 7
+	});
+
+	c.on('diff', function (diff) {
+		test.deepEqual(diff, { assign: 'fdsa' }, 'expected diff to be { assign: \'fdsa\' }'); // 8
+	});
+
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c)); // 4
 
 	a = 'fdsa';
 	b.assign('fdsa');
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 5
-	test.strictEqual(JSON.stringify(b), JSON.stringify(c)); // 6
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 9
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c)); // 10
+
+	test.strictEqual(bsignalcount, 2, 'expected b to signal 2 times.'); // 11
+	test.strictEqual(csignalcount, 2, 'expected c to signal 2 times.'); // 12
 
 	test.done();
 };
