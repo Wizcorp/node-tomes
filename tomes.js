@@ -732,11 +732,12 @@ Tome.prototype.batch = function (JSONDiff) {
 };
 
 Tome.prototype.consume = function (JSONDiff) {
-	for (var key in JSONDiff) {
-		var val = JSONDiff[key];
+	var key, val, k, i, unfd;
+	for (key in JSONDiff) {
+		val = JSONDiff[key];
 		switch (key) {
 		case 'set':
-			for (var k in val) {
+			for (k in val) {
 				this.set(k, val[k]);
 			}
 			break;
@@ -746,27 +747,35 @@ Tome.prototype.consume = function (JSONDiff) {
 		case 'inc':
 			this.inc(val);
 			break;
+		case 'shift':
+			for (i = 0; i < val; i += 1) {
+				this.shift();
+			}
+			break;
 		case 'pop':
-			for (var i = 0; i < val; i += 1) {
+			for (i = 0; i < val; i += 1) {
 				this.pop();
 			}
 			break;
 		case 'push':
 			this.push(val);
 			break;
+		case 'reverse':
+			this.reverse();
+			break;
 		case 'del':
 			this.del(val);
 			break;
 		default:
 			if (key.indexOf('_') === 0) {
-				var unfd = key.substring(1);
+				unfd = key.substring(1);
 				if (this.hasOwnProperty(unfd)) {
 					this[unfd].consume(val);
 				} else {
 					throw new ReferenceError('Tome.consume - key is not defined: ' + unfd);
 				}
 			} else {
-				console.log('unhandled op:', key);
+				throw new Error('Operation not implemented yet: ', key);
 			}
 		}
 	}
@@ -897,6 +906,7 @@ ArrayTome.prototype.shift = function () {
 		this.length = this._arr.length;
 		o.destroy();
 		this.emitDel(key);
+		this.diff('shift', 1);
 		this.signal();
 	}
 
@@ -954,6 +964,7 @@ ArrayTome.prototype.reverse = function () {
 		this[i] = this._arr[i];
 	}
 
+	this.diff('reverse', 1);
 	this.signal();
 
 	return this;
