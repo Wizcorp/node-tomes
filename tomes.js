@@ -663,31 +663,33 @@ Tome.prototype.emitAdd = function (key, val) {
 	this.emit('add', key, val);
 };
 
-Tome.prototype.diff = function (op, val) {
-	if (this.__diff__ === undefined) {
-		this.__diff__ = {};
-		this.__diff__[op] = val;
+Tome.prototype.diff = function (op, val, diff) {
+	if (diff === undefined) {
+		diff = {};
+		diff[op] = val;
 	}
 
 	// If our diff object is empty, we are at the bottom of the chain and we
 	// need to build up.
+	if (this.__diff__ === undefined) {
+		this.__diff__ = {};
+	}
 
-	var bigger = {};
 	if (this.hasOwnProperty('__key__')) {
-		bigger['_' + this.__key__] = this.__diff__;
+		this.__diff__['_' + this.__key__] = diff;
 	} else {
-		bigger = this.__diff__;
+		this.__diff__ = diff;
 	}
 
 	if (!this.__root__.__batch__) {
 		this.emit('signal', this.valueOf());
-		this.emit('diff', bigger);
+		this.emit('diff', this.__diff__);
 	} else {
-		this.__diff__ = bigger;
+		this.__diff__ = this.__diff__;
 	}
 
 	if (this.hasOwnProperty('__parent__') && this.__parent__ instanceof Tome) {
-		this.__parent__.diff(op, val);
+		this.__parent__.diff(op, val, this.__diff__);
 	}
 };
 

@@ -126,3 +126,36 @@ exports.testDiffObjectToString = function (test) {
 
 	test.done();
 };
+
+exports.testDiffSubObjectAssign = function (test) {
+	test.expect(8);
+
+	var a = { a: { b: { c: { d: { e: 7 }, f: 8 }, g: 9 }, h: 10 }, i: 11, j: 12, k: 13 };
+	var b = Tome.scribe(a);
+	var c = Tome.scribe(a);
+
+	b.on('diff', function (diff) {
+		test.deepEqual(diff, { _a: { _b: { _c: { _d: { _e: { assign: 100 } } } } } });
+		c.batch(diff);
+	});
+
+	c.on('diff', function (diff) {
+		test.deepEqual(diff, { _a: { _b: { _c: { _d: { _e: { assign: 100 } } } } } });
+	});
+
+	b.on('signal', function (val) {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	});
+
+	c.on('signal', function (val) {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	});
+
+	a.a.b.c.d.e = 100;
+	b.a.b.c.d.e.assign(100);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+
+	test.done();
+};
