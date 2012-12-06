@@ -70,44 +70,19 @@ function Tome(parent, key) {
 	});
 }
 
-function ArrayTome(arr, parent, key) {
+function ArrayTome(val, parent, key) {
 	Tome.call(this, parent, key);
-	Object.defineProperty(this, '_arr', { configurable: true, writable: true });
-	Object.defineProperty(this, 'length', { configurable: true, writable: true });
-
-	var len = arr.length;
-	
-	this._arr = new Array(len);
-
-	for (var i = 0; i < len; i += 1) {
-		this._arr[i] = Tome.scribe(arr[i], this, i);
-		if (arr.hasOwnProperty(i)) {
-			this[i] = this._arr[i];
-		}
-	}
-	this.length = len;
+	this.init(val);
 }
 
 function ObjectTome(val, parent, key) {
 	Tome.call(this, parent, key);
-
-	for (var k in val) {
-		if (val.hasOwnProperty(k)) {
-			var kv = val[k];
-			if (kv === undefined) {
-				this[k] = undefined;
-			} else {
-				this[k] = Tome.scribe(kv, this, k);
-			}
-		}
-	}
+	this.init(val);
 }
 
 function ScalarTome(val, parent, key) {
 	Tome.call(this, parent, key);
-	Object.defineProperty(this, '_val', { configurable: true, writable: true });
-
-	this._val = val.valueOf();
+	this.init(val);
 }
 
 function BooleanTome() {
@@ -189,6 +164,19 @@ Tome.typeOf = function (v) {
 	return typeof v;
 };
 
+Tome.protoOf = function (t) {
+	var prototypeMap = {
+		"array": ArrayTome.prototype,
+		"boolean": BooleanTome.prototype,
+		"null": NullTome.prototype,
+		"number": NumberTome.prototype,
+		"object": ObjectTome.prototype,
+		"string": StringTome.prototype,
+		"undefined": UndefinedTome.prototype
+	};
+	return prototypeMap[t];
+};
+
 Tome.scribe = function (val, parent, key) {
 
 	// We instantiate a new Tome object by using the Tome.scribe method.
@@ -267,7 +255,7 @@ Tome.prototype.set = function (key, val) {
 		// event followed by a signal which goes up the Tome chain.
 
 		this[key] = Tome.scribe(val, this, key);
-		this.emitAdd(key, this[key].valueOf());
+		this.emit('add', key, this[key].valueOf());
 		diff = {};
 		diff[key] = val;
 		this.diff('set', diff);
@@ -317,7 +305,16 @@ Tome.prototype.assign = function (val) {
 	// ensure we match the Tome type to the value type.
 
 	var vType = Tome.typeOf(val);
+	var vProto = Tome.protoOf(vType);
 	var pType = this.typeOf();
+
+	if (vProto === undefined) {
+		throw new TypeError('Tome.assign - Invalid value type: ' + vType);
+	}
+
+	if (vType === 'undefined' && (!this.hasOwnProperty('__parent__') || this.__parent__.typeOf() !== 'array')) {
+		throw new TypeError('Tome.assign - You can only assign undefined to ArrayTome elements');
+	}
 
 	if (vType === pType && this instanceof ScalarTome) {
 
@@ -336,181 +333,8 @@ Tome.prototype.assign = function (val) {
 
 	// Now we need to apply a new Tome type based on the value type.
 
-	var len, i, k;
-
-	switch (vType) {
-	case 'array':
-
-		// An ArrayTome has two non-enumerable properties:
-		//  -   _arr: Holds the actual array that we reference.
-		//  - length: Holds the length of the array in _arr.
-
-		this.__proto__ = ArrayTome.prototype;
-
-		Object.defineProperty(this, '_arr', { configurable: true, writable: true });
-		Object.defineProperty(this, 'length', { configurable: true, writable: true });
-
-		// val is an array so we take its length and instantiate a new array of
-		// the appropriate size in _arr. We already know the length so we
-		// assign that as well.
-
-		len = val.length;
-		this._arr = new Array(len);
-		this.length = len;
-
-		// We go through each element in val and scribe a new Tome based on that
-		// value with a reference to this as its parent. We also assign
-		// properties with references to those new array elements. We need this
-		// so we can do things like myTome[3].on('signal', function () {});
-
-		// One additional special case that bears mentioning here is when an
-		// array element has undefined as its value. When that element goes
-		// through JSON.stringify it turns into null. We handle that by having
-		// an UndefinedTome type and making its toJSON method return null. Also,
-		// that element does not show up in hasOwnProperty, so we do not assign
-		// a property for that element.
-
-		for (i = 0; i < len; i += 1) {
-			this._arr[i] = Tome.scribe(val[i], this, i);
-			
-			// We use hasOwnProperty here because arrays instantiated with new
-			// have elements, but no keys ie. new Array(1) is different from
-			// [undefined].
-
-			if (val.hasOwnProperty(i)) {
-				this[i] = this._arr[i];
-			}
-		}
-
-		for (i = 0; i < len; i += 1) {
-
-			// We want to emit add after the values have all been assigned.
-			// Otherwise, we would have unassigned values in the array.
-			// Additionally, we always emit the value from the array since
-			// the key may not exist.
-		
-			this.emitAdd(i, this._arr[i].valueOf());
-		}
-
-		break;
-
-	case 'boolean':
-		
-		// A BooleanTome is a ScalarTome type that holds a boolean value. It has
-		// one non-enumerable property:
-		//  - _val: Holds the actual value that we reference.
-
-		this.__proto__ = BooleanTome.prototype;
-
-		Object.defineProperty(this, '_val', { configurable: true, writable: true });
-
-		// We use valueOf() because it is a common method between Tomes and
-		// standard javascript objects. This way we can assign Tomes to Tomes and
-		// still get the same behavior as javascript objects.
-
-		this._val = val.valueOf();
-
-		break;
-
-	case 'null':
-
-		// A NullTome holds a null value. It has no non-enumerable properties.
-
-		this.__proto__ = NullTome.prototype;
-		
-		break;
-
-	case 'number':
-
-		// A NumberTome is a ScalarTome type that holds a number value. It has
-		// one non-enumerable property:
-		//  - _val: Holds the actual value that we reference.
-
-		this.__proto__ = NumberTome.prototype;
-
-		Object.defineProperty(this, '_val', { configurable: true, writable: true });
-
-		// We use valueOf() because it is a common method between Tomes and
-		// standard javascript objects. This way we can assign Tomes to Tomes and
-		// still get the same behavior as javascript objects.
-
-		this._val = val.valueOf();
-
-		break;
-
-	case 'object':
-
-		// An ObjectTome is a Tome that holds other Tomes. It has no
-		// non-enumerable properties. Every property of an ObjectTome is an
-		// instance of another Tome.
-
-		this.__proto__ = ObjectTome.prototype;
-
-		// There is one special case we need to handle with the ObjectTome type
-		// and that is when the value of a property is undefined. To match
-		// javascript's behavior we assign undefined directly to the property
-		// instead of creating an UndefinedTome since when you JSON.stringify an
-		// object with a property that has undefined as its value, it will
-		// leave that property out. This is different behavior from arrays
-		// which will stringify undefined elements to null.
-
-		var added = Object.keys(val);
-		len = added.length;
-
-		for (i = 0; i < len; i += 1) {
-			k = added[i];
-			var kv = val[k];
-			if (kv === undefined) {
-				this[k] = undefined;
-			} else {
-				this[k] = Tome.scribe(kv, this, k);
-			}
-		}
-
-		// Just like with arrays, we only want to emit add after we are done
-		// assigning values. We used Object.keys to get an array of all the
-		// properties we assigned so we can use it again to do the emission of
-		// adds. We also need to pay special attention when emitting add on
-		// undefined keys.
-
-		for (i = 0; i < len; i += 1) {
-			k = added[i];
-			this.emitAdd(k, this[k] ? this[k].valueOf() : undefined);
-		}
-
-		break;
-
-	case 'string':
-
-		// A NumberTome is a ScalarTome type that holds a string value. It has
-		// one non-enumerable property:
-		//  - _val: Holds the actual value that we reference.
-
-		this.__proto__ = StringTome.prototype;
-
-		Object.defineProperty(this, '_val', { configurable: true, writable: true });
-		
-		this._val = val.valueOf();
-		
-		break;
-
-	case 'undefined':
-
-		// An UndefinedTome is a Tome type that holds an undefined value. We use
-		// this in arrays since javascript's behavior when using JSON.stringify
-		// is to return null. We accomplish this by making the toJSON method on
-		// UndefinedTomes return null, therefore it can only be assigned to
-		// elements of ArrayTomes.
-
-		if (!this.hasOwnProperty('__parent__') || this.__parent__.typeOf() !== 'array') {
-			throw new TypeError('Tome.assign - You can only assign undefined to ArrayTome elements');
-		}
-
-		this.__proto__ = UndefinedTome.prototype;
-		break;
-	default:
-		throw new TypeError('Tome.assign - Invalid value type: ' + vType);
-	}
+	this.__proto__ = vProto;
+	this.init(val ? val.valueOf() : val);
 
 	this.diff('assign', val);
 
@@ -640,7 +464,8 @@ Tome.prototype.reset = function () {
 
 	for (i = 0; i < len; i += 1) {
 		key = keys[i];
-		this.emitDel(key);
+		this.emit('del', key);
+		//this.diff('del', key);
 	}
 };
 
@@ -653,14 +478,6 @@ Tome.prototype.toJSON = function () {
 	// stringify to null.
 
 	return this.valueOf();
-};
-
-Tome.prototype.emitDel = function (key) {
-	this.emit('del', key);
-};
-
-Tome.prototype.emitAdd = function (key, val) {
-	this.emit('add', key, val);
 };
 
 Tome.prototype.diff = function (op, val, diff) {
@@ -784,6 +601,58 @@ ArrayTome.isArrayTome = function (o) {
 	return o instanceof ArrayTome;
 };
 
+ArrayTome.prototype.init = function (val) {
+
+	// An ArrayTome has two non-enumerable properties:
+	//  -   _arr: Holds the actual array that we reference.
+	//  - length: Holds the length of the array in _arr.
+
+	Object.defineProperty(this, '_arr', { configurable: true, writable: true });
+	Object.defineProperty(this, 'length', { configurable: true, writable: true });
+
+	// val is an array so we take its length and instantiate a new array of
+	// the appropriate size in _arr. We already know the length so we
+	// assign that as well.
+
+	var len = val.length;
+	this._arr = new Array(len);
+	this.length = len;
+
+	// We go through each element in val and scribe a new Tome based on that
+	// value with a reference to this as its parent. We also assign
+	// properties with references to those new array elements. We need this
+	// so we can do things like myTome[3].on('signal', function () {});
+
+	// One additional special case that bears mentioning here is when an
+	// array element has undefined as its value. When that element goes
+	// through JSON.stringify it turns into null. We handle that by having
+	// an UndefinedTome type and making its toJSON method return null. Also,
+	// that element does not show up in hasOwnProperty, so we do not assign
+	// a property for that element.
+
+	for (var i = 0; i < len; i += 1) {
+		this._arr[i] = Tome.scribe(val[i], this, i);
+		
+		// We use hasOwnProperty here because arrays instantiated with new
+		// have elements, but no keys ie. new Array(1) is different from
+		// [undefined].
+
+		if (val.hasOwnProperty(i)) {
+			this[i] = this._arr[i];
+		}
+	}
+
+	for (i = 0; i < len; i += 1) {
+
+		// We want to emit add after the values have all been assigned.
+		// Otherwise, we would have unassigned values in the array.
+		// Additionally, we always emit the value from _arr since the key may
+		// not exist.
+	
+		this.emit('add', i, this._arr[i].valueOf());
+	}
+};
+
 ArrayTome.prototype.valueOf = function () {
 	return this._arr ? this._arr : [];
 };
@@ -835,12 +704,12 @@ ArrayTome.prototype.set = function (key, val) {
 		this._arr[key] = Tome.scribe(val, this, key);
 		this[key] = this._arr[key];
 		this.length = this._arr.length;
-		this.emitAdd(key, this._arr[key].valueOf());
+		this.emit('add', key, this._arr[key].valueOf());
 
 		for (var i = len, newlen = this._arr.length - 1; i < newlen; i += 1) {
 			this._arr[i] = Tome.scribe(undefined, this, i);
 			this.length = this._arr.length;
-			this.emitAdd(i, this._arr[i].valueOf());
+			this.emit('add', i, this._arr[i].valueOf());
 		}
 
 		var diff = {};
@@ -866,7 +735,7 @@ ArrayTome.prototype.del = function (key) {
 	this._arr[key] = Tome.scribe(undefined, this, key);
 	this[key] = this._arr[key];
 
-	this.emitDel(key);
+	this.emit('del', key);
 	this.diff('del', key);
 };
 
@@ -926,7 +795,7 @@ ArrayTome.prototype.push = function () {
 			this._arr.push(Tome.scribe(arguments[i], this, k));
 			this[k] = this._arr[k];
 			this.length = this._arr.length;
-			this.emitAdd(k, this[k].valueOf());
+			this.emit('add', k, this[k].valueOf());
 		}
 		this.diff('push', arguments);
 	}
@@ -962,10 +831,11 @@ ArrayTome.prototype.splice = function (spliceIndex, toRemove) {
 		var o = this[key];
 		delete this[key];
 		this.length = this._arr.length;
-		this.emitDel(key);
 		if (o instanceof Tome) {
 			o.destroy();
 		}
+		this.emit('del', key);
+		this.diff('del', key);
 	}
 
 	for (i = 0, len = toAdd.length; i < len; i += 1) {
@@ -973,7 +843,7 @@ ArrayTome.prototype.splice = function (spliceIndex, toRemove) {
 		this._arr.splice(key, 0, Tome.scribe(toAdd[i], this, key));
 		this[key] = this._arr[key];
 		this.length = this._arr.length;
-		this.emitAdd(key, this[key].valueOf());
+		this.emit('add', key, this[key].valueOf());
 	}
 
 	for (i = 0, len = this._arr.length; i < len; i += 1) {
@@ -1020,7 +890,7 @@ ArrayTome.prototype.unshift = function () {
 
 		for (i = 0, len = arguments.length; i < len; i += 1) {
 			this.length = this._arr.length;
-			this.emitAdd(i, this[i].valueOf());
+			this.emit('add', i, this[i].valueOf());
 		}
 
 		this.diff('unshift', arguments);
@@ -1184,6 +1054,46 @@ ObjectTome.isObjectTome = function (o) {
 	return o instanceof ObjectTome;
 };
 
+ObjectTome.prototype.init = function (val) {
+
+	// An ObjectTome is a Tome that holds other Tomes. It has no
+	// non-enumerable properties. Every property of an ObjectTome is an
+	// instance of another Tome.
+
+	// There is one special case we need to handle with the ObjectTome type
+	// and that is when the value of a property is undefined. To match
+	// javascript's behavior we assign undefined directly to the property
+	// instead of creating an UndefinedTome since when you JSON.stringify an
+	// object with a property that has undefined as its value, it will
+	// leave that property out. This is different behavior from arrays
+	// which will stringify undefined elements to null.
+
+	var added = Object.keys(val);
+	var len = added.length;
+	var k;
+
+	for (var i = 0; i < len; i += 1) {
+		k = added[i];
+		var kv = val[k];
+		if (kv === undefined) {
+			this[k] = undefined;
+		} else {
+			this[k] = Tome.scribe(kv, this, k);
+		}
+	}
+
+	// Just like with arrays, we only want to emit add after we are done
+	// assigning values. We used Object.keys to get an array of all the
+	// properties we assigned so we can use it again to do the emission of
+	// adds. We also need to pay special attention when emitting add on
+	// undefined keys.
+
+	for (i = 0; i < len; i += 1) {
+		k = added[i];
+		this.emit('add', k, this[k] ? this[k].valueOf() : undefined);
+	}
+};
+
 ObjectTome.prototype.typeOf = function () {
 	return 'object';
 };
@@ -1206,6 +1116,12 @@ exports.ScalarTome = ScalarTome;
 
 ScalarTome.isScalarTome = function (o) {
 	return o instanceof ScalarTome;
+};
+
+ScalarTome.prototype.init = function (val) {
+	Object.defineProperty(this, '_val', { configurable: true, writable: true });
+	
+	this._val = val.valueOf();
 };
 
 ScalarTome.prototype.valueOf = function () {
@@ -1312,6 +1228,10 @@ NullTome.isNullTome = function (o) {
 
 inherits(NullTome, Tome);
 
+NullTome.prototype.init = function () {
+
+};
+
 NullTome.prototype.valueOf = function () {
 	return null;
 };
@@ -1344,6 +1264,10 @@ UndefinedTome.isUndefinedTome = function (o) {
 };
 
 inherits(UndefinedTome, Tome);
+
+UndefinedTome.prototype.init = function () {
+
+};
 
 UndefinedTome.prototype.valueOf = function () {
 	return undefined;
