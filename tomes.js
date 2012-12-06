@@ -47,12 +47,12 @@ function Tome(parent, key) {
 
 	Object.defineProperty(this, '__root__', { value: parent instanceof Tome ? parent.__root__ : this });
 
-	// __signal__ is our indicator that while we are in batch mode this object
+	// __diff__ is our indicator that while we are in batch mode this object
 	// had changes and needs to emit signal events once we are finished with
-	// all our changes. This gets set to true in the signal method and set to
-	// false in the notify method once we emit the signal event.
+	// all our changes. This gets is modified in the diff method and set to
+	// undefined in the notify method once we emit the signal and diff event.
 
-	Object.defineProperty(this, '__signal__', { writable: true });
+	Object.defineProperty(this, '__diff__', { writable: true });
 
 	// If you're using the node.js event emitter, we need to make the _events
 	// non-enumerable. Ideally, node.js would make this the default behavior.
@@ -156,6 +156,11 @@ inherits(Tome, EventEmitter);
 //             Tomes change. It is also emitted when we register an event
 //             listener for the signal event. When an operation occurs that
 //             changes multiple children of a Tome, we only emit signal once.
+//
+//  -    diff: Emitted when a Tome is modified. A diff is emitted by a Tome
+//             when it or any of its child Tomes change. This diff is used by
+//             by Tomes operating in different environments to stay in sync.
+
 
 exports.Tome = Tome;
 
@@ -515,16 +520,16 @@ Tome.prototype.assign = function (val) {
 Tome.prototype.notify = function () {
 
 	// The notify method is called on the root Tome by endBatch to emit signal
-	// on all Tomes that need to. We know a Tome needs to emit signal because its
-	// __signal__ property was set to true by the signal method.
+	// and diff on all Tomes that need to. We know a Tome needs to emit because
+	// its __diff__ property was set by the diff method.
 
-	if (this.__signal__ === undefined) {
+	if (this.__diff__ === undefined) {
 		return;
 	}
 
 	this.emit('signal', this.valueOf());
-	this.emit('diff', this.__signal__);
-	this.__signal__ = undefined;
+	this.emit('diff', this.__diff__);
+	this.__diff__ = undefined;
 
 	// Since our Tomes inherit from multiple prototypes, they have a large
 	// number of properties. We use Object.keys to only get its own enumerable
@@ -534,7 +539,7 @@ Tome.prototype.notify = function () {
 	var keys = Object.keys(this);
 	for (var i = 0, len = keys.length; i < len; i += 1) {
 		var k = keys[i];
-		if (this[k] !== undefined && this[k].__signal__ !== undefined) {
+		if (this[k] !== undefined && this[k].__diff__ !== undefined) {
 			this[k].notify();
 		}
 	}
@@ -659,9 +664,9 @@ Tome.prototype.emitAdd = function (key, val) {
 };
 
 Tome.prototype.diff = function (op, val) {
-	if (this.__signal__ === undefined) {
-		this.__signal__ = {};
-		this.__signal__[op] = val;
+	if (this.__diff__ === undefined) {
+		this.__diff__ = {};
+		this.__diff__[op] = val;
 	}
 
 	// If our diff object is empty, we are at the bottom of the chain and we
@@ -669,16 +674,16 @@ Tome.prototype.diff = function (op, val) {
 
 	var bigger = {};
 	if (this.hasOwnProperty('__key__')) {
-		bigger['_' + this.__key__] = this.__signal__;
+		bigger['_' + this.__key__] = this.__diff__;
 	} else {
-		bigger = this.__signal__;
+		bigger = this.__diff__;
 	}
 
 	if (!this.__root__.__batch__) {
 		this.emit('signal', this.valueOf());
 		this.emit('diff', bigger);
 	} else {
-		this.__signal__ = bigger;
+		this.__diff__ = bigger;
 	}
 
 	if (this.hasOwnProperty('__parent__') && this.__parent__ instanceof Tome) {
