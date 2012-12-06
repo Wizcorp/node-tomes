@@ -35,6 +35,7 @@ function Tome(parent, key) {
 		Object.defineProperty(this, '__parent__', { writable: true, value: parent });
 	} else {
 		Object.defineProperty(this, '__batch__', { writable: true, value: false });
+		Object.defineProperty(this, '__diff__', { writable: true });
 	}
 
 	if (key !== undefined) {
@@ -224,6 +225,7 @@ Tome.scribe = function (val, parent, key) {
 };
 
 Tome.prototype.set = function (key, val) {
+	this.startBatch();
 
 	// We use this to set a property on a Tome to the specified value. This can
 	// either be a new property in which case we'd emit add and signal, or we
@@ -236,6 +238,7 @@ Tome.prototype.set = function (key, val) {
 		if (this instanceof ObjectTome) {
 			this[key] = undefined;
 			this.signal();
+			this.endBatch();
 		}
 		return undefined;
 	}
@@ -263,6 +266,7 @@ Tome.prototype.set = function (key, val) {
 		diff[key] = val;
 		this.diff('set', diff);
 		this[key].signal();
+		this.endBatch();
 
 		// We've already assigned the value to the property so we return this.
 
@@ -278,6 +282,7 @@ Tome.prototype.set = function (key, val) {
 
 		this[key] = Tome.scribe(val, this, key);
 		this[key].signal();
+		this.endBatch();
 
 		// We've already assigned the value to the property so we return this.
 
@@ -295,6 +300,7 @@ Tome.prototype.set = function (key, val) {
 	// property is the correct type for the value and emit the signal event.
 
 	p.assign(val);
+	this.endBatch();
 	return this[key].valueOf();
 };
 
@@ -315,8 +321,11 @@ Tome.prototype.assign = function (val) {
 		// and return our new value.
 
 		this._val = val.valueOf();
-		this.signal();
 		this.diff('assign', val.valueOf());
+		this.signal();
+		if (!this.__root__.__batch__) {
+			this.endBatch();
+		}
 		return this.valueOf();
 	}
 
@@ -505,6 +514,10 @@ Tome.prototype.assign = function (val) {
 	this.diff('assign', val);
 	this.signal();
 
+	if (!this.__root__.__batch__) {
+		this.endBatch();
+	}
+
 	return this.valueOf();
 };
 
@@ -546,7 +559,7 @@ Tome.prototype.notify = function () {
 	// on all Tomes that need to. We know a Tome needs to emit signal because its
 	// __signal__ property was set to true by the signal method.
 
-	if (!this.__signal__) {
+	if (this !== undefined && !this.__signal__) {
 		return;
 	}
 
@@ -561,7 +574,7 @@ Tome.prototype.notify = function () {
 	var keys = Object.keys(this);
 	for (var i = 0, len = keys.length; i < len; i += 1) {
 		var k = keys[i];
-		if (this[k].__signal__) {
+		if (this[k] !== undefined && this[k].__signal__) {
 			this[k].notify();
 		}
 	}
@@ -584,6 +597,11 @@ Tome.prototype.endBatch = function () {
 
 	this.__root__.__batch__ = false;
 	this.__root__.notify();
+
+	if (this.__root__.__diff__ !== undefined) {
+		this.__root__.emit('diff', this.__root__.__diff__);
+		this.__root__.__diff__ = undefined;
+	}
 };
 
 Tome.prototype.destroy = function () {
@@ -621,7 +639,9 @@ Tome.prototype.del = function (key) {
 
 	delete this[key];
 
-	o.destroy();
+	if (o instanceof Tome) {
+		o.destroy();
+	}
 
 	this.emitDel(key);
 
@@ -685,9 +705,6 @@ Tome.prototype.emitDel = function (key) {
 
 Tome.prototype.emitAdd = function (key, val) {
 	this.emit('add', key, val);
-	// if (this.typeOf() !== 'array') {
-		// this.diff('add', val, key);
-	// }
 };
 
 Tome.prototype.diff = function (op, val, diff) {
@@ -695,7 +712,7 @@ Tome.prototype.diff = function (op, val, diff) {
 		diff = {};
 		diff[op] = val;
 	}
-	
+
 	// If our diff object is empty, we are at the bottom of the chain and we
 	// need to build up.
 
@@ -706,10 +723,10 @@ Tome.prototype.diff = function (op, val, diff) {
 		bigger = diff;
 	}
 
-	this.emit('diff', bigger);
-
 	if (this.__parent__ instanceof Tome) {
 		this.__parent__.diff(op, val, bigger);
+	} else {
+		this.__root__.__diff__ = bigger;
 	}
 };
 
@@ -885,8 +902,9 @@ ArrayTome.prototype.del = function (key) {
 	this[key] = this._arr[key];
 
 	this.emitDel(key);
-
+	this.diff('del', key);
 	this.signal();
+	this.endBatch();
 };
 
 ArrayTome.prototype.shift = function () {
@@ -908,6 +926,7 @@ ArrayTome.prototype.shift = function () {
 		this.emitDel(key);
 		this.diff('shift', 1);
 		this.signal();
+		this.endBatch();
 	}
 
 	return out ? out.valueOf() : out;
@@ -933,6 +952,7 @@ ArrayTome.prototype.pop = function () {
 		this.emitDel(len);
 		this.diff('pop', 1);
 		this.signal();
+		this.endBatch();
 	}
 
 	return out ? out.valueOf() : out;
@@ -952,6 +972,7 @@ ArrayTome.prototype.push = function () {
 		}
 
 		this.signal();
+		this.endBatch();
 	}
 
 	return this.length;
@@ -966,6 +987,7 @@ ArrayTome.prototype.reverse = function () {
 
 	this.diff('reverse', 1);
 	this.signal();
+	this.endBatch();
 
 	return this;
 };
@@ -1293,6 +1315,7 @@ NumberTome.prototype.inc = function (val) {
 	this._val = this._val + val;
 	this.diff('inc', val);
 	this.signal();
+	this.endBatch();
 };
 
 

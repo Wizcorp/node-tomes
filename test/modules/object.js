@@ -198,25 +198,28 @@ exports.testObjectSet = function (test) {
 };
 
 exports.testObjectAdd = function (test) {
-	test.expect(9);
+	test.expect(10);
 
 	var a, b, c;
 	a = { john: { shirt: 'blue' } };
 	b = Tome.scribe(a);
 	c = { shirt: 'red' };
 
+	var signalcount = 0;
+
 	b.on('signal', function (bv) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bv)); // 1, 4, 8
+		signalcount += 1;
+		test.strictEqual(JSON.stringify(a), JSON.stringify(bv), 'expected ' + JSON.stringify(a)); // 1, 4, 8
 	});
 
 	b.on('add', function (k, kv) {
-		test.strictEqual('dave', k); // 6
-		test.strictEqual(JSON.stringify(c), JSON.stringify(kv)); // 7
+		test.strictEqual('dave', k, 'expected dave'); // 6
+		test.strictEqual(JSON.stringify(c), JSON.stringify(kv), 'expected ' + JSON.stringify(c)); // 7
 	});
 
 	b.john.on('add', function (k, kv) {
-		test.strictEqual('pants', k); // 2
-		test.strictEqual('green', kv); // 3
+		test.strictEqual('pants', k, 'expected pants'); // 2
+		test.strictEqual('green', kv, 'expected green'); // 3
 	});
 
 	a.john.pants = 'green';
@@ -226,6 +229,8 @@ exports.testObjectAdd = function (test) {
 	a.dave = c;
 	b.set('dave', c);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 9
+
+	test.strictEqual(3, signalcount); // 10
 
 	test.done();
 };
