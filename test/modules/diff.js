@@ -226,20 +226,20 @@ exports.testDiffDel = function (test) {
 	test.done();
 };
 
-exports.testDiffSort = function (test) {
-	test.expect(28);
+exports.testDiffArraySort = function (test) {
+	test.expect(30);
 
-	var a = [ 0, 5, 6, 8, 2, 3, 6, 7, 0, 9];
+	var a = [ 0, 5, 6, 8, 2, 3, 6, undefined, 7, 0, 9];
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
 	b.on('diff', function (diff) {
-		test.strictEqual(JSON.stringify(diff), JSON.stringify({ "rename": [ { "o": 8, "n": 1 }, { "o": 4, "n": 2 }, { "o": 5, "n": 3 }, { "o": 1, "n": 4 }, { "o": 2, "n": 5 }, { "o": 3, "n": 8 } ] }));
+		test.deepEqual(diff, { rename: [ { o: 9, n: 1 }, { o: 4, n: 2 }, { o: 5, n: 3 }, { o: 1, n: 4 }, { o: 6, n: 5 }, { o: 2, n: 6 }, { o: 8, n: 7 }, { o: 3, n: 8 }, { o: 10, n: 9 }, { o: 7, n: 10 } ] });
 		c.batch(diff);
 	});
 
 	c.on('diff', function (diff) {
-		test.strictEqual(JSON.stringify(diff), JSON.stringify({ "rename": [ { "o": 8, "n": 1 }, { "o": 4, "n": 2 }, { "o": 5, "n": 3 }, { "o": 1, "n": 4 }, { "o": 2, "n": 5 }, { "o": 3, "n": 8 } ] }));
+		test.deepEqual(diff, { rename: [ { o: 9, n: 1 }, { o: 4, n: 2 }, { o: 5, n: 3 }, { o: 1, n: 4 }, { o: 6, n: 5 }, { o: 2, n: 6 }, { o: 8, n: 7 }, { o: 3, n: 8 }, { o: 10, n: 9 }, { o: 7, n: 10 } ] });
 	});
 
 	b.on('signal', function (val) {
@@ -252,6 +252,45 @@ exports.testDiffSort = function (test) {
 
 	a.sort();
 	b.sort();
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+
+	for (var i = 0, len = b.length; i < len; i += 1) {
+		test.strictEqual(i, b[i].__key__);
+	}
+
+	for (i = 0, len = c.length; i < len; i += 1) {
+		test.strictEqual(i, c[i].__key__);
+	}
+	test.done();
+};
+
+exports.testDiffArrayShift = function (test) {
+	test.expect(29);
+
+	var a = [ 0, 5, 6, 8, 2, 3, 6, undefined, 7, 0, 9];
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	b.on('diff', function (diff) {
+		test.deepEqual(diff, { "shift": 1 });
+		c.batch(diff);
+	});
+
+	c.on('diff', function (diff) {
+		test.deepEqual(diff, { "shift": 1 });
+	});
+
+	b.on('signal', function (val) {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	});
+
+	c.on('signal', function (val) {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	});
+
+	test.equal(a.shift(), b.shift());
 
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
