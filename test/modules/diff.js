@@ -234,12 +234,12 @@ exports.testDiffSort = function (test) {
 	var c = Tome.conjure(a);
 
 	b.on('diff', function (diff) {
-		test.strictEqual(JSON.stringify(diff), JSON.stringify({ "_1": { "assign": 0 }, "_2": { "assign": 2 }, "_3": { "assign": 3 }, "_4": { "assign": 5 }, "_5": { "assign": 6 }, "_8": { "assign": 8 } }));
+		test.strictEqual(JSON.stringify(diff), JSON.stringify({ "rename": [ { "o": 8, "n": 1 }, { "o": 4, "n": 2 }, { "o": 5, "n": 3 }, { "o": 1, "n": 4 }, { "o": 2, "n": 5 }, { "o": 3, "n": 8 } ] }));
 		c.batch(diff);
 	});
 
 	c.on('diff', function (diff) {
-		test.strictEqual(JSON.stringify(diff), JSON.stringify({ "_1": { "assign": 0 }, "_2": { "assign": 2 }, "_3": { "assign": 3 }, "_4": { "assign": 5 }, "_5": { "assign": 6 }, "_8": { "assign": 8 } }));
+		test.strictEqual(JSON.stringify(diff), JSON.stringify({ "rename": [ { "o": 8, "n": 1 }, { "o": 4, "n": 2 }, { "o": 5, "n": 3 }, { "o": 1, "n": 4 }, { "o": 2, "n": 5 }, { "o": 3, "n": 8 } ] }));
 	});
 
 	b.on('signal', function (val) {
