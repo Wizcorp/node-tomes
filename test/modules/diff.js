@@ -227,7 +227,7 @@ exports.testDiffDel = function (test) {
 };
 
 exports.testDiffSort = function (test) {
-	test.expect(8);
+	test.expect(28);
 
 	var a = [ 0, 5, 6, 8, 2, 3, 6, 7, 0, 9];
 	var b = Tome.conjure(a);
@@ -256,5 +256,12 @@ exports.testDiffSort = function (test) {
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
 
+	for (var i = 0, len = b.length; i < len; i += 1) {
+		test.strictEqual(i, b[i].__key__);
+	}
+
+	for (i = 0, len = c.length; i < len; i += 1) {
+		test.strictEqual(i, c[i].__key__);
+	}
 	test.done();
 };
