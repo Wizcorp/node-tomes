@@ -25,7 +25,7 @@ var notInstanceOf = function (actual, expected) {
 exports.testArrayCreation = function (test) {
 	test.expect(15);
 	var a = [1, 2, 3, 4];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	test.ok(instanceOf(b, Tome), 'expected Tome');
 	test.ok(instanceOf(b, ArrayTome), 'expected ArrayTome');
 	test.ok(notInstanceOf(b, BooleanTome), 'expected not BooleanTome');
@@ -47,7 +47,7 @@ exports.testArrayCreation = function (test) {
 exports.testArrayCreation2 = function (test) {
 	test.expect(5);
 	var a = [];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	test.ok(JSON.stringify(a) === JSON.stringify(b), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(b));
 	a[0] = 0;
 	b.set(0, 0);
@@ -63,7 +63,7 @@ exports.testArrayCreation2 = function (test) {
 exports.testArrayJSONStringify = function (test) {
 	test.expect(2);
 	var a = [{ 1: 2, 3: { 4: 5 } }, 'six', false, [1, 2], {}, [], null, undefined];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(b));
 	test.strictEqual(a.length, b.length);
 	test.done();
@@ -72,7 +72,7 @@ exports.testArrayJSONStringify = function (test) {
 exports.testArrayToString = function (test) {
 	test.expect(2);
 	var a = [{ 1: 2, 3: { 4: 5 } }, 'six', false, [1, 2], {}, [], null, undefined];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	test.strictEqual(a.toString(), b.toString(), 'toString failure');
 	test.strictEqual(a.length, b.length);
 	test.done();
@@ -81,7 +81,7 @@ exports.testArrayToString = function (test) {
 exports.testArrayJoin = function (test) {
 	test.expect(4);
 	var a = [{ 1: 2, 3: { 4: 5 } }, 'six', false, [1, 2], {}, [], null, undefined];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	test.strictEqual(a.join(), b.join(), 'join failure');
 	test.strictEqual(a.join(', '), b.join(', '), 'join failure');
 	test.strictEqual(a.join(5), b.join(5), 'join failure');
@@ -92,7 +92,7 @@ exports.testArrayJoin = function (test) {
 exports.testArraySignal = function (test) {
 	test.expect(3);
 	var a = [1, 2, 3, 4];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function () {
 		test.ok(true, 'expected signal');
 	});
@@ -104,7 +104,7 @@ exports.testArraySignal = function (test) {
 exports.testArrayPush = function (test) {
 	test.expect(27);
 	var a = [1, 2, 3, 4];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('add', function (key, value) {
 		if (key !== b.valueOf().length - 1) {
 			test.ok(false, 'unexpected add ' + key + ': ' + value);
@@ -181,7 +181,7 @@ exports.testArrayPush = function (test) {
 exports.testArrayUnshift = function (test) {
 	test.expect(27);
 	var a = [1, 2, 3, 4];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('add', function (key, value) {
 		if (key !== 0) {
 			test.ok(false, 'unexpected add ' + key + ': ' + value);
@@ -258,7 +258,7 @@ exports.testArrayUnshift = function (test) {
 exports.testArrayPop = function (test) {
 	test.expect(32);
 	var a = [true, 'asdf', 4, { f: null }, { f: undefined }, null, undefined, { f: 1 }];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('del', function (key) {
 		if (key === b.valueOf().length) {
 			test.ok(true, 'expected signal');
@@ -318,7 +318,7 @@ exports.testArrayPop = function (test) {
 exports.testArrayShift = function (test) {
 	test.expect(32);
 	var a = [true, 'asdf', 4, { f: null }, { f: undefined }, null, undefined, { f: 1 }];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('del', function (key) {
 		if (key === 0) {
 			test.ok(true, 'expected del');
@@ -378,7 +378,7 @@ exports.testArrayShift = function (test) {
 exports.testArraySort = function (test) {
 	test.expect(8);
 	var a = [1, 6, 5, 8, 7, 9, 4, 5, 6, 99];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'sort failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});
@@ -398,7 +398,7 @@ exports.testArraySort = function (test) {
 exports.testArrayMapSqrt = function (test) {
 	test.expect(6);
 	var a = [1, 4, 9, 16, 25, 36, 49, 64, 81, 100, 'asdf', true, null, undefined];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});
@@ -415,7 +415,7 @@ exports.testArrayMapSqrt = function (test) {
 exports.testArrayMapParseInt = function (test) {
 	test.expect(6);
 	var a = ['1', '4', '9', '16', '25', '36', '49', '64', '81', '100', 'asdf', true, null, undefined];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});
@@ -435,7 +435,7 @@ exports.testArrayMapParseInt = function (test) {
 exports.testArrayIndexOf = function (test) {
 	test.expect(9);
 	var a = ['1', '4', '9', '16', '25', '36', '49', '64', '81', '100', 'asdf', true, null, undefined, '49', null, '100'];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});
@@ -453,7 +453,7 @@ exports.testArrayIndexOf = function (test) {
 exports.testArrayLastIndexOf = function (test) {
 	test.expect(8);
 	var a = ['1', '4', '9', '16', '25', '36', '49', '64', '81', '100', 'asdf', true, null, undefined, '49', null, '100'];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});
@@ -470,7 +470,7 @@ exports.testArrayLastIndexOf = function (test) {
 exports.testArraySlice = function (test) {
 	test.expect(11);
 	var a = [ { 1: 2, 3: { 4: 5 } }, 'six', false, [1, 2], {}, [], null, undefined];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});
@@ -490,7 +490,7 @@ exports.testArraySlice = function (test) {
 exports.testArrayConcat = function (test) {
 	test.expect(12);
 	var a = [ { 1: 2, 3: { 4: 5 } }, 'six', false, [1, 2], {}, [], null, undefined];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	var c = [ 1, 2, 3, 4, 5, 6, [ 7, 8, 9] ];
 	var d = { d: 1, e: 'e', f: [ 1, 2, 3, 4]};
 	b.on('signal', function (value) {
@@ -516,7 +516,7 @@ exports.testArrayReduce = function (test) {
 		return previousValue + currentValue;
 	}
 	var a = [0, 1, 2, 3, 4, 5];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});
@@ -533,7 +533,7 @@ exports.testArrayReduceRight = function (test) {
 		return previousValue + currentValue;
 	}
 	var a = [0, 1, 2, 3, 4, 5];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});
@@ -549,7 +549,7 @@ exports.testArrayFilter = function (test) {
 		return (element >= 10);
 	}
 	var a = [12, 5, 8, 130, 44];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});
@@ -566,7 +566,7 @@ exports.testArraySome = function (test) {
 		return (element >= 10);
 	}
 	var a = [12, 5, 8, 1, 4];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});
@@ -584,7 +584,7 @@ exports.testArrayEvery = function (test) {
 		return (element >= 10);
 	}
 	var a = [12, 15, 18, 11, 4];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});
@@ -593,7 +593,7 @@ exports.testArrayEvery = function (test) {
 	b.pop();
 	test.strictEqual(JSON.stringify(a.every(isBigEnough)), JSON.stringify(b.every(isBigEnough)), 'expected true');
 	a = [];
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 	test.strictEqual(JSON.stringify(a.every(isBigEnough)), JSON.stringify(b.every(isBigEnough)), 'expected true');
 	test.strictEqual(a.length, b.length);
 	test.done();
@@ -605,7 +605,7 @@ exports.testArrayForEach = function (test) {
 		test.equal(element, array[index]);
 	}
 	var a = [12, 15, 18, 11, 4];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});
@@ -621,7 +621,7 @@ exports.testArraySliceSubObjectModify = function (test) {
 	test.expect(3);
 	var x = { john: { pants: 'blue' } };
 	var a = [1, 2, 3, 4, x];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});
@@ -638,7 +638,7 @@ exports.testArrayFilterSubObjectModify = function (test) {
 	}
 	var x = { john: { pants: 'blue' } };
 	var a = [1, 2, 3, 4, x];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});
@@ -652,7 +652,7 @@ exports.testArrayConcatSubObjectModify = function (test) {
 	test.expect(3);
 	var x = { john: { pants: 'blue' } };
 	var a = [1, 2, 3, 4, x];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});
@@ -665,7 +665,7 @@ exports.testArrayConcatSubObjectModify = function (test) {
 exports.testArraySubObjectModify = function (test) {
 	test.expect(3);
 	var a = [ 1, 2, 3, 4, { john: { pants: 'blue' } } ];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	var x = a[4];
 	var y = b[4];
 	b.on('signal', function (value) {
@@ -680,7 +680,7 @@ exports.testArraySubObjectModify = function (test) {
 exports.testArrayAssign = function (test) {
 	test.expect(16);
 	var a = [ 1, 2, 3, 4, { john: { pants: 'blue' } } ];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});
@@ -710,7 +710,7 @@ exports.testArrayAssign = function (test) {
 exports.testArraySet = function (test) {
 	test.expect(16);
 	var a = [ 1, 2, 3, 4, { john: { pants: 'blue' } } ];
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	b.on('signal', function (value) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(value), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(value));
 	});

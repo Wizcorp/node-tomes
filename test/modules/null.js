@@ -25,7 +25,7 @@ var notInstanceOf = function (actual, expected) {
 exports.testNullCreation = function (test) {
 	test.expect(11);
 	var a = null;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	test.strictEqual(a, b.valueOf()); // 1
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
 	test.ok(instanceOf(b, Tome)); // 3
@@ -45,7 +45,7 @@ exports.testNullSignal = function (test) {
 	test.expect(3);
 
 	var a = null;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('signal', function (bval) {
 		test.strictEqual(a, bval); // 1
@@ -61,7 +61,7 @@ exports.testNullAssign = function (test) {
 	test.expect(11);
 
 	var a = null;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('signal', function (bval) {
 		test.strictEqual(a, bval); // 1, 4, 8
@@ -91,7 +91,7 @@ exports.testNullSet = function (test) {
 	test.expect(12);
 
 	var a = null;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('signal', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 9
@@ -123,7 +123,7 @@ exports.testNullDestroy = function (test) {
 	test.expect(3);
 
 	var a = { d: null};
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.d.on('destroy', function () {
 		test.ok(true); // 2
@@ -143,7 +143,7 @@ exports.testNullDelete = function (test) {
 	test.expect(3);
 
 	var a = { d: null};
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('del', function (key) {
 		test.strictEqual('d', key); // 2

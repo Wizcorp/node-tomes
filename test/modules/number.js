@@ -25,7 +25,7 @@ var notInstanceOf = function (actual, expected) {
 exports.testNumberCreation = function (test) {
 	test.expect(11);
 	var a = -43.75;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	test.strictEqual(a, b.valueOf()); // 1
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
 	test.ok(instanceOf(b, Tome)); // 3
@@ -45,7 +45,7 @@ exports.testNumberSignal = function (test) {
 	test.expect(3);
 
 	var a = -43.75;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('signal', function (bval) {
 		test.strictEqual(a, bval); // 1
@@ -62,7 +62,7 @@ exports.testNumberAssign = function (test) {
 	test.expect(6);
 
 	var a = -43.75;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('signal', function (bval) {
 		test.strictEqual(a, bval); // 1, 4
@@ -84,7 +84,7 @@ exports.testNumberSet = function (test) {
 	test.expect(13);
 
 	var a = -43.74;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('signal', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 9
@@ -116,7 +116,7 @@ exports.testNumberToString = function (test) {
 	test.expect(1);
 
 	var a = -43.76;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	test.strictEqual(a.toString(), b.toString()); // 1
 
@@ -127,7 +127,7 @@ exports.testNumberValueOf = function (test) {
 	test.expect(1);
 
 	var a = -9988.33;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	test.strictEqual(a.valueOf(), b.valueOf()); // 1
 
@@ -138,7 +138,7 @@ exports.testNumberDestroy = function (test) {
 	test.expect(3);
 
 	var a = { d: -44.23 };
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.d.on('destroy', function () {
 		test.ok(true); // 2
@@ -158,7 +158,7 @@ exports.testNumberDelete = function (test) {
 	test.expect(3);
 
 	var a = { d: -88.89876 };
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('del', function (key) {
 		test.strictEqual('d', key); // 2
@@ -178,7 +178,7 @@ exports.testNumberInc = function (test) {
 	test.expect(3);
 
 	var a = 44;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('signal', function (bval) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
@@ -197,7 +197,7 @@ exports.testNumberOperand = function (test) {
 	test.expect(3);
 
 	var a = 10;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('signal', function (bval) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
