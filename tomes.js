@@ -1152,6 +1152,49 @@ ObjectTome.prototype.typeOf = function () {
 	return 'object';
 };
 
+ObjectTome.prototype.rename = function (o, n) {
+	var oType = Tome.typeOf(o);
+	var oldKey, newKey;
+
+	switch (oType) {
+	case 'object':
+		oldKey = o.o;
+		newKey = o.n;
+		break;
+	case 'array':
+		this.startBatch();
+		for (var i = 0, len = o.length; i < len; i += 1) {
+			oldKey = o[i].o;
+			newKey = o[i].n;
+			this.rename(oldKey, newKey);
+		}
+		this.endBatch();
+		break;
+	case 'string':
+		oldKey = o;
+		newKey = n;
+		break;
+	default:
+		throw new TypeError('ObjectTome.rename - Invalid arguments');
+	}
+
+	if (!this.hasOwnProperty(oldKey)) {
+		throw new ReferenceError('ObjectTome.rename - Key is not defined: ' + oldKey);
+	}
+
+	if (this.hasOwnProperty(newKey)) {
+		this.del(newKey);
+	}
+
+	this[newKey] = this[oldKey];
+	this[newKey].__key__ = newKey;
+	delete this[oldKey];
+
+	this.emit('rename', oldKey, newKey);
+
+	this.diff('rename', { o: oldKey, n: newKey });
+};
+
 
 //   ______                      __
 //  /      \                    |  \
