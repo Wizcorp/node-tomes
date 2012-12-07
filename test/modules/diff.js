@@ -159,3 +159,102 @@ exports.testDiffSubObjectAssign = function (test) {
 
 	test.done();
 };
+
+exports.testDiffSubObjectSet = function (test) {
+	test.expect(8);
+
+	var a = { a: { b: { c: { d: { e: 7 }, f: 8 }, g: 9 }, h: 10 }, i: 11, j: 12, k: 13 };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	b.on('diff', function (diff) {
+		test.deepEqual(diff, { _a: { _b: { assign: { l: 100 } } } });
+		c.batch(diff);
+	});
+
+	c.on('diff', function (diff) {
+		test.deepEqual(diff, { _a: { _b: {  assign: { l: 100 } } } });
+	});
+
+	b.on('signal', function (val) {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	});
+
+	c.on('signal', function (val) {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	});
+
+	a.a.b = { l: 100 };
+	b.a.set('b', { l: 100 });
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+
+	test.done();
+};
+
+exports.testDiffDel = function (test) {
+	test.expect(8);
+
+	var a = { a: { b: { c: { d: { e: 7 }, f: 8 }, g: 9 }, h: 10 }, i: 11, j: 12, k: 13 };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	b.on('diff', function (diff) {
+		test.deepEqual(diff, { _a: { del: 'b' } });
+		c.batch(diff);
+	});
+
+	c.on('diff', function (diff) {
+		test.deepEqual(diff, { _a: {  del: 'b' } });
+	});
+
+	b.on('signal', function (val) {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	});
+
+	c.on('signal', function (val) {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	});
+
+	delete a.a.b;
+	b.a.del('b');
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+
+	test.done();
+};
+
+exports.testDiffSort = function (test) {
+	test.expect(8);
+
+	var a = [ 0, 5, 6, 8, 2, 3, 6, 7, 0, 9];
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	b.on('diff', function (diff) {
+		test.strictEqual(JSON.stringify(diff), JSON.stringify({ "_1": { "assign": 0 }, "_2": { "assign": 2 }, "_3": { "assign": 3 }, "_4": { "assign": 5 }, "_5": { "assign": 6 }, "_8": { "assign": 8 } }));
+		c.batch(diff);
+	});
+
+	c.on('diff', function (diff) {
+		test.strictEqual(JSON.stringify(diff), JSON.stringify({ "_1": { "assign": 0 }, "_2": { "assign": 2 }, "_3": { "assign": 3 }, "_4": { "assign": 5 }, "_5": { "assign": 6 }, "_8": { "assign": 8 } }));
+	});
+
+	b.on('signal', function (val) {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	});
+
+	c.on('signal', function (val) {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	});
+
+	a.sort();
+	b.sort();
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+
+	test.done();
+};
