@@ -773,6 +773,7 @@ ArrayTome.prototype.shift = function () {
 
 		for (var i = 0, len = this._arr.length; i < len; i += 1) {
 			this[i] = this._arr[i];
+			this._arr[i].__key__ = i;
 		}
 
 		delete this[len];
@@ -831,6 +832,7 @@ ArrayTome.prototype.reverse = function () {
 
 	for (var i = 0, len = this._arr.length; i < len; i += 1) {
 		this[i] = this._arr[i];
+		this._arr[i].__key__ = i;
 	}
 
 	this.diff('reverse', 1);
@@ -898,7 +900,7 @@ ArrayTome.prototype.rename = function (val) {
 			diff.push({ 'o': r.o, 'n': r.n });
 		}
 
-		this._arr.sort(function (a, b) { return a.__key__ > b.__key__; });
+		this._arr.sort(function (a, b) { return a.__key__ - b.__key__; });
 
 		for (i = 0, len = this._arr.length; i < len; i += 1) {
 			this[i] = this._arr[i];
@@ -937,6 +939,7 @@ ArrayTome.prototype.unshift = function () {
 
 		for (i = 0, len = this._arr.length; i < len; i += 1) {
 			this[i] = this._arr[i];
+			this._arr[i].__key__ = i;
 		}
 
 		for (i = 0, len = arguments.length; i < len; i += 1) {
