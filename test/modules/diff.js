@@ -304,3 +304,37 @@ exports.testDiffArrayShift = function (test) {
 	}
 	test.done();
 };
+
+exports.testDiffRename = function (test) {
+	test.expect(8);
+
+	var a = { a: { b: { c: { d: { e: 7 }, f: 8 }, g: 9 }, h: 10 }, i: 11, j: 12, k: 13 };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	b.on('diff', function (diff) {
+		test.deepEqual(diff, { _a: { _b: { rename: { o: 'c', n: 'z' } } } });
+		c.batch(diff);
+	});
+
+	c.on('diff', function (diff) {
+		test.deepEqual(diff, { _a: { _b: { rename: { o: 'c', n: 'z' } } } });
+	});
+
+	b.on('signal', function (val) {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	});
+
+	c.on('signal', function (val) {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	});
+
+	a.a.b.z = a.a.b.c;
+	delete a.a.b.c;
+	b.a.b.rename('c', 'z');
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+
+	test.done();
+};
