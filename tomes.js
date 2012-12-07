@@ -497,7 +497,16 @@ Tome.prototype.diff = function (op, val, chain) {
 	}
 
 	for (var k in chain) {
-		diff[k] = chain[k];
+		if (diff.hasOwnProperty(k)) {
+			if (Tome.typeOf(diff[k]) === 'array') {
+				diff[k].push(chain[k]);
+			} else {
+				var first = diff[k];
+				diff[k] = [ first, chain[k]];
+			}
+		} else {
+			diff[k] = chain[k];
+		}
 	}
 
 	if (!this.__root__.__batch__) {
@@ -574,6 +583,9 @@ Tome.prototype.consume = function (JSONDiff) {
 			break;
 		case 'del':
 			this.del(val);
+			break;
+		case 'rename':
+			this.rename(val);
 			break;
 		default:
 			if (key.indexOf('_') === 0) {
@@ -876,15 +888,38 @@ ArrayTome.prototype.splice = function (spliceIndex, toRemove) {
 	return out;
 };
 
+ArrayTome.prototype.rename = function (val) {
+	if (Tome.typeOf(val) === 'array') {
+		this.startBatch();
+
+		var changed = [];
+		for (var i = 0, len = val.length; i < len; i += 1) {
+			var r = val[i];
+			this._arr[r.o].__key__ = r.n;
+			changed.push(r.n);
+			this.diff('rename', { 'o': r.o, 'n': r.n });
+		}
+
+		for (i = 0, len = changed.length; i < len; i += 1) {
+			var c = changed[i];
+			this[c] = this._arr[c];
+		}
+
+		this._arr.sort(function (a, b) { return a.__key__ > b.__key__; });
+		this.endBatch();
+	}
+};
+
 ArrayTome.prototype.sort = function () {
 	this._arr.sort.apply(this._arr, arguments);
 	this.startBatch();
 
 	for (var i = 0, len = this._arr.length; i < len; i += 1) {
 		if (this._arr[i].__key__ !== i) {
+			var oldkey = this._arr[i].__key__;
 			this._arr[i].__key__ = i;
 			this[i] = this._arr[i];
-			this[i].diff('assign', this._arr[i]);
+			this.diff('rename', { 'o': oldkey, 'n': i });
 		}
 	}
 
