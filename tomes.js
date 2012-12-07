@@ -701,7 +701,7 @@ ArrayTome.prototype.toString = function () {
 };
 
 ArrayTome.prototype.set = function (key, val) {
-	if (parseInt(key, 10).toString() !== key) {
+	if (parseInt(key, 10).toString() !== key.toString()) {
 		Tome.prototype.set.apply(this, arguments);
 		return;
 	}
