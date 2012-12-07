@@ -480,33 +480,45 @@ Tome.prototype.toJSON = function () {
 	return this.valueOf();
 };
 
-Tome.prototype.diff = function (op, val, diff) {
+Tome.prototype.diff = function (op, val, chain) {
+
+	// op, val is the actual diff that triggered the diff event, chain holds
+	// the path and grows as we traverse up to the root.
+
+	if (chain === undefined) {
+		chain = {};
+		chain[op] = val;
+	}
+
+	var diff = this.__diff__;
+
 	if (diff === undefined) {
 		diff = {};
-		diff[op] = val;
 	}
 
-	// If our diff object is empty, we are at the bottom of the chain and we
-	// need to build up.
-	if (this.__diff__ === undefined) {
-		this.__diff__ = {};
-	}
-
-	if (this.hasOwnProperty('__key__')) {
-		this.__diff__['_' + this.__key__] = diff;
-	} else {
-		this.__diff__ = diff;
+	for (var k in chain) {
+		diff[k] = chain[k];
 	}
 
 	if (!this.__root__.__batch__) {
 		this.emit('signal', this.valueOf());
-		this.emit('diff', this.__diff__);
+		this.emit('diff', diff);
 	} else {
-		this.__diff__ = this.__diff__;
+		this.__diff__ = diff;
+	}
+
+	// Now we need to build a bigger object to send to the parent.
+
+	var link = {};
+
+	if (this.hasOwnProperty('__key__')) {
+		// We aren't on the root Tome, so we have a key, stick that on the
+		// chain
+		link['_' + this.__key__] = chain;
 	}
 
 	if (this.hasOwnProperty('__parent__') && this.__parent__ instanceof Tome) {
-		this.__parent__.diff(op, val, this.__diff__);
+		this.__parent__.diff(op, val, link);
 	}
 };
 
@@ -689,7 +701,7 @@ ArrayTome.prototype.toString = function () {
 };
 
 ArrayTome.prototype.set = function (key, val) {
-	if (parseInt(key, 10) !== key) {
+	if (parseInt(key, 10).toString() !== key) {
 		Tome.prototype.set.apply(this, arguments);
 		return;
 	}
@@ -866,13 +878,17 @@ ArrayTome.prototype.splice = function (spliceIndex, toRemove) {
 
 ArrayTome.prototype.sort = function () {
 	this._arr.sort.apply(this._arr, arguments);
+	this.startBatch();
 
 	for (var i = 0, len = this._arr.length; i < len; i += 1) {
-		this[i] = this._arr[i];
+		if (this._arr[i].__key__ !== i) {
+			this._arr[i].__key__ = i;
+			this[i] = this._arr[i];
+			this[i].diff('assign', this._arr[i]);
+		}
 	}
 
-	this.diff('sort', arguments);
-
+	this.endBatch();
 	return this;
 };
 
