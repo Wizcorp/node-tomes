@@ -25,7 +25,7 @@ var notInstanceOf = function (actual, expected) {
 exports.testObjectCreation = function (test) {
 	test.expect(11);
 	var a = {};
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	test.deepEqual(a, b); // 1
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
 	test.ok(instanceOf(b, Tome)); // 3
@@ -46,55 +46,55 @@ exports.testObjectStringify = function (test) {
 	var a, b;
 
 	a = { 'number': 1 };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 
 	a = { 'string': 'a' };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
 
 	a = { 'boolean': true };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
 
 	a = { 'null': null };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 4
 
 	a = { 'undefined': undefined };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));	// 5
 
 	a = { 'array': [] };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));	// 6
 
 	a = { 'object': {} };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));	// 7
 
 	a = { 'arrayofnumbers': [0, 1, 2, 3, 4] };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));	// 8
 
 	a = { 'arrayofstrings': ['0', '1', '2', '3', '4'] };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));	// 9
 
 	a = { 'arrayofbooleans': [true, false, false, true, false] };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));	// 10
 
 	a = { 'arrayofnulls': [null, null, null, null, null] };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));	// 11
 
 	a = { 'arrayofundefineds': [undefined, undefined, undefined, undefined, undefined] };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));	// 12
 
 	a = { 'arrayofobjects': [{}, {}, {}, {}, {}] };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));	// 13
 
 	test.ok(instanceOf(b, ObjectTome)); // 14
@@ -107,7 +107,7 @@ exports.testObjectSignal = function (test) {
 
 	var a, b;
 	a = { test: 'is this thing on?' };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 
 	b.on('signal', function (bv) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(bv)); // 1
@@ -122,7 +122,7 @@ exports.testObjectAssign = function (test) {
 
 	var a, b;
 	a = { john: { shirt: 'blue' } };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 
 	b.on('signal', function (bv) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(bv)); // 1, 4, 8
@@ -162,7 +162,7 @@ exports.testObjectSet = function (test) {
 
 	var a, b;
 	a = { john: { shirt: 'blue' } };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 
 	b.on('signal', function (bv) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(bv)); // 1, 4, 8
@@ -202,7 +202,7 @@ exports.testObjectAdd = function (test) {
 
 	var a, b, c;
 	a = { john: { shirt: 'blue' } };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 	c = { shirt: 'red' };
 
 	var signalcount = 0;
@@ -240,7 +240,7 @@ exports.testObjectDel = function (test) {
 
 	var a, b;
 	a = { john: { shirt: 'blue', pants: 'khaki' }, steve: { shoes: 'brown' } };
-	b = Tome.scribe(a);
+	b = Tome.conjure(a);
 
 	b.on('signal', function (bv) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(bv)); // 1, 4, 6
@@ -273,7 +273,7 @@ exports.testObjectToString = function (test) {
 	test.expect(1);
 
 	var a = { bubble: 'gum' };
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	test.strictEqual(a.toString(), b.toString()); // 1
 
@@ -284,7 +284,7 @@ exports.testObjectAssignValues = function (test) {
 	test.expect(2);
 
 	var a = 'asdf';
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 

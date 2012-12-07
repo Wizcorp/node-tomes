@@ -177,9 +177,9 @@ Tome.protoOf = function (t) {
 	return prototypeMap[t];
 };
 
-Tome.scribe = function (val, parent, key) {
+Tome.conjure = function (val, parent, key) {
 
-	// We instantiate a new Tome object by using the Tome.scribe method.
+	// We instantiate a new Tome object by using the Tome.conjure method.
 	// It will return a new Tome of the appropriate type for our value with Tome
 	// inherited. This is also how we pass parent into our Tome so we can signal
 	// a parent that its child has been modified.
@@ -212,7 +212,7 @@ Tome.scribe = function (val, parent, key) {
 
 		// If the value's type is not supported, complain loudly.
 
-		throw new TypeError('Tome.scribe - Invalid value type: ' + vType);
+		throw new TypeError('Tome.conjure - Invalid value type: ' + vType);
 	}
 };
 
@@ -250,11 +250,11 @@ Tome.prototype.set = function (key, val) {
 
 	if (!this.hasOwnProperty(key)) {
 
-		// This is a new property, we scribe a new Tome with a type based on the
-		// type of the value and assign it to the property. Then we emit an add
-		// event followed by a signal which goes up the Tome chain.
+		// This is a new property, we conjure a new Tome with a type based on
+		// the type of the value and assign it to the property. Then we emit an
+		// add event followed by a signal which goes up the Tome chain.
 
-		this[key] = Tome.scribe(val, this, key);
+		this[key] = Tome.conjure(val, this, key);
 		this.emit('add', key, this[key].valueOf());
 		diff = {};
 		diff[key] = val;
@@ -270,9 +270,9 @@ Tome.prototype.set = function (key, val) {
 	if (p === undefined) {
 
 		// This property exists, but has undefined as its value. We need to
-		// scribe a Tome to assign a value to it.
+		// conjure a Tome to assign a value to it.
 
-		this[key] = Tome.scribe(val, this, key);
+		this[key] = Tome.conjure(val, this, key);
 		diff = {};
 		diff[key] = val;
 		this.diff('set', diff);
@@ -618,7 +618,7 @@ ArrayTome.prototype.init = function (val) {
 	this._arr = new Array(len);
 	this.length = len;
 
-	// We go through each element in val and scribe a new Tome based on that
+	// We go through each element in val and conjure a new Tome based on that
 	// value with a reference to this as its parent. We also assign
 	// properties with references to those new array elements. We need this
 	// so we can do things like myTome[3].on('signal', function () {});
@@ -631,7 +631,7 @@ ArrayTome.prototype.init = function (val) {
 	// a property for that element.
 
 	for (var i = 0; i < len; i += 1) {
-		this._arr[i] = Tome.scribe(val[i], this, i);
+		this._arr[i] = Tome.conjure(val[i], this, i);
 		
 		// We use hasOwnProperty here because arrays instantiated with new
 		// have elements, but no keys ie. new Array(1) is different from
@@ -701,13 +701,13 @@ ArrayTome.prototype.set = function (key, val) {
 	if (key >= this._arr.length) {
 		var len = this._arr.length;
 
-		this._arr[key] = Tome.scribe(val, this, key);
+		this._arr[key] = Tome.conjure(val, this, key);
 		this[key] = this._arr[key];
 		this.length = this._arr.length;
 		this.emit('add', key, this._arr[key].valueOf());
 
 		for (var i = len, newlen = this._arr.length - 1; i < newlen; i += 1) {
-			this._arr[i] = Tome.scribe(undefined, this, i);
+			this._arr[i] = Tome.conjure(undefined, this, i);
 			this.length = this._arr.length;
 			this.emit('add', i, this._arr[i].valueOf());
 		}
@@ -732,7 +732,7 @@ ArrayTome.prototype.del = function (key) {
 		throw new TypeError('ArrayTome.del - Key is not a Tome: ' + key);
 	}
 
-	this._arr[key] = Tome.scribe(undefined, this, key);
+	this._arr[key] = Tome.conjure(undefined, this, key);
 	this[key] = this._arr[key];
 
 	this.emit('del', key);
@@ -792,7 +792,7 @@ ArrayTome.prototype.push = function () {
 	if (arguments.length) {
 		for (var i = 0, len = arguments.length; i < len; i += 1) {
 			var k = length + i;
-			this._arr.push(Tome.scribe(arguments[i], this, k));
+			this._arr.push(Tome.conjure(arguments[i], this, k));
 			this[k] = this._arr[k];
 			this.length = this._arr.length;
 			this.emit('add', k, this[k].valueOf());
@@ -840,7 +840,7 @@ ArrayTome.prototype.splice = function (spliceIndex, toRemove) {
 
 	for (i = 0, len = toAdd.length; i < len; i += 1) {
 		key = spliceIndex + i;
-		this._arr.splice(key, 0, Tome.scribe(toAdd[i], this, key));
+		this._arr.splice(key, 0, Tome.conjure(toAdd[i], this, key));
 		this[key] = this._arr[key];
 		this.length = this._arr.length;
 		this.emit('add', key, this[key].valueOf());
@@ -881,7 +881,7 @@ ArrayTome.prototype.unshift = function () {
 		var i, len;
 
 		for (i = arguments.length - 1; i >= 0; i -= 1) {
-			this._arr.unshift(Tome.scribe(arguments[i], this, i));
+			this._arr.unshift(Tome.conjure(arguments[i], this, i));
 		}
 
 		for (i = 0, len = this._arr.length; i < len; i += 1) {
@@ -951,7 +951,7 @@ ArrayTome.prototype.lastIndexOf = function (searchElement) {
 };
 
 ArrayTome.prototype.concat = function () {
-	var out = Tome.scribe([]);
+	var out = Tome.conjure([]);
 	var len = this._arr.length;
 
 	out._arr = new Array(len);
@@ -982,12 +982,12 @@ ArrayTome.prototype.concat = function () {
 		} else {
 			if (newValType === 'array') {
 				for (j = 0, ken = newVal.length; j < ken; j += 1) {
-					out._arr.push(Tome.scribe(newVal[j]));
+					out._arr.push(Tome.conjure(newVal[j]));
 					out[len] = out._arr[len];
 					len += 1;
 				}
 			} else {
-				out._arr.push(Tome.scribe(newVal));
+				out._arr.push(Tome.conjure(newVal));
 				out[len] = out._arr[len];
 				len += 1;
 			}
@@ -1078,7 +1078,7 @@ ObjectTome.prototype.init = function (val) {
 		if (kv === undefined) {
 			this[k] = undefined;
 		} else {
-			this[k] = Tome.scribe(kv, this, k);
+			this[k] = Tome.conjure(kv, this, k);
 		}
 	}
 

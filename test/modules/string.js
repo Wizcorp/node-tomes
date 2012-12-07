@@ -25,7 +25,7 @@ var notInstanceOf = function (actual, expected) {
 exports.testStringCreation = function (test) {
 	test.expect(11);
 	var a = 'blue';
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	test.strictEqual(a, b.valueOf()); // 1
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
 	test.ok(instanceOf(b, Tome)); // 3
@@ -45,7 +45,7 @@ exports.testStringSignal = function (test) {
 	test.expect(3);
 
 	var a = 'green';
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('signal', function (bval) {
 		test.strictEqual(a, bval); // 1
@@ -61,7 +61,7 @@ exports.testStringAssign = function (test) {
 	test.expect(6);
 
 	var a = 'red';
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('signal', function (bval) {
 		test.strictEqual(a, bval); // 1, 4
@@ -83,7 +83,7 @@ exports.testStringSet = function (test) {
 	test.expect(11);
 
 	var a = 'red';
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('signal', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 8
@@ -113,7 +113,7 @@ exports.testStringToString = function (test) {
 	test.expect(1);
 
 	var a = 'violet';
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	test.strictEqual(a.toString(), b.toString()); // 1
 
@@ -124,7 +124,7 @@ exports.testStringValueOf = function (test) {
 	test.expect(1);
 
 	var a = 'lavender';
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	test.strictEqual(a.valueOf(), b.valueOf()); // 1
 
@@ -135,7 +135,7 @@ exports.testStringDestroy = function (test) {
 	test.expect(3);
 
 	var a = { d: 'turquoise'};
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.d.on('destroy', function () {
 		test.ok(true); // 2
@@ -155,7 +155,7 @@ exports.testStringDelete = function (test) {
 	test.expect(3);
 
 	var a = { d: 'turquoise'};
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('del', function (key) {
 		test.strictEqual('d', key); // 2
@@ -175,7 +175,7 @@ exports.testStringAppend = function (test) {
 	test.expect(2);
 
 	var a = 'foo';
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('signal', function (bval) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2

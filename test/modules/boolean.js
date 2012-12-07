@@ -25,7 +25,7 @@ var notInstanceOf = function (actual, expected) {
 exports.testBooleanCreation = function (test) {
 	test.expect(11);
 	var a = true;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 	test.strictEqual(a, b.valueOf()); // 1
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
 	test.ok(instanceOf(b, Tome)); // 3
@@ -45,7 +45,7 @@ exports.testBooleanSignal = function (test) {
 	test.expect(3);
 
 	var a = true;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('signal', function (bval) {
 		test.strictEqual(a, bval); // 1
@@ -62,7 +62,7 @@ exports.testBooleanAssign = function (test) {
 	test.expect(6);
 
 	var a = true;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('signal', function (bval) {
 		test.strictEqual(a, bval); // 1, 4
@@ -84,7 +84,7 @@ exports.testBooleanSet = function (test) {
 	test.expect(13);
 
 	var a = true;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('signal', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 9
@@ -116,7 +116,7 @@ exports.testBooleanToString = function (test) {
 	test.expect(1);
 
 	var a = true;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	test.strictEqual(a.toString(), b.toString()); // 1
 
@@ -127,7 +127,7 @@ exports.testBooleanValueOf = function (test) {
 	test.expect(1);
 
 	var a = false;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	test.strictEqual(a.valueOf(), b.valueOf()); // 1
 
@@ -138,7 +138,7 @@ exports.testBooleanDestroy = function (test) {
 	test.expect(3);
 
 	var a = { d: true };
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.d.on('destroy', function () {
 		test.ok(true); // 2
@@ -158,7 +158,7 @@ exports.testBooleanDelete = function (test) {
 	test.expect(3);
 
 	var a = { d: true };
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('del', function (key) {
 		test.strictEqual('d', key); // 2
@@ -178,7 +178,7 @@ exports.testBooleanAndOr = function (test) {
 	test.expect(3);
 
 	var a = true;
-	var b = Tome.scribe(a);
+	var b = Tome.conjure(a);
 
 	b.on('signal', function (bval) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2, 3

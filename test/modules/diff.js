@@ -8,8 +8,8 @@ exports.testDiffSimpleString = function (test) {
 	var bsignalcount = 0;
 	var csignalcount = 0;
 	var a = 'asdf';
-	var b = Tome.scribe(a);
-	var c = Tome.scribe(a);
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
 
 	b.on('diff', function (diff) {
 		test.deepEqual(diff, { assign: 'fdsa' }, 'expected diff to be { assign: \'fdsa\' }'); // 6
@@ -50,8 +50,8 @@ exports.testDiffStringToNumber = function (test) {
 	test.expect(6);
 
 	var a = 'asdf';
-	var b = Tome.scribe(a);
-	var c = Tome.scribe(a);
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
 
 	b.on('diff', function (diff) {
 		c.batch(diff);
@@ -77,8 +77,8 @@ exports.testDiffStringToObject = function (test) {
 	test.expect(6);
 
 	var a = 'asdf';
-	var b = Tome.scribe(a);
-	var c = Tome.scribe(a);
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
 
 	b.on('diff', function (diff) {
 		c.batch(diff);
@@ -104,8 +104,8 @@ exports.testDiffObjectToString = function (test) {
 	test.expect(6);
 
 	var a = { foo: [], bar: undefined, j: Infinity, k: -Infinity, l: (1 / 0), m: -(1 / 0), n: null, o: Number.MAX_VALUE, p: Number.MIN_VALUE, q: '', r: 7, s: '7', t: 0.00001 };
-	var b = Tome.scribe(a);
-	var c = Tome.scribe(a);
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
 
 	b.on('diff', function (diff) {
 		c.batch(diff);
@@ -131,8 +131,8 @@ exports.testDiffSubObjectAssign = function (test) {
 	test.expect(8);
 
 	var a = { a: { b: { c: { d: { e: 7 }, f: 8 }, g: 9 }, h: 10 }, i: 11, j: 12, k: 13 };
-	var b = Tome.scribe(a);
-	var c = Tome.scribe(a);
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
 
 	b.on('diff', function (diff) {
 		test.deepEqual(diff, { _a: { _b: { _c: { _d: { _e: { assign: 100 } } } } } });
