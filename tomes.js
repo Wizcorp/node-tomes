@@ -531,7 +531,7 @@ Tome.prototype.diff = function (op, val, chain) {
 	}
 };
 
-Tome.prototype.batch = function (JSONDiff) {
+Tome.prototype.batch = function (diff) {
 
 	// The batch method takes an object and assigns new values to the Tome based
 	// on the object. It enables batch mode through startBatch, applies the new
@@ -539,20 +539,20 @@ Tome.prototype.batch = function (JSONDiff) {
 	// mode and signal on the Tomes that were changed.
 
 	this.startBatch();
-	if (Tome.typeOf(JSONDiff) === 'array') {
-		for (var i = 0, len = JSONDiff.length; i < len; i += 1) {
-			this.consume(JSONDiff[i]);
+	if (Tome.typeOf(diff) === 'array') {
+		for (var i = 0, len = diff.length; i < len; i += 1) {
+			this.consume(diff[i]);
 		}
 	} else {
-		this.consume(JSONDiff);
+		this.consume(diff);
 	}
 	this.endBatch();
 };
 
-Tome.prototype.consume = function (JSONDiff) {
-	var key, val, k, i, unfd;
-	for (key in JSONDiff) {
-		val = JSONDiff[key];
+Tome.prototype.consume = function (diff) {
+	var key, val, k, unfd;
+	for (key in diff) {
+		val = diff[key];
 		switch (key) {
 		case 'set':
 			for (k in val) {
@@ -564,22 +564,6 @@ Tome.prototype.consume = function (JSONDiff) {
 			break;
 		case 'inc':
 			this.inc(val);
-			break;
-		case 'shift':
-			for (i = 0; i < val; i += 1) {
-				this.shift();
-			}
-			break;
-		case 'pop':
-			for (i = 0; i < val; i += 1) {
-				this.pop();
-			}
-			break;
-		case 'push':
-			this.push.apply(this, val);
-			break;
-		case 'reverse':
-			this.reverse();
 			break;
 		case 'del':
 			this.del(val);
@@ -763,6 +747,39 @@ ArrayTome.prototype.del = function (key) {
 	this.diff('del', key);
 };
 
+ArrayTome.prototype.consume = function (diff) {
+	var key, val, i;
+	for (key in diff) {
+		val = diff[key];
+		switch (key) {
+		case 'shift':
+			for (i = 0; i < val; i += 1) {
+				this.shift();
+			}
+			break;
+		case 'pop':
+			for (i = 0; i < val; i += 1) {
+				this.pop();
+			}
+			break;
+		case 'push':
+			this.push.apply(this, val);
+			break;
+		case 'unshift':
+			this.unshift.apply(this, val);
+			break;
+		case 'splice':
+			this.splice.apply(this, val);
+			break;
+		case 'reverse':
+			this.reverse();
+			break;
+		default:
+			Tome.prototype.consume.apply(this, arguments);
+		}
+	}
+};
+
 ArrayTome.prototype.shift = function () {
 	var out = this._arr.shift();
 	var key = 0;
@@ -846,10 +863,15 @@ ArrayTome.prototype.splice = function (spliceIndex, toRemove) {
 	spliceIndex = spliceIndex >= 0 ? Math.min(spliceIndex, this._arr.length) : Math.max(this._arr.length + spliceIndex, 0);
 	var toAdd = [];
 
-	var i, len, key;
+	var i, len, key, args;
+
+	args = new Array(arguments.length);
+	args[0] = spliceIndex;
+	args[1] = toRemove;
 
 	for (i = 2, len = arguments.length; i < len; i += 1) {
 		toAdd.push(arguments[i]);
+		args[i] = arguments[i];
 	}
 
 	var out = this._arr.splice(spliceIndex, toRemove);
@@ -863,7 +885,6 @@ ArrayTome.prototype.splice = function (spliceIndex, toRemove) {
 			o.destroy();
 		}
 		this.emit('del', key);
-		this.diff('del', key);
 	}
 
 	for (i = 0, len = toAdd.length; i < len; i += 1) {
@@ -886,7 +907,7 @@ ArrayTome.prototype.splice = function (spliceIndex, toRemove) {
 	}
 
 	if (toRemove || toAdd.length) {
-		this.diff('splice', arguments);
+		this.diff('splice', args);
 	}
 
 	return out;
@@ -933,10 +954,13 @@ ArrayTome.prototype.sort = function () {
 
 ArrayTome.prototype.unshift = function () {
 	if (arguments.length) {
-		var i, len;
-
+		var args, i, len;
+		
+		args = new Array(arguments.length);
+		
 		for (i = arguments.length - 1; i >= 0; i -= 1) {
 			this._arr.unshift(Tome.conjure(arguments[i], this, i));
+			args[i] = arguments[i];
 		}
 
 		for (i = 0, len = this._arr.length; i < len; i += 1) {
@@ -949,7 +973,7 @@ ArrayTome.prototype.unshift = function () {
 			this.emit('add', i, this[i].valueOf());
 		}
 
-		this.diff('unshift', arguments);
+		this.diff('unshift', args);
 	}
 
 	return this._arr.length;
@@ -1282,6 +1306,18 @@ NumberTome.prototype.inc = function (val) {
 
 	this._val = this._val + val;
 	this.diff('inc', val);
+};
+
+NumberTome.prototype.consume = function (diff) {
+	var key, val;
+	for (key in diff) {
+		val = diff[key];
+		if (key === 'inc') {
+			this.inc(val);
+		} else {
+			Tome.prototype.consume.apply(this, arguments);
+		}
+	}
 };
 
 
