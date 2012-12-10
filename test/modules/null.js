@@ -5,7 +5,6 @@ var Tome = tomes.Tome,
 	BooleanTome = tomes.BooleanTome,
 	NumberTome = tomes.NumberTome,
 	ObjectTome = tomes.ObjectTome,
-	ScalarTome = tomes.ScalarTome,
 	StringTome = tomes.StringTome,
 	NullTome = tomes.NullTome,
 	UndefinedTome = tomes.UndefinedTome;
@@ -23,7 +22,7 @@ var notInstanceOf = function (actual, expected) {
 };
 
 exports.testNullCreation = function (test) {
-	test.expect(11);
+	test.expect(10);
 	var a = null;
 	var b = Tome.conjure(a);
 	test.strictEqual(a, b.valueOf()); // 1
@@ -34,9 +33,8 @@ exports.testNullCreation = function (test) {
 	test.ok(instanceOf(b, NullTome)); // 6
 	test.ok(notInstanceOf(b, NumberTome)); // 7
 	test.ok(notInstanceOf(b, ObjectTome)); // 8
-	test.ok(notInstanceOf(b, ScalarTome)); // 9
-	test.ok(notInstanceOf(b, StringTome)); // 10
-	test.ok(notInstanceOf(b, UndefinedTome)); // 11
+	test.ok(notInstanceOf(b, StringTome)); // 9
+	test.ok(notInstanceOf(b, UndefinedTome)); // 10
 
 	test.done();
 };
@@ -155,6 +153,68 @@ exports.testNullDelete = function (test) {
 
 	a = null;
 	b.assign(null);
+
+	test.done();
+};
+
+exports.testNullArrayRepeatSet = function (test) {
+	test.expect(6);
+
+	var signalCount = 0;
+
+	var a = [ 0 ];
+	var b = Tome.conjure(a);
+
+	b.on('signal', function (bval) {
+		signalCount += 1;
+		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
+	});
+
+	a[0] = null;
+	b.set('0', null);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
+	test.strictEqual(a.hasOwnProperty(0), b.hasOwnProperty(0)); // 4
+
+	test.strictEqual(signalCount, 2); // 5
+
+	// This should do nothing, we are not changing the value.
+
+	a[0] = null;
+	b.set('0', null);
+
+	test.strictEqual(signalCount, 2); // 6
+
+	test.done();
+};
+
+exports.testNullArrayRepeatAssign = function (test) {
+	test.expect(6);
+
+	var signalCount = 0;
+
+	var a = [ 0 ];
+	var b = Tome.conjure(a);
+
+	b.on('signal', function (bval) {
+		signalCount += 1;
+		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
+	});
+
+	a[0] = null;
+	b[0].assign(null);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
+	test.strictEqual(a.hasOwnProperty(0), b.hasOwnProperty(0)); // 4
+
+	test.strictEqual(signalCount, 2); // 5
+
+	// This should do nothing, we are not changing the value.
+
+	a[0] = null;
+	b[0].assign(null);
+
+	test.strictEqual(signalCount, 2); // 6
 
 	test.done();
 };

@@ -5,7 +5,6 @@ var Tome = tomes.Tome,
 	BooleanTome = tomes.BooleanTome,
 	NumberTome = tomes.NumberTome,
 	ObjectTome = tomes.ObjectTome,
-	ScalarTome = tomes.ScalarTome,
 	StringTome = tomes.StringTome,
 	NullTome = tomes.NullTome,
 	UndefinedTome = tomes.UndefinedTome;
@@ -23,7 +22,7 @@ var notInstanceOf = function (actual, expected) {
 };
 
 exports.testUndefinedCreation = function (test) {
-	test.expect(11);
+	test.expect(10);
 	var a;
 	var b = Tome.conjure(a);
 	test.strictEqual(a, b); // 1
@@ -31,12 +30,11 @@ exports.testUndefinedCreation = function (test) {
 	test.ok(notInstanceOf(b, Tome)); // 3
 	test.ok(notInstanceOf(b, ObjectTome)); // 4
 	test.ok(notInstanceOf(b, ArrayTome)); // 5
-	test.ok(notInstanceOf(b, ScalarTome)); // 6
-	test.ok(notInstanceOf(b, BooleanTome)); // 7
-	test.ok(notInstanceOf(b, NumberTome)); // 8
-	test.ok(notInstanceOf(b, StringTome)); // 9
-	test.ok(notInstanceOf(b, NullTome)); // 10
-	test.ok(notInstanceOf(b, UndefinedTome)); // 11
+	test.ok(notInstanceOf(b, BooleanTome)); // 6
+	test.ok(notInstanceOf(b, NumberTome)); // 7
+	test.ok(notInstanceOf(b, StringTome)); // 8
+	test.ok(notInstanceOf(b, NullTome)); // 9
+	test.ok(notInstanceOf(b, UndefinedTome)); // 10
 	
 	test.done();
 };
@@ -86,32 +84,122 @@ exports.testUndefinedObjectSet = function (test) {
 
 exports.testUndefinedObjectAssign = function (test) {
 	test.expect(2);
+
 	var a = { c: true };
 	var b = Tome.conjure(a);
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
+
+	b.on('signal', function (bval) {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1
+	});
+
 	a.c = undefined;
 	test.throws(function () { b.c.assign(undefined); }, TypeError); // 2
+
 	test.done();
 };
 
 exports.testUndefinedStringAssign = function (test) {
 	test.expect(2);
+
 	var a = 'a string.';
 	var b = Tome.conjure(a);
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
+
+	b.on('signal', function (bval) {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1
+	});
+
 	a = undefined;
 	test.throws(function () { b.assign(undefined); }, TypeError); // 2
+
 	test.done();
 };
 
 exports.testUndefinedStringSet = function (test) {
-	test.expect(3);
+	test.expect(5);
+
+	var signalCount = 0;
+
 	var a = 'a string.';
 	var b = Tome.conjure(a);
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
+
+	b.on('signal', function (bval) {
+		signalCount += 1;
+		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1
+	});
+
+	// This does absolutely nothing... a is still a string, b is still a
+	// StringTome. We mimic JavaScript's behavior.
+
 	a.c = undefined;
 	b.set('c', undefined);
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
-	test.strictEqual(a.hasOwnProperty('c'), b.hasOwnProperty('c')); // 3
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b), 'Expected \'a string.\''); // 2
+	test.strictEqual(a.hasOwnProperty('c'), b.hasOwnProperty('c'), 'Expected no property called c'); // 3
+	test.strictEqual(Tome.typeOf(a), Tome.typeOf(b), 'Expected typeof \'string\''); // 4
+
+	test.strictEqual(signalCount, 1, 'expected signal 1 time.'); // 5
+
+	test.done();
+};
+
+exports.testUndefinedArrayRepeatSet = function (test) {
+	test.expect(6);
+
+	var signalCount = 0;
+
+	var a = [ 0 ];
+	var b = Tome.conjure(a);
+
+	b.on('signal', function (bval) {
+		signalCount += 1;
+		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
+	});
+
+	a[0] = undefined;
+	b.set('0', undefined);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
+	test.strictEqual(a.hasOwnProperty(0), b.hasOwnProperty(0)); // 4
+
+	test.strictEqual(signalCount, 2); // 5
+
+	// This should do nothing, we are not changing the value.
+
+	a[0] = undefined;
+	b.set('0', undefined);
+
+	test.strictEqual(signalCount, 2); // 6
+
+	test.done();
+};
+
+exports.testUndefinedArrayRepeatAssign = function (test) {
+	test.expect(6);
+
+	var signalCount = 0;
+
+	var a = [ 0 ];
+	var b = Tome.conjure(a);
+
+	b.on('signal', function (bval) {
+		signalCount += 1;
+		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
+	});
+
+	a[0] = undefined;
+	b[0].assign(undefined);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
+	test.strictEqual(a.hasOwnProperty(0), b.hasOwnProperty(0)); // 4
+
+	test.strictEqual(signalCount, 2); // 5
+
+	// This should do nothing, we are not changing the value.
+
+	a[0] = undefined;
+	b[0].assign(undefined);
+
+	test.strictEqual(signalCount, 2); // 6
+
 	test.done();
 };

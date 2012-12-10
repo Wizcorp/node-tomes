@@ -5,7 +5,6 @@ var Tome = tomes.Tome,
 	BooleanTome = tomes.BooleanTome,
 	NumberTome = tomes.NumberTome,
 	ObjectTome = tomes.ObjectTome,
-	ScalarTome = tomes.ScalarTome,
 	StringTome = tomes.StringTome,
 	NullTome = tomes.NullTome,
 	UndefinedTome = tomes.UndefinedTome;
@@ -23,7 +22,7 @@ var notInstanceOf = function (actual, expected) {
 };
 
 exports.testObjectCreation = function (test) {
-	test.expect(11);
+	test.expect(10);
 	var a = {};
 	var b = Tome.conjure(a);
 	test.deepEqual(a, b); // 1
@@ -31,12 +30,11 @@ exports.testObjectCreation = function (test) {
 	test.ok(instanceOf(b, Tome)); // 3
 	test.ok(instanceOf(b, ObjectTome)); // 4
 	test.ok(notInstanceOf(b, ArrayTome)); // 5
-	test.ok(notInstanceOf(b, ScalarTome)); // 6
-	test.ok(notInstanceOf(b, BooleanTome)); // 7
-	test.ok(notInstanceOf(b, NumberTome)); // 8
-	test.ok(notInstanceOf(b, StringTome)); // 9
-	test.ok(notInstanceOf(b, NullTome)); // 10
-	test.ok(notInstanceOf(b, UndefinedTome)); // 11
+	test.ok(notInstanceOf(b, BooleanTome)); // 6
+	test.ok(notInstanceOf(b, NumberTome)); // 7
+	test.ok(notInstanceOf(b, StringTome)); // 8
+	test.ok(notInstanceOf(b, NullTome)); // 9
+	test.ok(notInstanceOf(b, UndefinedTome)); // 10
 	
 	test.done();
 };
