@@ -323,6 +323,10 @@ Tome.prototype.assign = function (val) {
 		// we already have the correct Tome type we assign the value, signal,
 		// and return our new value.
 
+		if (this._val === val.valueOf()) {
+			return this.valueOf();
+		}
+
 		this._val = val.valueOf();
 		this.diff('assign', val.valueOf());
 		return this.valueOf();

@@ -175,7 +175,7 @@ exports.testBooleanDelete = function (test) {
 };
 
 exports.testBooleanAndOr = function (test) {
-	test.expect(3);
+	test.expect(2);
 
 	var a = true;
 	var b = Tome.conjure(a);
@@ -187,8 +187,8 @@ exports.testBooleanAndOr = function (test) {
 	a = a || false;
 	b.assign(b || false);
 
-	a = a && true;
-	b.assign(b && true);
+	a = a && false;
+	b.assign(b && false);
 
 	test.done();
 };
