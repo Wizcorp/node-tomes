@@ -576,7 +576,7 @@ Tome.prototype.consume = function (JSONDiff) {
 			}
 			break;
 		case 'push':
-			this.push(val);
+			this.push.apply(this, val);
 			break;
 		case 'reverse':
 			this.reverse();
@@ -815,14 +815,16 @@ ArrayTome.prototype.push = function () {
 	var length = this._arr.length;
 
 	if (arguments.length) {
+		var args = new Array(arguments.length);
 		for (var i = 0, len = arguments.length; i < len; i += 1) {
 			var k = length + i;
 			this._arr.push(Tome.conjure(arguments[i], this, k));
 			this[k] = this._arr[k];
 			this.length = this._arr.length;
 			this.emit('add', k, this[k].valueOf());
+			args[i] = arguments[i];
 		}
-		this.diff('push', arguments);
+		this.diff('push', args);
 	}
 	return this.length;
 };
