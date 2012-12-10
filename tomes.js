@@ -4,6 +4,7 @@ if (typeof require === 'function') {
 }
 
 var exports = exports || {};
+var isArray = Array.isArray;
 
 //  ________
 // |        \
@@ -149,7 +150,7 @@ Tome.typeOf = function (v) {
 	// attention to array and null as JavaScript currently considers these
 	// objects. This also works on Tomes.
 
-	if (Array.isArray(v)) {
+	if (isArray(v)) {
 		return 'array';
 	}
 
@@ -550,37 +551,27 @@ Tome.prototype.batch = function (diff) {
 };
 
 Tome.prototype.consume = function (diff) {
-	var key, val, k, unfd;
-	for (key in diff) {
-		val = diff[key];
+	for (var key in diff) {
+		var val = diff[key];
 		switch (key) {
 		case 'set':
-			for (k in val) {
+			for (var k in val) {
 				this.set(k, val[k]);
 			}
 			break;
 		case 'assign':
 			this.assign(val);
 			break;
-		case 'inc':
-			this.inc(val);
-			break;
-		case 'del':
-			this.del(val);
-			break;
-		case 'rename':
-			this.rename(val);
-			break;
 		default:
 			if (key.indexOf('_') === 0) {
-				unfd = key.substring(1);
-				if (this.hasOwnProperty(unfd)) {
-					this[unfd].consume(val);
+				var child = key.substring(1);
+				if (this.hasOwnProperty(child)) {
+					this[child].consume(val);
 				} else {
-					throw new ReferenceError('Tome.consume - key is not defined: ' + unfd);
+					throw new ReferenceError('Tome.consume - key is not defined: ' + child);
 				}
 			} else {
-				throw new Error('Operation not implemented yet: ', key);
+				throw new Error('Tome.consume - Invalid operation: ', key);
 			}
 		}
 	}
@@ -748,14 +739,13 @@ ArrayTome.prototype.del = function (key) {
 };
 
 ArrayTome.prototype.consume = function (diff) {
-	var key, val, i;
-	for (key in diff) {
-		val = diff[key];
+	var i;
+
+	for (var key in diff) {
+		var val = diff[key];
 		switch (key) {
-		case 'shift':
-			for (i = 0; i < val; i += 1) {
-				this.shift();
-			}
+		case 'del':
+			this.del(val);
 			break;
 		case 'pop':
 			for (i = 0; i < val; i += 1) {
@@ -765,14 +755,22 @@ ArrayTome.prototype.consume = function (diff) {
 		case 'push':
 			this.push.apply(this, val);
 			break;
-		case 'unshift':
-			this.unshift.apply(this, val);
+		case 'rename':
+			this.rename(val);
+			break;
+		case 'reverse':
+			this.reverse();
+			break;
+		case 'shift':
+			for (i = 0; i < val; i += 1) {
+				this.shift();
+			}
 			break;
 		case 'splice':
 			this.splice.apply(this, val);
 			break;
-		case 'reverse':
-			this.reverse();
+		case 'unshift':
+			this.unshift.apply(this, val);
 			break;
 		default:
 			Tome.prototype.consume.apply(this, arguments);
@@ -1221,6 +1219,22 @@ ObjectTome.prototype.rename = function (o, n) {
 	this.diff('rename', { o: oldKey, n: newKey });
 };
 
+ObjectTome.prototype.consume = function (diff) {
+	for (var key in diff) {
+		var val = diff[key];
+		switch (key) {
+		case 'del':
+			this.del(val);
+			break;
+		case 'rename':
+			this.rename(val);
+			break;
+		default:
+			Tome.prototype.consume.apply(this, arguments);
+		}
+	}
+};
+
 
 //   ______                      __
 //  /      \                    |  \
@@ -1314,9 +1328,9 @@ NumberTome.prototype.consume = function (diff) {
 		val = diff[key];
 		if (key === 'inc') {
 			this.inc(val);
-		} else {
-			Tome.prototype.consume.apply(this, arguments);
+			continue;
 		}
+		Tome.prototype.consume.apply(this, arguments);
 	}
 };
 
