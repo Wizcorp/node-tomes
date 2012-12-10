@@ -5,7 +5,6 @@ var Tome = tomes.Tome,
 	BooleanTome = tomes.BooleanTome,
 	NumberTome = tomes.NumberTome,
 	ObjectTome = tomes.ObjectTome,
-	ScalarTome = tomes.ScalarTome,
 	StringTome = tomes.StringTome,
 	NullTome = tomes.NullTome,
 	UndefinedTome = tomes.UndefinedTome;
@@ -23,7 +22,7 @@ var notInstanceOf = function (actual, expected) {
 };
 
 exports.testArrayCreation = function (test) {
-	test.expect(15);
+	test.expect(14);
 	var a = [1, 2, 3, 4];
 	var b = Tome.conjure(a);
 	test.ok(instanceOf(b, Tome), 'expected Tome');
@@ -31,7 +30,6 @@ exports.testArrayCreation = function (test) {
 	test.ok(notInstanceOf(b, BooleanTome), 'expected not BooleanTome');
 	test.ok(notInstanceOf(b, NumberTome), 'expected not NumberTome');
 	test.ok(notInstanceOf(b, ObjectTome), 'expected not ObjectTome');
-	test.ok(notInstanceOf(b, ScalarTome), 'expected not ScalarTome');
 	test.ok(notInstanceOf(b, StringTome), 'expected not StringTome');
 	test.ok(notInstanceOf(b, NullTome), 'expected not NullTome');
 	test.ok(notInstanceOf(b, UndefinedTome), 'expected not UndefinedTome');

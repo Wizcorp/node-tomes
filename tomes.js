@@ -19,10 +19,10 @@ var isArray = Array.isArray;
 
 function Tome(parent, key) {
 
-	// The Tome type holds references and methods that all 'real' types inherit.
-	// We should never get an object that is just a Tome, it should always be
-	// at least one other type ie. a NumberTome is a ScalarTome and a Tome. We
-	// call this function in the constructor of each Tome type.
+	// The Tome type holds references and methods that all 'real' types
+	// inherit. We should never get an object that is just a Tome, it should
+	// always be at least one other type. We call this function in the
+	// constructor of each Tome type.
 
 	// __parent__ holds a reference to the Tome's parent object so we can signal
 	// up the Tome chain.
@@ -81,25 +81,23 @@ function ObjectTome(val, parent, key) {
 	this.init(val);
 }
 
-function ScalarTome(val, parent, key) {
+function BooleanTome(val, parent, key) {
 	Tome.call(this, parent, key);
 	this.init(val);
-}
-
-function BooleanTome() {
-	ScalarTome.apply(this, arguments);
 }
 
 function NullTome() {
 	Tome.apply(this, arguments);
 }
 
-function NumberTome() {
-	ScalarTome.apply(this, arguments);
+function NumberTome(val, parent, key) {
+	Tome.call(this, parent, key);
+	this.init(val);
 }
 
-function StringTome() {
-	ScalarTome.apply(this, arguments);
+function StringTome(val, parent, key) {
+	Tome.call(this, parent, key);
+	this.init(val);
 }
 
 function UndefinedTome() {
@@ -224,7 +222,8 @@ Tome.prototype.set = function (key, val) {
 	// assign a new value to an existing value, destroying the old value.
 
 	// If we try to assign an undefined value to a property, it will only have
-	// an effect on ObjectTomes, otherwise it will do nothing.
+	// an effect on ObjectTomes, otherwise it will do nothing. This mimics
+	// JavaScript's behavior.
 
 	var diff;
 
@@ -300,8 +299,6 @@ Tome.prototype.set = function (key, val) {
 
 Tome.prototype.assign = function (val) {
 
-	// This is where the magic happens.
-
 	// First we need to get the type of the value and the type of the Tome to
 	// ensure we match the Tome type to the value type.
 
@@ -317,15 +314,29 @@ Tome.prototype.assign = function (val) {
 		throw new TypeError('Tome.assign - You can only assign undefined to ArrayTome elements');
 	}
 
-	if (vType === pType && this instanceof ScalarTome) {
+	// The simplest cases are boolean, number, and string. If we already have
+	// the correct Tome type we assign the value, signal, and return our new
+	// value.
 
-		// The simplest case is scalar types: boolean, number, and string. If
-		// we already have the correct Tome type we assign the value, signal,
-		// and return our new value.
+	if (vType === pType && (pType === 'boolean' || pType === 'number' || pType === 'string')) {
+
+		// If we already have the value then just return the value.
+
+		if (this._val === val.valueOf()) {
+			return this.valueOf();
+		}
 
 		this._val = val.valueOf();
 		this.diff('assign', val.valueOf());
 		return this.valueOf();
+	}
+
+	if (vType === pType && vType === 'null') {
+		return this.valueOf();
+	}
+
+	if (vType === pType && pType === 'undefined') {
+		return;
 	}
 
 	// We reset the Tome type back to the base Tome to ensure we're clean.
@@ -1236,44 +1247,6 @@ ObjectTome.prototype.consume = function (diff) {
 };
 
 
-//   ______                      __
-//  /      \                    |  \
-// |  $$$$$$\  _______  ______  | $$  ______    ______
-// | $$___\$$ /       \|      \ | $$ |      \  /      \
-//  \$$    \ |  $$$$$$$ \$$$$$$\| $$  \$$$$$$\|  $$$$$$\
-//  _\$$$$$$\| $$      /      $$| $$ /      $$| $$   \$$
-// |  \__| $$| $$_____|  $$$$$$$| $$|  $$$$$$$| $$
-//  \$$    $$ \$$     \\$$    $$| $$ \$$    $$| $$
-//   \$$$$$$   \$$$$$$$ \$$$$$$$ \$$  \$$$$$$$ \$$
-
-
-inherits(ScalarTome, Tome);
-
-exports.ScalarTome = ScalarTome;
-
-ScalarTome.isScalarTome = function (o) {
-	return o instanceof ScalarTome;
-};
-
-ScalarTome.prototype.init = function (val) {
-	Object.defineProperty(this, '_val', { configurable: true, writable: true });
-	
-	this._val = val.valueOf();
-};
-
-ScalarTome.prototype.valueOf = function () {
-	return this._val;
-};
-
-ScalarTome.prototype.typeOf = function () {
-	return typeof this._val;
-};
-
-ScalarTome.prototype.toString = function () {
-	return this._val.toString();
-};
-
-
 //  _______                       __
 // |       \                     |  \
 // | $$$$$$$\  ______    ______  | $$  ______    ______   _______
@@ -1285,7 +1258,7 @@ ScalarTome.prototype.toString = function () {
 //  \$$$$$$$   \$$$$$$   \$$$$$$  \$$  \$$$$$$$  \$$$$$$$ \$$   \$$
 
 
-inherits(BooleanTome, ScalarTome);
+inherits(BooleanTome, Tome);
 
 exports.BooleanTome = BooleanTome;
 
@@ -1293,6 +1266,21 @@ BooleanTome.isBooleanTome = function (o) {
 	return o instanceof BooleanTome;
 };
 
+BooleanTome.prototype.init = function (val) {
+	Object.defineProperty(this, '_val', { configurable: true, writable: true, value: val.valueOf() });
+};
+
+BooleanTome.prototype.toString = function () {
+	return this._val.toString();
+};
+
+BooleanTome.prototype.typeOf = function () {
+	return 'boolean';
+};
+
+BooleanTome.prototype.valueOf = function () {
+	return this._val;
+};
 
 //  __    __                          __
 // |  \  |  \                        |  \
@@ -1311,7 +1299,11 @@ NumberTome.isNumberTome = function (o) {
 	return o instanceof NumberTome;
 };
 
-inherits(NumberTome, ScalarTome);
+inherits(NumberTome, Tome);
+
+NumberTome.prototype.init = function (val) {
+	Object.defineProperty(this, '_val', { configurable: true, writable: true, value: val.valueOf() });
+};
 
 NumberTome.prototype.inc = function (val) {
 	if (typeof val !== 'number') {
@@ -1332,6 +1324,18 @@ NumberTome.prototype.consume = function (diff) {
 		}
 		Tome.prototype.consume.apply(this, arguments);
 	}
+};
+
+NumberTome.prototype.toString = function () {
+	return this._val.toString();
+};
+
+NumberTome.prototype.typeOf = function () {
+	return 'number';
+};
+
+NumberTome.prototype.valueOf = function () {
+	return this._val;
 };
 
 
@@ -1355,7 +1359,23 @@ StringTome.isStringTome = function (o) {
 	return o instanceof StringTome;
 };
 
-inherits(StringTome, ScalarTome);
+inherits(StringTome, Tome);
+
+StringTome.prototype.init = function (val) {
+	Object.defineProperty(this, '_val', { configurable: true, writable: true, value: val.valueOf() });
+};
+
+StringTome.prototype.toString = function () {
+	return this._val;
+};
+
+StringTome.prototype.typeOf = function () {
+	return 'string';
+};
+
+StringTome.prototype.valueOf = function () {
+	return this._val;
+};
 
 
 //  __    __            __  __
