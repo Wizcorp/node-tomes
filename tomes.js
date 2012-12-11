@@ -956,7 +956,9 @@ ArrayTome.prototype.sort = function () {
 		}
 	}
 
-	this.diff('rename', diff);
+	if (diff.length) {
+		this.diff('rename', diff);
+	}
 
 	return this;
 };
