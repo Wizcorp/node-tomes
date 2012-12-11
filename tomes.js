@@ -24,8 +24,8 @@ function Tome(parent, key) {
 	// always be at least one other type. We call this function in the
 	// constructor of each Tome type.
 
-	// __parent__ holds a reference to the Tome's parent object so we can signal
-	// up the Tome chain.
+	// __parent__ holds a reference to the Tome's parent object so we can
+	// signal up the Tome chain.
 
 	// __batch__ is our indicator that we will only emit signal events once we
 	// are finished with all our changes. We set this to true in the startBatch
@@ -42,9 +42,9 @@ function Tome(parent, key) {
 		Object.defineProperty(this, '__key__', { writable: true, value: key });
 	}
 
-	// __root__ holds a reference to the Tome at the top of the chain. We use it
-	// to batch signals when we perform operations that would cause a Tome to
-	// signal multiple times, ie. consuming diffs.
+	// __root__ holds a reference to the Tome at the top of the chain. We use
+	// it to batch signals when we perform operations that would cause a Tome
+	// to signal multiple times, ie. consuming diffs.
 
 	Object.defineProperty(this, '__root__', { value: parent instanceof Tome ? parent.__root__ : this });
 
@@ -76,11 +76,6 @@ function ArrayTome(val, parent, key) {
 	this.init(val);
 }
 
-function ObjectTome(val, parent, key) {
-	Tome.call(this, parent, key);
-	this.init(val);
-}
-
 function BooleanTome(val, parent, key) {
 	Tome.call(this, parent, key);
 	this.init(val);
@@ -91,6 +86,11 @@ function NullTome() {
 }
 
 function NumberTome(val, parent, key) {
+	Tome.call(this, parent, key);
+	this.init(val);
+}
+
+function ObjectTome(val, parent, key) {
 	Tome.call(this, parent, key);
 	this.init(val);
 }
@@ -116,10 +116,11 @@ inherits(Tome, EventEmitter);
 //
 //  -     del: Emitted when deleting a property from a Tome. Emits the key of
 //             the property that was deleted. This event is only emitted on the
-//             Tome whose property was deleted and does not traverse up the Tome
-//             chain. A del event is always accompanied by a signal event that
-//             does traverse up the Tome chain. Additionally, the Tome that was
-//             deleted and all of it's children will also emit a destroy event.
+//             Tome whose property was deleted and does not traverse up the
+//             Tome chain. A del event is always accompanied by a signal event
+//             that does traverse up the Tome chain. Additionally, the Tome
+//             that was deleted and all of it's children will also emit a
+//             destroy event.
 //
 //  - destroy: Emitted when a Tome has been deleted. We use this to tell all
 //             interested parties that the Tome no longer exists and will not
@@ -194,10 +195,10 @@ Tome.conjure = function (val, parent, key) {
 		return new NullTome(parent, key);
 	case 'number':
 		return new NumberTome(val, parent, key);
-	case 'string':
-		return new StringTome(val, parent, key);
 	case 'object':
 		return new ObjectTome(val, parent, key);
+	case 'string':
+		return new StringTome(val, parent, key);
 	case 'undefined':
 
 		// UndefinedTomes only exist in the context of Arrays because they JSON
@@ -339,9 +340,11 @@ Tome.prototype.assign = function (val) {
 		return;
 	}
 
-	// We reset the Tome type back to the base Tome to ensure we're clean.
+	// If we're dealing with an array or object we need to reset the Tome.
 
-	this.reset();
+	if (vType === 'array' || vType === 'object' || pType === 'array' || pType === 'object') {
+		this.reset();
+	}
 
 	// Now we need to apply a new Tome type based on the value type.
 
@@ -477,7 +480,6 @@ Tome.prototype.reset = function () {
 	for (i = 0; i < len; i += 1) {
 		key = keys[i];
 		this.emit('del', key);
-		//this.diff('del', key);
 	}
 };
 
@@ -617,8 +619,13 @@ ArrayTome.prototype.init = function (val) {
 	//  -   _arr: Holds the actual array that we reference.
 	//  - length: Holds the length of the array in _arr.
 
-	Object.defineProperty(this, '_arr', { configurable: true, writable: true });
-	Object.defineProperty(this, 'length', { configurable: true, writable: true });
+	if (!this.hasOwnProperty('_arr')) {
+		Object.defineProperty(this, '_arr', { configurable: true, writable: true });
+	}
+
+	if (!this.hasOwnProperty('length')) {
+		Object.defineProperty(this, 'length', { configurable: true, writable: true });
+	}
 
 	// val is an array so we take its length and instantiate a new array of
 	// the appropriate size in _arr. We already know the length so we
@@ -1123,6 +1130,154 @@ ArrayTome.prototype.forEach = function () {
 };
 
 
+//  _______                       __
+// |       \                     |  \
+// | $$$$$$$\  ______    ______  | $$  ______    ______   _______
+// | $$__/ $$ /      \  /      \ | $$ /      \  |      \ |       \
+// | $$    $$|  $$$$$$\|  $$$$$$\| $$|  $$$$$$\  \$$$$$$\| $$$$$$$\
+// | $$$$$$$\| $$  | $$| $$  | $$| $$| $$    $$ /      $$| $$  | $$
+// | $$__/ $$| $$__/ $$| $$__/ $$| $$| $$$$$$$$|  $$$$$$$| $$  | $$
+// | $$    $$ \$$    $$ \$$    $$| $$ \$$     \ \$$    $$| $$  | $$
+//  \$$$$$$$   \$$$$$$   \$$$$$$  \$$  \$$$$$$$  \$$$$$$$ \$$   \$$
+
+
+inherits(BooleanTome, Tome);
+
+exports.BooleanTome = BooleanTome;
+
+BooleanTome.isBooleanTome = function (o) {
+	return o instanceof BooleanTome;
+};
+
+BooleanTome.prototype.init = function (val) {
+	if (!this.hasOwnProperty('_val')) {
+		Object.defineProperty(this, '_val', { configurable: true, writable: true, value: val.valueOf() });
+	} else {
+		this._val = val.valueOf();
+	}
+};
+
+BooleanTome.prototype.toString = function () {
+	return this._val.toString();
+};
+
+BooleanTome.prototype.typeOf = function () {
+	return 'boolean';
+};
+
+BooleanTome.prototype.valueOf = function () {
+	return this._val;
+};
+
+
+//  __    __            __  __
+// |  \  |  \          |  \|  \
+// | $$\ | $$ __    __ | $$| $$
+// | $$$\| $$|  \  |  \| $$| $$
+// | $$$$\ $$| $$  | $$| $$| $$
+// | $$\$$ $$| $$  | $$| $$| $$
+// | $$ \$$$$| $$__/ $$| $$| $$
+// | $$  \$$$ \$$    $$| $$| $$
+//  \$$   \$$  \$$$$$$  \$$ \$$
+
+
+exports.NullTome = NullTome;
+
+inherits(NullTome, Tome);
+
+NullTome.isNullTome = function (o) {
+	return o instanceof NullTome;
+};
+
+NullTome.prototype.init = function () {
+
+};
+
+NullTome.prototype.valueOf = function () {
+	return null;
+};
+
+NullTome.prototype.typeOf = function () {
+
+	// Here we make an abrupt departure from pedantically duplicating the
+	// behavior of JavaScript. Instead of null being an object, we call it
+	// null.
+
+	return 'null';
+};
+
+
+//  __    __                          __
+// |  \  |  \                        |  \
+// | $$\ | $$ __    __  ______ ____  | $$____    ______    ______
+// | $$$\| $$|  \  |  \|      \    \ | $$    \  /      \  /      \
+// | $$$$\ $$| $$  | $$| $$$$$$\$$$$\| $$$$$$$\|  $$$$$$\|  $$$$$$\
+// | $$\$$ $$| $$  | $$| $$ | $$ | $$| $$  | $$| $$    $$| $$   \$$
+// | $$ \$$$$| $$__/ $$| $$ | $$ | $$| $$__/ $$| $$$$$$$$| $$
+// | $$  \$$$ \$$    $$| $$ | $$ | $$| $$    $$ \$$     \| $$
+//  \$$   \$$  \$$$$$$  \$$  \$$  \$$ \$$$$$$$   \$$$$$$$ \$$
+
+
+exports.NumberTome = NumberTome;
+
+inherits(NumberTome, Tome);
+
+NumberTome.isNumberTome = function (o) {
+	return o instanceof NumberTome;
+};
+
+NumberTome.prototype.init = function (val) {
+	if (!this.hasOwnProperty('_val')) {
+		Object.defineProperty(this, '_val', { configurable: true, writable: true, value: val.valueOf() });
+	} else {
+		this._val = val.valueOf();
+	}
+};
+
+NumberTome.prototype.inc = function (val) {
+	if (val === undefined) {
+		val = 1;
+	}
+
+	if (typeof val !== 'number') {
+		throw new TypeError('You can only increment by a number');
+	}
+
+	if (val === 0) {
+		return this._val;
+	}
+
+	this._val = this._val + val;
+	this.diff('inc', val);
+
+	return this._val;
+};
+
+NumberTome.prototype.consume = function (diff) {
+	var key, val;
+	for (key in diff) {
+		val = diff[key];
+		if (key === 'inc') {
+			this.inc(val);
+			continue;
+		}
+		Tome.prototype.consume.apply(this, arguments);
+	}
+};
+
+NumberTome.prototype.toString = function () {
+	return this._val.toString();
+};
+
+NumberTome.prototype.typeOf = function () {
+	return 'number';
+};
+
+NumberTome.prototype.valueOf = function () {
+	return this._val;
+};
+
+
 //   ______   __                                      __
 //  /      \ |  \                                    |  \
 // |  $$$$$$\| $$____       __   ______    _______  _| $$_
@@ -1249,108 +1404,6 @@ ObjectTome.prototype.consume = function (diff) {
 };
 
 
-//  _______                       __
-// |       \                     |  \
-// | $$$$$$$\  ______    ______  | $$  ______    ______   _______
-// | $$__/ $$ /      \  /      \ | $$ /      \  |      \ |       \
-// | $$    $$|  $$$$$$\|  $$$$$$\| $$|  $$$$$$\  \$$$$$$\| $$$$$$$\
-// | $$$$$$$\| $$  | $$| $$  | $$| $$| $$    $$ /      $$| $$  | $$
-// | $$__/ $$| $$__/ $$| $$__/ $$| $$| $$$$$$$$|  $$$$$$$| $$  | $$
-// | $$    $$ \$$    $$ \$$    $$| $$ \$$     \ \$$    $$| $$  | $$
-//  \$$$$$$$   \$$$$$$   \$$$$$$  \$$  \$$$$$$$  \$$$$$$$ \$$   \$$
-
-
-inherits(BooleanTome, Tome);
-
-exports.BooleanTome = BooleanTome;
-
-BooleanTome.isBooleanTome = function (o) {
-	return o instanceof BooleanTome;
-};
-
-BooleanTome.prototype.init = function (val) {
-	Object.defineProperty(this, '_val', { configurable: true, writable: true, value: val.valueOf() });
-};
-
-BooleanTome.prototype.toString = function () {
-	return this._val.toString();
-};
-
-BooleanTome.prototype.typeOf = function () {
-	return 'boolean';
-};
-
-BooleanTome.prototype.valueOf = function () {
-	return this._val;
-};
-
-//  __    __                          __
-// |  \  |  \                        |  \
-// | $$\ | $$ __    __  ______ ____  | $$____    ______    ______
-// | $$$\| $$|  \  |  \|      \    \ | $$    \  /      \  /      \
-// | $$$$\ $$| $$  | $$| $$$$$$\$$$$\| $$$$$$$\|  $$$$$$\|  $$$$$$\
-// | $$\$$ $$| $$  | $$| $$ | $$ | $$| $$  | $$| $$    $$| $$   \$$
-// | $$ \$$$$| $$__/ $$| $$ | $$ | $$| $$__/ $$| $$$$$$$$| $$
-// | $$  \$$$ \$$    $$| $$ | $$ | $$| $$    $$ \$$     \| $$
-//  \$$   \$$  \$$$$$$  \$$  \$$  \$$ \$$$$$$$   \$$$$$$$ \$$
-
-
-exports.NumberTome = NumberTome;
-
-NumberTome.isNumberTome = function (o) {
-	return o instanceof NumberTome;
-};
-
-inherits(NumberTome, Tome);
-
-NumberTome.prototype.init = function (val) {
-	Object.defineProperty(this, '_val', { configurable: true, writable: true, value: val.valueOf() });
-};
-
-NumberTome.prototype.inc = function (val) {
-	if (val === undefined) {
-		val = 1;
-	}
-
-	if (typeof val !== 'number') {
-		throw new TypeError('You can only increment by a number');
-	}
-
-	if (val === 0) {
-		return this._val;
-	}
-
-	this._val = this._val + val;
-	this.diff('inc', val);
-
-	return this._val;
-};
-
-NumberTome.prototype.consume = function (diff) {
-	var key, val;
-	for (key in diff) {
-		val = diff[key];
-		if (key === 'inc') {
-			this.inc(val);
-			continue;
-		}
-		Tome.prototype.consume.apply(this, arguments);
-	}
-};
-
-NumberTome.prototype.toString = function () {
-	return this._val.toString();
-};
-
-NumberTome.prototype.typeOf = function () {
-	return 'number';
-};
-
-NumberTome.prototype.valueOf = function () {
-	return this._val;
-};
-
-
 //   ______     __                __
 //  /      \   |  \              |  \
 // |  $$$$$$\ _| $$_     ______   \$$ _______    ______
@@ -1367,14 +1420,18 @@ NumberTome.prototype.valueOf = function () {
 
 exports.StringTome = StringTome;
 
+inherits(StringTome, Tome);
+
 StringTome.isStringTome = function (o) {
 	return o instanceof StringTome;
 };
 
-inherits(StringTome, Tome);
-
 StringTome.prototype.init = function (val) {
-	Object.defineProperty(this, '_val', { configurable: true, writable: true, value: val.valueOf() });
+	if (!this.hasOwnProperty('_val')) {
+		Object.defineProperty(this, '_val', { configurable: true, writable: true, value: val.valueOf() });
+	} else {
+		this._val = val.valueOf();
+	}
 };
 
 StringTome.prototype.toString = function () {
@@ -1387,43 +1444,6 @@ StringTome.prototype.typeOf = function () {
 
 StringTome.prototype.valueOf = function () {
 	return this._val;
-};
-
-
-//  __    __            __  __
-// |  \  |  \          |  \|  \
-// | $$\ | $$ __    __ | $$| $$
-// | $$$\| $$|  \  |  \| $$| $$
-// | $$$$\ $$| $$  | $$| $$| $$
-// | $$\$$ $$| $$  | $$| $$| $$
-// | $$ \$$$$| $$__/ $$| $$| $$
-// | $$  \$$$ \$$    $$| $$| $$
-//  \$$   \$$  \$$$$$$  \$$ \$$
-
-
-exports.NullTome = NullTome;
-
-NullTome.isNullTome = function (o) {
-	return o instanceof NullTome;
-};
-
-inherits(NullTome, Tome);
-
-NullTome.prototype.init = function () {
-
-};
-
-NullTome.prototype.valueOf = function () {
-	return null;
-};
-
-NullTome.prototype.typeOf = function () {
-
-	// Here we make an abrupt departure from pedantically duplicating the
-	// behavior of JavaScript. Instead of null being an object, we call it
-	// null.
-
-	return 'null';
 };
 
 
@@ -1440,11 +1460,11 @@ NullTome.prototype.typeOf = function () {
 
 exports.UndefinedTome = UndefinedTome;
 
+inherits(UndefinedTome, Tome);
+
 UndefinedTome.isUndefinedTome = function (o) {
 	return o instanceof UndefinedTome;
 };
-
-inherits(UndefinedTome, Tome);
 
 UndefinedTome.prototype.init = function () {
 
