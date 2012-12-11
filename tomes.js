@@ -1306,12 +1306,22 @@ NumberTome.prototype.init = function (val) {
 };
 
 NumberTome.prototype.inc = function (val) {
+	if (val === undefined) {
+		val = 1;
+	}
+
 	if (typeof val !== 'number') {
 		throw new TypeError('You can only increment by a number');
 	}
 
+	if (val === 0) {
+		return this._val;
+	}
+
 	this._val = this._val + val;
 	this.diff('inc', val);
+
+	return this._val;
 };
 
 NumberTome.prototype.consume = function (diff) {
