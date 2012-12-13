@@ -1,12 +1,7 @@
 var tomes = require('../../tomes');
 
 var Tome = tomes.Tome,
-	ArrayTome = tomes.ArrayTome,
-	BooleanTome = tomes.BooleanTome,
-	NumberTome = tomes.NumberTome,
 	ObjectTome = tomes.ObjectTome,
-	StringTome = tomes.StringTome,
-	NullTome = tomes.NullTome,
 	UndefinedTome = tomes.UndefinedTome;
 
 var instanceOf = function (actual, expected) {
@@ -22,19 +17,9 @@ var notInstanceOf = function (actual, expected) {
 };
 
 exports.testUndefinedCreation = function (test) {
-	test.expect(10);
-	var a;
-	var b = Tome.conjure(a);
-	test.strictEqual(a, b); // 1
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
-	test.ok(notInstanceOf(b, Tome)); // 3
-	test.ok(notInstanceOf(b, ObjectTome)); // 4
-	test.ok(notInstanceOf(b, ArrayTome)); // 5
-	test.ok(notInstanceOf(b, BooleanTome)); // 6
-	test.ok(notInstanceOf(b, NumberTome)); // 7
-	test.ok(notInstanceOf(b, StringTome)); // 8
-	test.ok(notInstanceOf(b, NullTome)); // 9
-	test.ok(notInstanceOf(b, UndefinedTome)); // 10
+	test.expect(1);
+	
+	test.throws(function () { Tome.conjure(); }, TypeError);
 	
 	test.done();
 };
