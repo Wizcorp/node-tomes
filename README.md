@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/bjornstar/node-tomes.png)](https://travis-ci.org/bjornstar/node-tomes)
+
 node-tomes
 =========
 
