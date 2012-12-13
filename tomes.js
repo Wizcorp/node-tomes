@@ -1,7 +1,5 @@
-if (typeof require === 'function') {
-	var EventEmitter = require('events') ? require('events').EventEmitter : EventEmitter;
-	var inherits = require('util') ? require('util').inherits : inherits;
-}
+var EventEmitter = typeof require === 'function' ? require('events').EventEmitter : EventEmitter;
+var inherits = typeof require === 'function' ? require('util').inherits : inherits;
 
 var exports = exports || {};
 var isArray = Array.isArray;
@@ -81,8 +79,8 @@ function BooleanTome(val, parent, key) {
 	this.init(val);
 }
 
-function NullTome() {
-	Tome.apply(this, arguments);
+function NullTome(val, parent, key) {
+	Tome.call(this, parent, key);
 }
 
 function NumberTome(val, parent, key) {
@@ -100,8 +98,8 @@ function StringTome(val, parent, key) {
 	this.init(val);
 }
 
-function UndefinedTome() {
-	Tome.apply(this, arguments);
+function UndefinedTome(val, parent, key) {
+	Tome.call(this, parent, key);
 }
 
 inherits(Tome, EventEmitter);
@@ -127,10 +125,16 @@ inherits(Tome, EventEmitter);
 //             emit any more events.
 //
 //  -  signal: Emitted when a Tome is modified. This is our bread and butter
-//             event. A signal is emitted by a Tome when it or any of its child
-//             Tomes change. It is also emitted when we register an event
-//             listener for the signal event. When an operation occurs that
-//             changes multiple children of a Tome, we only emit signal once.
+//             event when dealing with the UI. A signal is emitted by a Tome
+//             when it or any of its child Tomes change. It is also emitted
+//             when we register an event listener for the signal event. When an
+//             operation occurs that changes multiple children of a Tome, we
+//             only emit signal once.
+//
+//  -  change: Emitted when a Tome is modified. Just like with signal change
+//             gets emitted when a Tome or any of its child Tomes are altered.
+//             Change will only be emitted once per Tome even if a multiple
+//             changes occurred.
 //
 //  -    diff: Emitted when a Tome is modified. A diff is emitted by a Tome
 //             when it or any of its child Tomes change. This diff is used by
@@ -164,17 +168,21 @@ Tome.typeOf = function (v) {
 	return typeof v;
 };
 
-Tome.protoOf = function (t) {
-	var prototypeMap = {
-		"array": ArrayTome.prototype,
-		"boolean": BooleanTome.prototype,
-		"null": NullTome.prototype,
-		"number": NumberTome.prototype,
-		"object": ObjectTome.prototype,
-		"string": StringTome.prototype,
-		"undefined": UndefinedTome.prototype
-	};
-	return prototypeMap[t];
+var tomeMap = {
+	"array": ArrayTome,
+	"boolean": BooleanTome,
+	"null": NullTome,
+	"number": NumberTome,
+	"object": ObjectTome,
+	"string": StringTome,
+	"undefined": UndefinedTome
+};
+
+var classMap = {
+	"array": Array,
+	"boolean": Boolean,
+	"number": Number,
+	"string": String
 };
 
 Tome.conjure = function (val, parent, key) {
@@ -185,35 +193,17 @@ Tome.conjure = function (val, parent, key) {
 	// a parent that its child has been modified.
 
 	var vType = Tome.typeOf(val);
+	var ClassRef = tomeMap[vType];
 
-	switch (vType) {
-	case 'array':
-		return new ArrayTome(val, parent, key);
-	case 'boolean':
-		return new BooleanTome(val, parent, key);
-	case 'null':
-		return new NullTome(parent, key);
-	case 'number':
-		return new NumberTome(val, parent, key);
-	case 'object':
-		return new ObjectTome(val, parent, key);
-	case 'string':
-		return new StringTome(val, parent, key);
-	case 'undefined':
+	if (vType === 'undefined' && Tome.typeOf(parent) !== 'array') {
+		throw new TypeError('Tome.conjure - You can only set array elements to undefined.');
+	}
 
-		// UndefinedTomes only exist in the context of Arrays because they JSON
-		// stringify to null when in arrays.
-
-		if (Tome.typeOf(parent) === 'array') {
-			return new UndefinedTome(parent, key);
-		}
-		return;
-	default:
-
-		// If the value's type is not supported, complain loudly.
-
+	if (ClassRef === undefined) {
 		throw new TypeError('Tome.conjure - Invalid value type: ' + vType);
 	}
+
+	return new ClassRef(val, parent, key);
 };
 
 Tome.prototype.set = function (key, val) {
@@ -263,7 +253,7 @@ Tome.prototype.set = function (key, val) {
 
 		// We've already assigned the value to the property so we return this.
 
-		return this.valueOf();
+		return this;
 	}
 
 	var p = this[key];
@@ -280,7 +270,7 @@ Tome.prototype.set = function (key, val) {
 
 		// We've already assigned the value to the property so we return this.
 
-		return this[key].valueOf();
+		return this;
 	}
 
 	if (!(p instanceof Tome)) {
@@ -295,7 +285,7 @@ Tome.prototype.set = function (key, val) {
 
 	p.assign(val);
 
-	return this[key].valueOf();
+	return this;
 };
 
 Tome.prototype.assign = function (val) {
@@ -304,10 +294,10 @@ Tome.prototype.assign = function (val) {
 	// ensure we match the Tome type to the value type.
 
 	var vType = Tome.typeOf(val);
-	var vProto = Tome.protoOf(vType);
+	var vClass = tomeMap[vType];
 	var pType = this.typeOf();
 
-	if (vProto === undefined) {
+	if (vClass === undefined) {
 		throw new TypeError('Tome.assign - Invalid value type: ' + vType);
 	}
 
@@ -319,25 +309,27 @@ Tome.prototype.assign = function (val) {
 	// the correct Tome type we assign the value, signal, and return our new
 	// value.
 
-	if (vType === pType && (pType === 'boolean' || pType === 'number' || pType === 'string')) {
+	if (vType === pType) {
+		if (pType === 'boolean' || pType === 'number' || pType === 'string') {
 
-		// If we already have the value then just return the value.
+			// If we already have the value then just return the value.
 
-		if (this._val === val.valueOf()) {
-			return this.valueOf();
+			if (this._val === val.valueOf()) {
+				return this;
+			}
+
+			this._val = val.valueOf();
+			this.diff('assign', val.valueOf());
+			return this;
 		}
 
-		this._val = val.valueOf();
-		this.diff('assign', val.valueOf());
-		return this.valueOf();
-	}
+		if (vType === 'null') {
+			return this;
+		}
 
-	if (vType === pType && vType === 'null') {
-		return this.valueOf();
-	}
-
-	if (vType === pType && pType === 'undefined') {
-		return;
+		if (vType === 'undefined') {
+			return;
+		}
 	}
 
 	// If we're dealing with an array or object we need to reset the Tome.
@@ -348,12 +340,12 @@ Tome.prototype.assign = function (val) {
 
 	// Now we need to apply a new Tome type based on the value type.
 
-	this.__proto__ = vProto;
+	this.__proto__ = vClass.prototype;
 	this.init(val ? val.valueOf() : val);
 
 	this.diff('assign', val);
 
-	return this.valueOf();
+	return this;
 };
 
 Tome.prototype.notify = function () {
@@ -367,6 +359,7 @@ Tome.prototype.notify = function () {
 	}
 
 	this.emit('signal', this.valueOf());
+	this.emit('change', this.valueOf());
 	this.emit('diff', this.__diff__);
 	this.__diff__ = undefined;
 
@@ -378,7 +371,7 @@ Tome.prototype.notify = function () {
 	var keys = Object.keys(this);
 	for (var i = 0, len = keys.length; i < len; i += 1) {
 		var k = keys[i];
-		if (this[k] !== undefined && this[k].__diff__ !== undefined) {
+		if (this[k] && this[k].__diff__) {
 			this[k].notify();
 		}
 	}
@@ -409,11 +402,14 @@ Tome.prototype.destroy = function () {
 	// Tomes since they will no longer exist. We go down the Tome chain first and
 	// then emit our way up.
 
-	for (var key in this) {
-		if (this.hasOwnProperty(key) && this[key] instanceof Tome) {
+	var keys = Object.keys(this);
+	for (var i = 0, len = keys.length; i < len; i += 1) {
+		var key = keys[i];
+		if (this[key] instanceof Tome) {
 			this[key].destroy();
 		}
 	}
+
 	this.emit('destroy');
 };
 
@@ -430,7 +426,7 @@ Tome.prototype.del = function (key) {
 		throw new ReferenceError('Tome.del - Key is not defined: ' + key);
 	}
 
-	if (!this[key] instanceof Tome) {
+	if (!(this[key] instanceof Tome)) {
 		throw new TypeError('Tome.del - Key is not a Tome: ' + key);
 	}
 
@@ -458,7 +454,7 @@ Tome.prototype.reset = function () {
 
 	var keys = Object.keys(this);
 	var len = keys.length;
-	var key, i, o;
+	var key, i;
 
 	// Here we delete all of the properties and emit destroy on all of their
 	// child Tomes. For destroy we don't really care about the order of events.
@@ -466,8 +462,8 @@ Tome.prototype.reset = function () {
 
 	for (i = 0; i < len; i += 1) {
 		key = keys[i];
-		if (this[key] instanceof Tome) {
-			o = this[key];
+		var o = this[key];
+		if (o instanceof Tome) {
 			delete this[key];
 			o.destroy();
 		}
@@ -478,8 +474,7 @@ Tome.prototype.reset = function () {
 	// properties have already been deleted.
 
 	for (i = 0; i < len; i += 1) {
-		key = keys[i];
-		this.emit('del', key);
+		this.emit('del', keys[i]);
 	}
 };
 
@@ -510,21 +505,41 @@ Tome.prototype.diff = function (op, val, chain) {
 		diff = {};
 	}
 
-	for (var k in chain) {
-		if (diff.hasOwnProperty(k)) {
-			if (Tome.typeOf(diff[k]) === 'array') {
-				diff[k].push(chain[k]);
+	// We need to merge chain into this Tome's diff.
+
+	for (var opk in chain) {
+
+		// opk is the op as it relates to this Tome. If this Tome has children
+		// it will hold diffs for all of its children as well as its own diffs.
+		// Child diffs start with _.
+
+		if (diff.hasOwnProperty(opk)) {
+
+			// This Tome already has an entry for opk. We need to augment it.
+			
+			if (Tome.typeOf(diff[opk]) === 'array') {
+
+				// this entry already has 2 entries so we can just push.
+
+				diff[opk].push(chain[opk]);
 			} else {
-				var first = diff[k];
-				diff[k] = [ first, chain[k]];
+
+				// There is only one entry, so we need to turn it into an array
+				// with the original value at 0.
+
+				diff[opk] = [ diff[opk], chain[opk] ];
 			}
 		} else {
-			diff[k] = chain[k];
+
+			// This Tome has no entry for opk so we create it.
+
+			diff[opk] = chain[opk];
 		}
 	}
 
 	if (!this.__root__.__batch__) {
 		this.emit('signal', this.valueOf());
+		this.emit('change', this.valueOf());
 		this.emit('diff', diff);
 	} else {
 		this.__diff__ = diff;
@@ -535,9 +550,12 @@ Tome.prototype.diff = function (op, val, chain) {
 	var link = {};
 
 	if (this.hasOwnProperty('__key__')) {
-		// We aren't on the root Tome, so we have a key, stick that on the
-		// chain
-		link['_' + this.__key__] = chain;
+
+		// We have a key, so we aren't on the root Tome stick that on the
+		// chain. This is the opk in our chain for in loop up above referencing
+		// this Tome is a child of That tome.
+
+		link['_'.concat(this.__key__)] = chain;
 	}
 
 	if (this.hasOwnProperty('__parent__') && this.__parent__ instanceof Tome) {
@@ -584,7 +602,7 @@ Tome.prototype.consume = function (diff) {
 					throw new ReferenceError('Tome.consume - key is not defined: ' + child);
 				}
 			} else {
-				throw new Error('Tome.consume - Invalid operation: ', key);
+				throw new Error('Tome.consume - Invalid operation: ' + key);
 			}
 		}
 	}
@@ -680,7 +698,9 @@ ArrayTome.prototype.typeOf = function () {
 
 ArrayTome.prototype.join = function (separator) {
 	var out = '';
-	if (!this._arr.length) {
+	var len = this._arr.length;
+
+	if (!len) {
 		return out;
 	}
 
@@ -690,11 +710,12 @@ ArrayTome.prototype.join = function (separator) {
 
 	out += this._arr[0];
 
-	for (var i = 1, len = this._arr.length; i < len; i += 1) {
+	for (var i = 1; i < len; i += 1) {
 		out += separator;
 		var e = this._arr[i];
-		if (e.typeOf() !== 'null' && e.typeOf() !== 'undefined') {
-			out += this._arr[i].toString();
+		var eType = e.typeOf();
+		if (eType !== 'null' && eType !== 'undefined') {
+			out += e.toString();
 		}
 	}
 
@@ -705,8 +726,10 @@ ArrayTome.prototype.toString = function () {
 	return this.join();
 };
 
-ArrayTome.prototype.set = function (key, val) {
-	if (parseInt(key, 10).toString() !== key.toString()) {
+ArrayTome.prototype.set = function (okey, val) {
+	var key = parseInt(okey, 10);
+
+	if (okey.toString() !== key.toString()) {
 		Tome.prototype.set.apply(this, arguments);
 		return;
 	}
@@ -715,29 +738,28 @@ ArrayTome.prototype.set = function (key, val) {
 		return;
 	}
 
-	if (key >= this._arr.length) {
-		var len = this._arr.length;
+	var arr = this._arr;
+	var len = arr.length;
 
-		this._arr[key] = Tome.conjure(val, this, key);
-		this[key] = this._arr[key];
-		this.length = this._arr.length;
-		this.emit('add', key, this._arr[key].valueOf());
+	if (key >= len) {
+		arr[key] = Tome.conjure(val, this, key);
+		this[key] = arr[key];
+		this.length = arr.length;
+		this.emit('add', key, arr[key].valueOf());
 
-		for (var i = len, newlen = this._arr.length - 1; i < newlen; i += 1) {
-			this._arr[i] = Tome.conjure(undefined, this, i);
-			this.length = this._arr.length;
-			this.emit('add', i, this._arr[i].valueOf());
+		for (var i = len, newlen = arr.length - 1; i < newlen; i += 1) {
+			arr[i] = Tome.conjure(undefined, this, i);
+			this.length = arr.length;
+			this.emit('add', i, arr[i].valueOf());
 		}
 
 		var diff = {};
 		diff[key] = val;
 		this.diff('set', diff);
-	} else {
-		if (this[key] instanceof Tome) {
-			this[key].assign(val);
-		}
+	} else if (this[key] instanceof Tome) {
+		this[key].assign(val);
 	}
-	return this._arr[key].valueOf();
+	return arr[key].valueOf();
 };
 
 ArrayTome.prototype.del = function (key) {
@@ -745,7 +767,7 @@ ArrayTome.prototype.del = function (key) {
 		throw new ReferenceError('ArrayTome.del - Key is not defined: ' + key);
 	}
 
-	if (!this[key] instanceof Tome) {
+	if (!(this[key] instanceof Tome)) {
 		throw new TypeError('ArrayTome.del - Key is not a Tome: ' + key);
 	}
 
@@ -877,16 +899,18 @@ ArrayTome.prototype.reverse = function () {
 
 ArrayTome.prototype.splice = function (spliceIndex, toRemove) {
 	spliceIndex = spliceIndex >= 0 ? Math.min(spliceIndex, this._arr.length) : Math.max(this._arr.length + spliceIndex, 0);
-	var toAdd = [];
 
-	var i, len, key, args;
+	var len = arguments.length;
+	var toAdd = new Array(len - 2);
 
-	args = new Array(arguments.length);
+	var i, key;
+
+	var args = new Array(len);
 	args[0] = spliceIndex;
 	args[1] = toRemove;
 
 	for (i = 2, len = arguments.length; i < len; i += 1) {
-		toAdd.push(arguments[i]);
+		toAdd[i - 2] = arguments[i];
 		args[i] = arguments[i];
 	}
 
@@ -930,23 +954,25 @@ ArrayTome.prototype.splice = function (spliceIndex, toRemove) {
 };
 
 ArrayTome.prototype.rename = function (val) {
-	if (Tome.typeOf(val) === 'array') {
-		var diff = [];
-
-		for (var i = 0, len = val.length; i < len; i += 1) {
-			var r = val[i];
-			this._arr[r.o].__key__ = r.n;
-			diff.push({ 'o': r.o, 'n': r.n });
-		}
-
-		this._arr.sort(function (a, b) { return a.__key__ - b.__key__; });
-
-		for (i = 0, len = this._arr.length; i < len; i += 1) {
-			this[i] = this._arr[i];
-		}
-
-		this.diff('rename', diff);
+	if (Tome.typeOf(val) !== 'array') {
+		throw new Error('ArrayTome.rename - You cannot rename a single element in an array.');
 	}
+
+	var diff = [];
+
+	for (var i = 0, len = val.length; i < len; i += 1) {
+		var r = val[i];
+		this._arr[r.o].__key__ = r.n;
+		diff.push({ 'o': r.o, 'n': r.n });
+	}
+
+	this._arr.sort(function (a, b) { return a.__key__ - b.__key__; });
+
+	for (i = 0, len = this._arr.length; i < len; i += 1) {
+		this[i] = this._arr[i];
+	}
+
+	this.diff('rename', diff);
 };
 
 ArrayTome.prototype.sort = function () {
@@ -971,10 +997,11 @@ ArrayTome.prototype.sort = function () {
 };
 
 ArrayTome.prototype.unshift = function () {
-	if (arguments.length) {
+	var arglen = arguments.length;
+	if (arglen) {
 		var args, i, len;
 		
-		args = new Array(arguments.length);
+		args = new Array(arglen);
 		
 		for (i = arguments.length - 1; i >= 0; i -= 1) {
 			this._arr.unshift(Tome.conjure(arguments[i], this, i));
@@ -986,7 +1013,7 @@ ArrayTome.prototype.unshift = function () {
 			this._arr[i].__key__ = i;
 		}
 
-		for (i = 0, len = arguments.length; i < len; i += 1) {
+		for (i = 0; i < arglen; i += 1) {
 			this.length = this._arr.length;
 			this.emit('add', i, this[i].valueOf());
 		}
@@ -998,12 +1025,16 @@ ArrayTome.prototype.unshift = function () {
 };
 
 ArrayTome.prototype.indexOf = function (searchElement) {
+	// straight from MDN, Tomes have to do valueOf instead of ===
 	var t = this._arr;
 	var len = t.length;
+
 	if (len === 0) {
 		return -1;
 	}
+
 	var n = 0;
+	
 	if (arguments.length > 1) {
 		n = Number(arguments[1]);
 		if (n !== n) { // shortcut for verifying if it's NaN
@@ -1012,39 +1043,50 @@ ArrayTome.prototype.indexOf = function (searchElement) {
 			n = (n > 0 || -1) * Math.floor(Math.abs(n));
 		}
 	}
+	
 	if (n >= len) {
 		return -1;
 	}
+	
 	var k = n >= 0 ? n : Math.max(len - Math.abs(n), 0);
+	
 	for (; k < len; k += 1) {
 		if (k in t && t[k].valueOf() === searchElement) {
 			return k;
 		}
 	}
+	
 	return -1;
 };
 
 ArrayTome.prototype.lastIndexOf = function (searchElement) {
+	// straight from MDN, Tomes have to do valueOf instead of ===
 	var t = this._arr;
 	var len = t.length;
+	
 	if (len === 0) {
 		return -1;
 	}
+
 	var n = len;
+	
 	if (arguments.length > 1) {
 		n = Number(arguments[1]);
-		if (n !== n) {
+		if (n !== n) { // shortcut for verifying if it's NaN
 			n = 0;
 		} else if (n !== 0 && n !== Infinity && n !== -Infinity) {
 			n = (n > 0 || -1) * Math.floor(Math.abs(n));
 		}
 	}
+	
 	var k = n >= 0 ? Math.min(n, len - 1) : len - Math.abs(n);
+	
 	for (; k >= 0; k -= 1) {
 		if (k in t && t[k].valueOf() === searchElement) {
 			return k;
 		}
 	}
+	
 	return -1;
 };
 
@@ -1080,12 +1122,12 @@ ArrayTome.prototype.concat = function () {
 		} else {
 			if (newValType === 'array') {
 				for (j = 0, ken = newVal.length; j < ken; j += 1) {
-					out._arr.push(Tome.conjure(newVal[j]));
+					out._arr.push(Tome.conjure(newVal[j], this, len));
 					out[len] = out._arr[len];
 					len += 1;
 				}
 			} else {
-				out._arr.push(Tome.conjure(newVal));
+				out._arr.push(Tome.conjure(newVal, this, len));
 				out[len] = out._arr[len];
 				len += 1;
 			}
@@ -1095,38 +1137,6 @@ ArrayTome.prototype.concat = function () {
 	out.length = len;
 
 	return out;
-};
-
-ArrayTome.prototype.slice = function () {
-	return this._arr.slice.apply(this._arr, arguments);
-};
-
-ArrayTome.prototype.map = function () {
-	return this._arr.map.apply(this._arr, arguments);
-};
-
-ArrayTome.prototype.reduce = function () {
-	return this._arr.reduce.apply(this._arr, arguments);
-};
-
-ArrayTome.prototype.reduceRight = function () {
-	return this._arr.reduceRight.apply(this._arr, arguments);
-};
-
-ArrayTome.prototype.filter = function () {
-	return this._arr.filter.apply(this._arr, arguments);
-};
-
-ArrayTome.prototype.some = function () {
-	return this._arr.some.apply(this._arr, arguments);
-};
-
-ArrayTome.prototype.every = function () {
-	return this._arr.every.apply(this._arr, arguments);
-};
-
-ArrayTome.prototype.forEach = function () {
-	return this._arr.forEach.apply(this._arr, arguments);
 };
 
 
@@ -1259,9 +1269,9 @@ NumberTome.prototype.consume = function (diff) {
 		val = diff[key];
 		if (key === 'inc') {
 			this.inc(val);
-			continue;
+		} else {
+			Tome.prototype.consume.apply(this, arguments);
 		}
-		Tome.prototype.consume.apply(this, arguments);
 	}
 };
 
@@ -1321,11 +1331,7 @@ ObjectTome.prototype.init = function (val) {
 	for (var i = 0; i < len; i += 1) {
 		k = added[i];
 		var kv = val[k];
-		if (kv === undefined) {
-			this[k] = undefined;
-		} else {
-			this[k] = Tome.conjure(kv, this, k);
-		}
+		this[k] = kv === undefined ? undefined : Tome.conjure(kv, this, k);
 	}
 
 	// Just like with arrays, we only want to emit add after we are done
@@ -1344,47 +1350,61 @@ ObjectTome.prototype.typeOf = function () {
 	return 'object';
 };
 
-ObjectTome.prototype.rename = function (o, n) {
-	var oType = Tome.typeOf(o);
-	var oldKey, newKey;
+ObjectTome.prototype.rename = function () {
+	
+	// ObjectTome.rename can take a few different styles of arguments:
+	//  - object: { o: 'oldKey', n: 'newKey' }
+	//  -  array: [ { o: 'oldKey1', n: 'newKey1' }, { o: 'oldKey2', n: 'newKey2' } ]
+	//  - string: 'oldKey', 'newKey'
+
+	var oType = Tome.typeOf(arguments[0]);
+	var arr;
 
 	switch (oType) {
 	case 'object':
-		oldKey = o.o;
-		newKey = o.n;
+		arr = [ arguments[0] ];
 		break;
 	case 'array':
-		this.startBatch();
-		for (var i = 0, len = o.length; i < len; i += 1) {
-			oldKey = o[i].o;
-			newKey = o[i].n;
-			this.rename(oldKey, newKey);
-		}
-		this.endBatch();
+		arr = arguments[0];
 		break;
 	case 'string':
-		oldKey = o;
-		newKey = n;
+		arr = [ { o: arguments[0], n: arguments[1] } ];
 		break;
 	default:
 		throw new TypeError('ObjectTome.rename - Invalid arguments');
 	}
 
-	if (!this.hasOwnProperty(oldKey)) {
-		throw new ReferenceError('ObjectTome.rename - Key is not defined: ' + oldKey);
+	var len = arr.length;
+
+	var isAlreadyBatch = this.__root__.__batch__;
+
+	if (!isAlreadyBatch && len > 1) {
+		this.startBatch();
 	}
 
-	if (this.hasOwnProperty(newKey)) {
-		this.del(newKey);
+	for (var i = 0; i < len; i += 1) {
+		var oldKey = arr[i].o;
+		var newKey = arr[i].n;
+
+		if (!this.hasOwnProperty(oldKey)) {
+			throw new ReferenceError('ObjectTome.rename - Key is not defined: ' + oldKey);
+		}
+
+		if (this.hasOwnProperty(newKey)) {
+			this.del(newKey);
+		}
+
+		this[newKey] = this[oldKey];
+		this[newKey].__key__ = newKey;
+		delete this[oldKey];
+
+		this.emit('rename', oldKey, newKey);
+		this.diff('rename', { o: oldKey, n: newKey });
 	}
 
-	this[newKey] = this[oldKey];
-	this[newKey].__key__ = newKey;
-	delete this[oldKey];
-
-	this.emit('rename', oldKey, newKey);
-
-	this.diff('rename', { o: oldKey, n: newKey });
+	if (!isAlreadyBatch && len > 1) {
+		this.endBatch();
+	}
 };
 
 ObjectTome.prototype.consume = function (diff) {
@@ -1446,6 +1466,16 @@ StringTome.prototype.valueOf = function () {
 	return this._val;
 };
 
+var stringPrototypeMethods = Object.getOwnPropertyNames(String.prototype);
+
+for (var i = 0, len = stringPrototypeMethods.length; i < len; i += 1) {
+	var key = stringPrototypeMethods[i];
+	if (!StringTome.prototype.hasOwnProperty(key)) {
+		StringTome.prototype[key] = String.prototype[key];
+	}
+}
+
+
 
 //  __    __                  __             ______   __                            __
 // |  \  |  \                |  \           /      \ |  \                          |  \
@@ -1487,3 +1517,22 @@ UndefinedTome.prototype.toJSON = function () {
 
 	return null;
 };
+
+for (var ck in classMap) {
+
+	// Here we inherit all of the methods from javascript classes. This works
+	// because we provide a valueOf method on our Tomes.
+
+	var c = classMap[ck]; // class
+	var t = tomeMap[ck]; // tome
+
+	var methods = Object.getOwnPropertyNames(c.prototype);
+	var len = methods.length;
+
+	for (var i = 0; i < len; i += 1) {
+		var key = methods[i];
+		if (!t.prototype.hasOwnProperty(key)) {
+			t.prototype[key] = c.prototype[key];
+		}
+	}
+}
