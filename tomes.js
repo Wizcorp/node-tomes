@@ -22,41 +22,46 @@ function Tome(parent, key) {
 	// always be at least one other type. We call this function in the
 	// constructor of each Tome type.
 
+	// __root__ holds a reference to the Tome at the top of the chain. We need
+	// it to be able to pause event emission and do notification all the way
+	// down the Tome chain when we resume. It exists on all Tomes.
+
+	// __diff__ is our indicator that while we were paused this Tome was
+	// was modified and will to emit events when resumed. Diffs are kept up to
+	// date by the diff method and we set this to undefined in the notify
+	// method once the Tome emits all its events. It exists on all Tomes.
+
+	// __version__ is a number that increments whenever a Tome or any of its
+	// child Tomes changes. It exists on all Tomes.
+
+	// __buffer__ holds copies of all of the add, del, destroy, and rename
+	// events that have occurred since the pause method was called. It only
+	// exists on the root Tome.
+
 	// __parent__ holds a reference to the Tome's parent object so we can
-	// signal up the Tome chain.
+	// signal up the Tome chain. It only exists on Tomes with parents.
 
-	// __batch__ is our indicator that we will only emit signal events once we
-	// are finished with all our changes. We set this to true in the startBatch
-	// method and then set it to false in the endBatch method which follows it
-	// up with calling the notify method that signals all changed Tomes.
-
-	if (parent instanceof Tome) {
-		Object.defineProperty(this, '__parent__', { writable: true, value: parent });
-	} else {
-		Object.defineProperty(this, '__batch__', { writable: true, value: false });
-	}
-
-	if (key !== undefined) {
-		Object.defineProperty(this, '__key__', { writable: true, value: key });
-	}
-
-	// __root__ holds a reference to the Tome at the top of the chain. We use
-	// it to batch signals when we perform operations that would cause a Tome
-	// to signal multiple times, ie. consuming diffs.
-
-	Object.defineProperty(this, '__root__', { value: parent instanceof Tome ? parent.__root__ : this });
-
-	// __diff__ is our indicator that while we are in batch mode this object
-	// had changes and needs to emit signal events once we are finished with
-	// all our changes. This gets is modified in the diff method and set to
-	// undefined in the notify method once we emit the signal and diff event.
-
-	Object.defineProperty(this, '__diff__', { writable: true });
+	// __key__ is the key that our Tome is referred to by its parent. It only
+	// exists on Tomes with parents.
 
 	// If you're using the node.js event emitter, we need to make the _events
 	// non-enumerable. Ideally, node.js would make this the default behavior.
 
-	Object.defineProperty(this, '_events', { configurable: true, writable: true });
+	var properties = {
+		__root__: { value: parent instanceof Tome ? parent.__root__ : this },
+		__diff__: { writable: true },
+		__version__: { writable: true, value: 1 },
+		_events: { configurable: true, writable: true }
+	};
+
+	if (parent instanceof Tome) {
+		properties.__parent__ = { writable: true, value: parent };
+		properties.__key__ = { writable: true, value: key };
+	} else {
+		properties.__buffer__ = { writable: true, value: false };
+	}
+
+	Object.defineProperties(this, properties);
 
 	// When we add a signal listener, we emit once with the current value. This
 	// is helpful when setting up UI components. We shouldn't have to create
@@ -124,6 +129,8 @@ inherits(Tome, EventEmitter);
 //             interested parties that the Tome no longer exists and will not
 //             emit any more events.
 //
+//  -  rename: Emitted when a Tome's property is renamed.
+//
 //  -  signal: Emitted when a Tome is modified. This is our bread and butter
 //             event when dealing with the UI. A signal is emitted by a Tome
 //             when it or any of its child Tomes change. It is also emitted
@@ -176,13 +183,6 @@ var tomeMap = {
 	"object": ObjectTome,
 	"string": StringTome,
 	"undefined": UndefinedTome
-};
-
-var classMap = {
-	"array": Array,
-	"boolean": Boolean,
-	"number": Number,
-	"string": String
 };
 
 Tome.conjure = function (val, parent, key) {
@@ -246,7 +246,7 @@ Tome.prototype.set = function (key, val) {
 		// add event followed by a signal which goes up the Tome chain.
 
 		this[key] = Tome.conjure(val, this, key);
-		this.emit('add', key, this[key].valueOf());
+		this.emitAdd(key);
 		diff = {};
 		diff[key] = val;
 		this.diff('set', diff);
@@ -348,14 +348,70 @@ Tome.prototype.assign = function (val) {
 	return this;
 };
 
+Tome.prototype.emitAdd = function (key) {
+	var buffer = this.__root__.__buffer__;
+	if (buffer) {
+		var added = { tome: this, key: key };
+		if (!buffer.add) {
+			buffer.add = [ added ];
+		} else {
+			buffer.add.push(added);
+		}
+	} else {
+		this.emit('add', key, this[key] === undefined ? undefined : this[key].valueOf());
+	}
+};
+
+Tome.prototype.emitDel = function (key) {
+	var buffer = this.__root__.__buffer__;
+	if (buffer) {
+		var deleted = { tome: this, key: key };
+		if (!buffer.del) {
+			buffer.del = [ deleted ];
+		} else {
+			buffer.del.push(deleted);
+		}
+	} else {
+		this.emit('del', key);
+	}
+};
+
+Tome.prototype.emitRename = function (oldKey, newKey) {
+	var buffer = this.__root__.__buffer__;
+	if (buffer) {
+		var renamed = { tome: this, oldKey: oldKey, newKey: newKey };
+		if (!buffer.rename) {
+			buffer.rename = [ renamed ];
+		} else {
+			buffer.rename.push(renamed);
+		}
+	} else {
+		this.emit('rename', oldKey, newKey);
+	}
+};
+
+Tome.prototype.emitDestroy = function () {
+	var buffer = this.__root__.__buffer__;
+	if (buffer) {
+		var destroyed = { tome: this };
+		if (!buffer.destroy) {
+			buffer.destroy = [ destroyed ];
+		} else {
+			buffer.destroy.push(destroyed);
+		}
+	} else {
+		this.emit('destroy');
+	}
+};
+
 Tome.prototype.notify = function () {
 
-	// The notify method is called on the root Tome by endBatch to emit signal
+	// The notify method is called on the root Tome when we resume to emit signal
 	// and diff on all Tomes that need to. We know a Tome needs to emit because
 	// its __diff__ property was set by the diff method.
 
 	if (this.__diff__ === undefined) {
-		return;
+		return false;
 	}
 
 	this.emit('signal', this.valueOf());
@@ -377,23 +433,75 @@ Tome.prototype.notify = function () {
 	}
 };
 
-Tome.prototype.startBatch = function () {
+Tome.prototype.pause = function () {
 
-	// startBatch enables batch mode for signal emission. We need this so that
-	// we only emit signal once per object even if there were multiple changes
-	// on its child Tomes. Whenever you call startBatch, you must call endBatch
-	// to perform signal emission.
+	// The pause method creates a buffer on the root Tome. When this buffer is
+	// in place, all events with go into the buffer instead of being emitted.
+	// The return value indicates whether we were paused or not.
 
-	this.__root__.__batch__ = true;
+	if (!this.__root__.__buffer__) {
+		this.__root__.__buffer__ = {};
+		return false;
+	}
+
+	return true;
 };
 
-Tome.prototype.endBatch = function () {
+Tome.prototype.resume = function () {
 
-	// endBatch disables batch mode for signal emission and calls the notify
-	// method to trigger signal emission on all child Tomes that need to signal.
+	// The resume method goes through all the events in the buffer on the root
+	// Tome and emits them. Once that is done it calls the notify on the root
+	// Tome which will walk down the Tome chain and emit signal, change, and
+	// diff events on all Tomes that had changes.
 
-	this.__root__.__batch__ = false;
+	var buffer = this.__root__.__buffer__;
+
+	if (!buffer) {
+		return false;
+	}
+
+	for (var opName in buffer) {
+		var ops = buffer[opName];
+		var len = ops.length;
+
+		var op, i;
+
+		switch (opName) {
+		case 'add':
+			for (i = 0; i < len; i += 1) {
+				op = ops[i];
+				var k = op.key;
+				var t = op.tome;
+				t.emit(opName, k, t[k] === undefined ? undefined : t[k].valueOf());
+			}
+			break;
+		case 'del':
+			for (i = 0; i < len; i += 1) {
+				op = ops[i];
+				op.tome.emit(opName, op.key);
+			}
+			break;
+		case 'rename':
+			for (i = 0; i < len; i += 1) {
+				op = ops[i];
+				op.tome.emit(opName, op.oldKey, op.newKey);
+			}
+			break;
+		case 'destroy':
+			for (i = 0; i < len; i += 1) {
+				ops[i].tome.emit(opName);
+			}
+			break;
+		default:
+			throw new TypeError('Tome.resume - unhandled event type: ' + op);
+		}
+	}
+
+	this.__root__.__buffer__ = false;
+
 	this.__root__.notify();
+
+	return true;
 };
 
 Tome.prototype.destroy = function () {
@@ -410,7 +518,7 @@ Tome.prototype.destroy = function () {
 		}
 	}
 
-	this.emit('destroy');
+	this.emitDestroy();
 };
 
 Tome.prototype.del = function (key) {
@@ -438,8 +546,10 @@ Tome.prototype.del = function (key) {
 		o.destroy();
 	}
 
-	this.emit('del', key);
+	this.emitDel(key);
 	this.diff('del', key);
+
+	return this;
 };
 
 Tome.prototype.reset = function () {
@@ -474,7 +584,7 @@ Tome.prototype.reset = function () {
 	// properties have already been deleted.
 
 	for (i = 0; i < len; i += 1) {
-		this.emit('del', keys[i]);
+		this.emitDel(keys[i]);
 	}
 };
 
@@ -493,6 +603,10 @@ Tome.prototype.diff = function (op, val, chain) {
 
 	// op, val is the actual diff that triggered the diff event, chain holds
 	// the path and grows as we traverse up to the root.
+
+	// We increment the version on this Tome because it has changed.
+
+	this.__version__ += 1;
 
 	if (chain === undefined) {
 		chain = {};
@@ -537,7 +651,7 @@ Tome.prototype.diff = function (op, val, chain) {
 		}
 	}
 
-	if (!this.__root__.__batch__) {
+	if (!this.__root__.__buffer__) {
 		this.emit('signal', this.valueOf());
 		this.emit('change', this.valueOf());
 		this.emit('diff', diff);
@@ -563,25 +677,33 @@ Tome.prototype.diff = function (op, val, chain) {
 	}
 };
 
-Tome.prototype.batch = function (diff) {
+Tome.prototype.consume = function (diff) {
 
-	// The batch method takes an object and assigns new values to the Tome based
-	// on the object. It enables batch mode through startBatch, applies the new
-	// values using the consume method, then calls endBatch to disable batch
-	// mode and signal on the Tomes that were changed.
+	// consume is a helper method that pauses event emission, merges one or
+	// more diffs and then resumes event emission to emit. We don't have to use
+	// this function to merge diffs, but it is the default way that diffs are
+	// handled.
 
-	this.startBatch();
+	this.pause();
+
 	if (Tome.typeOf(diff) === 'array') {
 		for (var i = 0, len = diff.length; i < len; i += 1) {
-			this.consume(diff[i]);
+			this.merge(diff[i]);
 		}
 	} else {
-		this.consume(diff);
+		this.merge(diff);
 	}
-	this.endBatch();
+
+	this.resume();
 };
 
-Tome.prototype.consume = function (diff) {
+Tome.prototype.merge = function (diff) {
+
+	// merge is used to apply diffs to our Tomes. Typically the diff would be a
+	// parsed JSON string or come directly from another Tome. Array, Number,
+	// and Object implement their own merge methods and fall through to this
+	// method when needed.
+
 	for (var key in diff) {
 		var val = diff[key];
 		switch (key) {
@@ -597,12 +719,12 @@ Tome.prototype.consume = function (diff) {
 			if (key.indexOf('_') === 0) {
 				var child = key.substring(1);
 				if (this.hasOwnProperty(child)) {
-					this[child].consume(val);
+					this[child].merge(val);
 				} else {
-					throw new ReferenceError('Tome.consume - key is not defined: ' + child);
+					throw new ReferenceError('Tome.merge - key is not defined: ' + child);
 				}
 			} else {
-				throw new Error('Tome.consume - Invalid operation: ' + key);
+				throw new Error('Tome.merge - Invalid operation: ' + key);
 			}
 		}
 	}
@@ -684,7 +806,7 @@ ArrayTome.prototype.init = function (val) {
 		// Additionally, we always emit the value from _arr since the key may
 		// not exist.
 	
-		this.emit('add', i, this._arr[i].valueOf());
+		this.emitAdd(i);
 	}
 };
 
@@ -745,12 +867,12 @@ ArrayTome.prototype.set = function (okey, val) {
 		arr[key] = Tome.conjure(val, this, key);
 		this[key] = arr[key];
 		this.length = arr.length;
-		this.emit('add', key, arr[key].valueOf());
+		this.emitAdd(key);
 
 		for (var i = len, newlen = arr.length - 1; i < newlen; i += 1) {
 			arr[i] = Tome.conjure(undefined, this, i);
 			this.length = arr.length;
-			this.emit('add', i, arr[i].valueOf());
+			this.emitAdd(i);
 		}
 
 		var diff = {};
@@ -774,11 +896,11 @@ ArrayTome.prototype.del = function (key) {
 	this._arr[key] = Tome.conjure(undefined, this, key);
 	this[key] = this._arr[key];
 
-	this.emit('del', key);
+	this.emitDel(key);
 	this.diff('del', key);
 };
 
-ArrayTome.prototype.consume = function (diff) {
+ArrayTome.prototype.merge = function (diff) {
 	var i;
 
 	for (var key in diff) {
@@ -813,7 +935,7 @@ ArrayTome.prototype.consume = function (diff) {
 			this.unshift.apply(this, val);
 			break;
 		default:
-			Tome.prototype.consume.apply(this, arguments);
+			Tome.prototype.merge.apply(this, arguments);
 		}
 	}
 };
@@ -835,7 +957,7 @@ ArrayTome.prototype.shift = function () {
 
 		this.length = this._arr.length;
 		o.destroy();
-		this.emit('del', key);
+		this.emitDel(key);
 		this.diff('shift', 1);
 	}
 
@@ -859,7 +981,7 @@ ArrayTome.prototype.pop = function () {
 			o.destroy();
 		}
 
-		this.emit('del', len);
+		this.emitDel(len);
 		this.diff('pop', 1);
 	}
 
@@ -876,7 +998,7 @@ ArrayTome.prototype.push = function () {
 			this._arr.push(Tome.conjure(arguments[i], this, k));
 			this[k] = this._arr[k];
 			this.length = this._arr.length;
-			this.emit('add', k, this[k].valueOf());
+			this.emitAdd(k);
 			args[i] = arguments[i];
 		}
 		this.diff('push', args);
@@ -924,7 +1046,7 @@ ArrayTome.prototype.splice = function (spliceIndex, toRemove) {
 		if (o instanceof Tome) {
 			o.destroy();
 		}
-		this.emit('del', key);
+		this.emitDel(key);
 	}
 
 	for (i = 0, len = toAdd.length; i < len; i += 1) {
@@ -932,7 +1054,7 @@ ArrayTome.prototype.splice = function (spliceIndex, toRemove) {
 		this._arr.splice(key, 0, Tome.conjure(toAdd[i], this, key));
 		this[key] = this._arr[key];
 		this.length = this._arr.length;
-		this.emit('add', key, this[key].valueOf());
+		this.emitAdd(key);
 	}
 
 	for (i = 0, len = this._arr.length; i < len; i += 1) {
@@ -1003,7 +1125,7 @@ ArrayTome.prototype.unshift = function () {
 		
 		args = new Array(arglen);
 		
-		for (i = arguments.length - 1; i >= 0; i -= 1) {
+		for (i = arglen - 1; i >= 0; i -= 1) {
 			this._arr.unshift(Tome.conjure(arguments[i], this, i));
 			args[i] = arguments[i];
 		}
@@ -1015,7 +1137,7 @@ ArrayTome.prototype.unshift = function () {
 
 		for (i = 0; i < arglen; i += 1) {
 			this.length = this._arr.length;
-			this.emit('add', i, this[i].valueOf());
+			this.emitAdd(i);
 		}
 
 		this.diff('unshift', args);
@@ -1263,14 +1385,14 @@ NumberTome.prototype.inc = function (val) {
 	return this._val;
 };
 
-NumberTome.prototype.consume = function (diff) {
+NumberTome.prototype.merge = function (diff) {
 	var key, val;
 	for (key in diff) {
 		val = diff[key];
 		if (key === 'inc') {
 			this.inc(val);
 		} else {
-			Tome.prototype.consume.apply(this, arguments);
+			Tome.prototype.merge.apply(this, arguments);
 		}
 	}
 };
@@ -1342,7 +1464,7 @@ ObjectTome.prototype.init = function (val) {
 
 	for (i = 0; i < len; i += 1) {
 		k = added[i];
-		this.emit('add', k, this[k] ? this[k].valueOf() : undefined);
+		this.emitAdd(k);
 	}
 };
 
@@ -1376,10 +1498,10 @@ ObjectTome.prototype.rename = function () {
 
 	var len = arr.length;
 
-	var isAlreadyBatch = this.__root__.__batch__;
+	var wasPaused;
 
-	if (!isAlreadyBatch && len > 1) {
-		this.startBatch();
+	if (len > 1) {
+		wasPaused = this.pause();
 	}
 
 	for (var i = 0; i < len; i += 1) {
@@ -1398,16 +1520,16 @@ ObjectTome.prototype.rename = function () {
 		this[newKey].__key__ = newKey;
 		delete this[oldKey];
 
-		this.emit('rename', oldKey, newKey);
+		this.emitRename(oldKey, newKey);
 		this.diff('rename', { o: oldKey, n: newKey });
 	}
 
-	if (!isAlreadyBatch && len > 1) {
-		this.endBatch();
+	if (!wasPaused && len > 1) {
+		this.resume();
 	}
 };
 
-ObjectTome.prototype.consume = function (diff) {
+ObjectTome.prototype.merge = function (diff) {
 	for (var key in diff) {
 		var val = diff[key];
 		switch (key) {
@@ -1418,7 +1540,7 @@ ObjectTome.prototype.consume = function (diff) {
 			this.rename(val);
 			break;
 		default:
-			Tome.prototype.consume.apply(this, arguments);
+			Tome.prototype.merge.apply(this, arguments);
 		}
 	}
 };
@@ -1466,16 +1588,6 @@ StringTome.prototype.valueOf = function () {
 	return this._val;
 };
 
-var stringPrototypeMethods = Object.getOwnPropertyNames(String.prototype);
-
-for (var i = 0, len = stringPrototypeMethods.length; i < len; i += 1) {
-	var key = stringPrototypeMethods[i];
-	if (!StringTome.prototype.hasOwnProperty(key)) {
-		StringTome.prototype[key] = String.prototype[key];
-	}
-}
-
-
 
 //  __    __                  __             ______   __                            __
 // |  \  |  \                |  \           /      \ |  \                          |  \
@@ -1516,6 +1628,13 @@ UndefinedTome.prototype.toJSON = function () {
 	// existence.
 
 	return null;
+};
+
+var classMap = {
+	"array": Array,
+	"boolean": Boolean,
+	"number": Number,
+	"string": String
 };
 
 for (var ck in classMap) {

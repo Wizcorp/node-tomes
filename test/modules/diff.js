@@ -13,7 +13,7 @@ exports.testDiffSimpleString = function (test) {
 
 	b.on('diff', function (diff) {
 		test.deepEqual(diff, { assign: 'fdsa' }, 'expected diff to be { assign: \'fdsa\' }'); // 6
-		c.batch(diff);
+		c.consume(diff);
 	});
 
 	b.on('signal', function (bVal) {
@@ -54,7 +54,7 @@ exports.testDiffStringToNumber = function (test) {
 	var c = Tome.conjure(a);
 
 	b.on('diff', function (diff) {
-		c.batch(diff);
+		c.consume(diff);
 	});
 
 	c.on('signal', function (cVal) {
@@ -81,7 +81,7 @@ exports.testDiffStringToObject = function (test) {
 	var c = Tome.conjure(a);
 
 	b.on('diff', function (diff) {
-		c.batch(diff);
+		c.consume(diff);
 	});
 
 	c.on('signal', function (cVal) {
@@ -108,7 +108,7 @@ exports.testDiffObjectToString = function (test) {
 	var c = Tome.conjure(a);
 
 	b.on('diff', function (diff) {
-		c.batch(diff);
+		c.consume(diff);
 	});
 
 	c.on('signal', function (cVal) {
@@ -136,7 +136,7 @@ exports.testDiffSubObjectAssign = function (test) {
 
 	b.on('diff', function (diff) {
 		test.deepEqual(diff, { _a: { _b: { _c: { _d: { _e: { assign: 100 } } } } } });
-		c.batch(diff);
+		c.consume(diff);
 	});
 
 	c.on('diff', function (diff) {
@@ -169,7 +169,7 @@ exports.testDiffSubObjectSet = function (test) {
 
 	b.on('diff', function (diff) {
 		test.deepEqual(diff, { _a: { _b: { assign: { l: 100 } } } });
-		c.batch(diff);
+		c.consume(diff);
 	});
 
 	c.on('diff', function (diff) {
@@ -202,7 +202,7 @@ exports.testDiffDel = function (test) {
 
 	b.on('diff', function (diff) {
 		test.deepEqual(diff, { _a: { del: 'b' } });
-		c.batch(diff);
+		c.consume(diff);
 	});
 
 	c.on('diff', function (diff) {
@@ -235,7 +235,7 @@ exports.testDiffArraySort = function (test) {
 
 	b.on('diff', function (diff) {
 		test.deepEqual(diff, { rename: [ { o: 9, n: 1 }, { o: 4, n: 2 }, { o: 5, n: 3 }, { o: 1, n: 4 }, { o: 6, n: 5 }, { o: 2, n: 6 }, { o: 8, n: 7 }, { o: 3, n: 8 }, { o: 10, n: 9 }, { o: 7, n: 10 } ] });
-		c.batch(diff);
+		c.consume(diff);
 	});
 
 	c.on('diff', function (diff) {
@@ -275,7 +275,7 @@ exports.testDiffArrayShift = function (test) {
 
 	b.on('diff', function (diff) {
 		test.deepEqual(diff, { "shift": 1 });
-		c.batch(diff);
+		c.consume(diff);
 	});
 
 	c.on('diff', function (diff) {
@@ -314,7 +314,7 @@ exports.testDiffRename = function (test) {
 
 	b.on('diff', function (diff) {
 		test.deepEqual(diff, { _a: { _b: { rename: { o: 'c', n: 'z' } } } });
-		c.batch(diff);
+		c.consume(diff);
 	});
 
 	c.on('diff', function (diff) {
@@ -348,7 +348,7 @@ exports.testDiffPush = function (test) {
 
 	b.on('diff', function (diff) {
 		test.deepEqual(diff, { push: [ 10, 11, 12, 13 ] });
-		c.batch(diff);
+		c.consume(diff);
 	});
 
 	c.on('diff', function (diff) {
@@ -389,7 +389,7 @@ exports.testDiffUnshift = function (test) {
 
 	b.on('diff', function (diff) {
 		test.deepEqual(diff, { unshift: [ 10, 11, 12, 13 ] });
-		c.batch(diff);
+		c.consume(diff);
 	});
 
 	c.on('diff', function (diff) {
@@ -430,7 +430,7 @@ exports.testDiffSplice = function (test) {
 
 	b.on('diff', function (diff) {
 		test.deepEqual(diff, { splice: [ 3, 2, 12, 13 ] });
-		c.batch(diff);
+		c.consume(diff);
 	});
 
 	c.on('diff', function (diff) {
