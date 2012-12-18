@@ -5,30 +5,38 @@ node-tomes
 
 Evented Storage Agnostic Data API
 
-Play with a demo here - http://bjornstar.github.com/node-tomes/
-
 Problem: You've got data and you want to do something whenever it changes.
 
 Access and modify your data through the Tomes API and you'll get change events.
 
+Play with a live demo here - http://bjornstar.github.com/node-tomes/
+
+Example
+=======
 ```javascript
 var filmData = {
 	cast: [
-		{ name: "Mr. Pink", guns: 1 },
 		{ name: "Mr. Blonde", guns: 1, razors: 1 },
-		{ name: "Mr. White", guns: 2 },
-		{ name: "Mr. Orange", guns: 1, cop: true },
-		{ name: "Mr. Brown", guns: 1 },
-		{ name: "Mr. Blue", guns: 1 },
 		{ name: "Marvin Nash", ears: [ "left", "right" ], cop: true },
-		{ name: "Nice Guy Eddie", guns: 2 },
-		{ name: "Joe Cabot", guns: 1 }
 	]
 };
 
 var reservoirDogs = Tome.conjure(filmData);
 
-reservoirDogs.set('director', reservoirDogs.cast[4]);
+reservoirDogs.cast[1].on('signal', function (marvinNash) {
+	console.log(marvinNash.ears.length);
+});
+// >>> 2
 
-reservoirDogs.director.name.assign('Quentin Tarantino');
+reservoirDogs.cast[1].ears.pop();
+// >>> 1
 ```
+
+API
+===
+
+conjure( data ) - Instantiate a Tome containing your data.
+
+set( key, data ) - Assigns data to key on a Tome.
+
+assign( data ) - Assigns data to a Tome.
