@@ -461,3 +461,43 @@ exports.testDiffSplice = function (test) {
 
 	test.done();
 };
+
+exports.testDiffMove = function (test) {
+	test.expect(3);
+
+	var a = { b: { c: 1 }, d: { e: 1} };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	b.on('diff', function (diff) {
+		c.consume(diff);
+	});
+
+	b.b.move('c', b.d.e);
+
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+	test.strictEqual(b.d.e.c.__parent__, b.d.e);
+	test.strictEqual(c.d.e.c.__parent__, c.d.e);
+
+	test.done();
+};
+
+exports.testDiffMoveArray = function (test) {
+	test.expect(3);
+
+	var a = [ 0, 1, 2, 3, 4];
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	b.on('diff', function (diff) {
+		c.consume(diff);
+	});
+
+	b.move(0, 4);
+
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+	test.strictEqual(b[4].__key__, 4);
+	test.strictEqual(c[4].__key__, 4);
+
+	test.done();
+};

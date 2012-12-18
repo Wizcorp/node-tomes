@@ -48,7 +48,7 @@ function Tome(parent, key) {
 	// non-enumerable. Ideally, node.js would make this the default behavior.
 
 	var properties = {
-		__root__: { value: parent instanceof Tome ? parent.__root__ : this },
+		__root__: { writable: true, value: parent instanceof Tome ? parent.__root__ : this },
 		__diff__: { writable: true },
 		__version__: { writable: true, value: 1 },
 		_events: { configurable: true, writable: true }
@@ -706,6 +706,7 @@ Tome.prototype.merge = function (diff) {
 
 	for (var key in diff) {
 		var val = diff[key];
+		var chain, len, link, i;
 		switch (key) {
 		case 'set':
 			for (var k in val) {
@@ -714,6 +715,28 @@ Tome.prototype.merge = function (diff) {
 			break;
 		case 'assign':
 			this.assign(val);
+			break;
+		case 'move':
+			chain = val.chain;
+			len = chain.length;
+			link = this.__root__;
+			for (i = 0; i < len; i++) {
+				if (link.hasOwnProperty(chain[i])) {
+					link = link[chain[i]];
+				}
+			}
+			this.move(val.key, link, val.newKey);
+			break;
+		case 'swap':
+			chain = val.chain;
+			len = chain.length;
+			link = this.__root__;
+			for (i = 0; i < len; i++) {
+				if (link.hasOwnProperty(chain[i])) {
+					link = link[chain[i]];
+				}
+			}
+			this.swap(val.key, link);
 			break;
 		default:
 			if (key.indexOf('_') === 0) {
@@ -728,6 +751,176 @@ Tome.prototype.merge = function (diff) {
 			}
 		}
 	}
+};
+
+Tome.prototype.swapWith = function (target) {
+	if (!this.hasOwnProperty(key)) {
+		throw new ReferenceError('Tome.swapWith - Cannot swapWith a root Tome');
+	}
+};
+
+Tome.prototype.swap = function (key, target) {
+	if (key instanceof Tome) {
+		target = key;
+		key = this.__key__.toString();
+	} else if (!this.hasOwnProperty(key)) {
+		throw new ReferenceError('Tome.swap - Key is not defined: ' + key);
+	}
+
+	if (!(target instanceof Tome)) {
+		throw new TypeError('Tome.swap - Target must be a Tome');
+	}
+
+	if (!target.hasOwnProperty('__parent__')) {
+		throw new ReferenceError('Tome.swap - Cannot swap to a root Tome');
+	}
+
+	var link = target;
+	var chain = [];
+
+	while (link.hasOwnProperty('__key__')) {
+		chain.push(link.__key__);
+		link = link.__parent__;
+	}
+
+	chain.reverse();
+
+	var op = {};
+	op.key = key;
+	op.chain = chain;
+
+	var newKey = target.__key__;
+	var newParent = target.__parent__;
+	var newRoot = target.__root__;
+
+	this[key].__key__ = newKey;
+	this[key].__parent__ = newParent;
+	this[key].__root__ = newRoot;
+
+	var intermediate = this[key];
+
+	target.__parent__ = this;
+	target.__key__ = key;
+	target.__root__ = this.__root__;
+
+	this[key] = target;
+	newParent[newKey] = intermediate;
+
+	if (this instanceof ArrayTome) {
+		this._arr[key] = this[key];
+	}
+
+	if (newParent instanceof ArrayTome) {
+		newParent._arr[newKey] = newParent[newKey];
+	}
+
+	if (this.__root__ === newRoot) {
+		this.diff('swap', op);
+	} else {
+		var diff = {};
+		diff[newKey] = newParent[newKey].valueOf();
+		newParent.diff('set', diff);
+		diff = {};
+		diff[key] = this[key].valueOf();
+		this.diff('set', diff);
+	}
+
+	return this;
+};
+
+Tome.prototype.move = function (key, newParent, onewKey) {
+	if (!this.hasOwnProperty(key)) {
+		throw new ReferenceError('Tome.move - Key is not defined: ' + key);
+	}
+
+	if (onewKey !== undefined && !(newParent instanceof Tome)) {
+		throw new TypeError('Tome.move - new parent must be a Tome');
+	} else if (onewKey === undefined && !(newParent instanceof Tome)) {
+		onewKey = newParent;
+		newParent = this;
+	}
+
+	if (onewKey === undefined) {
+		onewKey = key;
+	}
+
+	var newKey = parseInt(onewKey, 10);
+
+	if (newKey < 0) {
+		return this;
+	}
+
+	if (onewKey.toString() === newKey.toString() && newParent instanceof ArrayTome) {
+		// we're good...
+	} else if (onewKey.toString() !== newKey.toString()) {
+		newKey = onewKey;
+		if (!(newParent instanceof ObjectTome)) {
+			newParent.reset();
+			newParent.__proto__ = ObjectTome.prototype;
+		}
+	}
+
+	if (newParent.hasOwnProperty(newKey)) {
+		newParent.del(newKey);
+	}
+
+	if (newParent instanceof ArrayTome) {
+		var arr = newParent._arr;
+		var len = arr.length;
+
+		arr[newKey] = this[key];
+		newParent[newKey] = arr[newKey];
+
+		if (newKey >= len) {
+			for (var i = len; i < newKey - 1; i += 1) {
+				arr[i] = Tome.conjure(undefined, this, i);
+				this.emitAdd(i);
+			}
+			this.length = arr.length;
+		}
+	} else {
+		newParent[newKey] = this[key];
+	}
+
+	if (this instanceof ArrayTome) {
+		this._arr[key] = Tome.conjure(undefined, this, key);
+		this[key] = this._arr[key];
+	} else {
+		delete this[key];
+	}
+
+	newParent[newKey].__parent__ = newParent;
+	newParent[newKey].__key__ = newKey;
+	newParent[newKey].__root__ = newParent.__root__;
+
+	this.emitDel(key);
+	newParent.emitAdd(newKey);
+
+	if (this.__root__ === newParent.__root__) {	
+		var link = newParent;
+		var chain = [];
+
+		while (link.hasOwnProperty('__key__')) {
+			chain.push(link.__key__);
+			link = link.__parent__;
+		}
+
+		chain.reverse();
+
+		var op = {};
+		op.key = key;
+		op.chain = chain;
+		op.newKey = newKey === key ? undefined : newKey;
+
+		this.diff('move', op);
+	} else {
+		this.diff('del', key);
+		var diff = {};
+		diff[newKey] = newParent[newKey].valueOf();
+		newParent.diff('set', diff);
+	}
+
+	return this;
 };
 
 
@@ -881,7 +1074,7 @@ ArrayTome.prototype.set = function (okey, val) {
 	} else if (this[key] instanceof Tome) {
 		this[key].assign(val);
 	}
-	return arr[key].valueOf();
+	return this;
 };
 
 ArrayTome.prototype.del = function (key) {
@@ -893,11 +1086,17 @@ ArrayTome.prototype.del = function (key) {
 		throw new TypeError('ArrayTome.del - Key is not a Tome: ' + key);
 	}
 
+	var o = this[key];
+
+	o.destroy();
+
 	this._arr[key] = Tome.conjure(undefined, this, key);
 	this[key] = this._arr[key];
 
 	this.emitDel(key);
 	this.diff('del', key);
+
+	return this;
 };
 
 ArrayTome.prototype.merge = function (diff) {
@@ -1471,6 +1670,57 @@ ObjectTome.prototype.init = function (val) {
 ObjectTome.prototype.typeOf = function () {
 	return 'object';
 };
+/*
+ObjectTome.prototype.move = function (key, newParent, newKey) {
+	if (!this.hasOwnProperty(key)) {
+		throw new ReferenceError('ObjectTome.move - Key is not defined: ' + key);
+	}
+
+	if (!(newParent instanceof Tome)) {
+		throw new TypeError('ObjectTome.move - new parent must be a Tome');
+	}
+
+	if (newKey === undefined) {
+		newKey = key;
+	}
+
+	if (newParent.hasOwnProperty(newKey)) {
+		newParent.del(newKey);
+	}
+
+	if (!(newParent instanceof ObjectTome)) {
+		newParent.reset();
+		newParent.__proto__ = ObjectTome.prototype;
+	}
+
+	newParent[newKey] = this[key];
+	newParent[newKey].__parent__ = newParent;
+	newParent[newKey].__key__ = newKey;
+
+	delete this[key];
+
+	this.emitDel(key);
+	newParent.emitAdd(newKey);
+
+	var link = newParent;
+	var chain = [];
+
+	while (link.hasOwnProperty('__key__')) {
+		chain.push(link.__key__);
+		link = link.__parent__;
+	}
+
+	chain.reverse();
+
+	var op = {};
+	op.key = key;
+	op.chain = chain;
+	op.newKey = newKey === key ? undefined : newKey;
+
+	this.diff('move', op);
+
+	return this;
+}; */
 
 ObjectTome.prototype.rename = function () {
 	
@@ -1527,6 +1777,7 @@ ObjectTome.prototype.rename = function () {
 	if (!wasPaused && len > 1) {
 		this.resume();
 	}
+	return this;
 };
 
 ObjectTome.prototype.merge = function (diff) {
@@ -1538,6 +1789,17 @@ ObjectTome.prototype.merge = function (diff) {
 			break;
 		case 'rename':
 			this.rename(val);
+			break;
+		case 'move':
+			var chain = val.chain;
+			var len = chain.length;
+			var link = this.__root__;
+			for (var i = 0; i < len; i++) {
+				if (link.hasOwnProperty(chain[i])) {
+					link = link[chain[i]];
+				}
+			}
+			this.move(val.key, link, val.newKey);
 			break;
 		default:
 			Tome.prototype.merge.apply(this, arguments);
