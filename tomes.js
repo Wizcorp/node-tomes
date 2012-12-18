@@ -720,7 +720,7 @@ Tome.prototype.merge = function (diff) {
 			chain = val.chain;
 			len = chain.length;
 			link = this.__root__;
-			for (i = 0; i < len; i++) {
+			for (i = 0; i < len; i += 1) {
 				if (link.hasOwnProperty(chain[i])) {
 					link = link[chain[i]];
 				}
@@ -731,7 +731,7 @@ Tome.prototype.merge = function (diff) {
 			chain = val.chain;
 			len = chain.length;
 			link = this.__root__;
-			for (i = 0; i < len; i++) {
+			for (i = 0; i < len; i += 1) {
 				if (link.hasOwnProperty(chain[i])) {
 					link = link[chain[i]];
 				}
@@ -753,11 +753,12 @@ Tome.prototype.merge = function (diff) {
 	}
 };
 
+/*
 Tome.prototype.swapWith = function (target) {
 	if (!this.hasOwnProperty(key)) {
 		throw new ReferenceError('Tome.swapWith - Cannot swapWith a root Tome');
 	}
-};
+}; */
 
 Tome.prototype.swap = function (key, target) {
 	if (key instanceof Tome) {
@@ -851,7 +852,8 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 	}
 
 	if (onewKey.toString() === newKey.toString() && newParent instanceof ArrayTome) {
-		// we're good...
+		var a = 9;
+		a = 8;
 	} else if (onewKey.toString() !== newKey.toString()) {
 		newKey = onewKey;
 		if (!(newParent instanceof ObjectTome)) {
@@ -896,7 +898,7 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 	this.emitDel(key);
 	newParent.emitAdd(newKey);
 
-	if (this.__root__ === newParent.__root__) {	
+	if (this.__root__ === newParent.__root__) {
 		var link = newParent;
 		var chain = [];
 
@@ -1794,7 +1796,7 @@ ObjectTome.prototype.merge = function (diff) {
 			var chain = val.chain;
 			var len = chain.length;
 			var link = this.__root__;
-			for (var i = 0; i < len; i++) {
+			for (var i = 0; i < len; i += 1) {
 				if (link.hasOwnProperty(chain[i])) {
 					link = link[chain[i]];
 				}
