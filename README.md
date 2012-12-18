@@ -31,4 +31,4 @@ var reservoirDogs = Tome.conjure(filmData);
 reservoirDogs.set('director', reservoirDogs.cast[4]);
 
 reservoirDogs.director.name.assign('Quentin Tarantino');
-
+```
