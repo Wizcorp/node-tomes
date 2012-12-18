@@ -1,0 +1,27 @@
+{
+    "name": "tomes",
+    "description": "Evented Storage Agnostic Data API",
+    "version": "0.0.1",
+    "author": "Wizcorp, Inc. <info@wizcorp.jp>",
+    "maintainers": [
+        { "name": "Bjorn Stromberg", "email": "bstromberg@wizcorp.jp" }
+    ],
+    "scripts": {
+        "test": "node test"
+    },
+    "main": "tomes.js",
+    "devDependencies": {
+        "nodeunit": "*"
+    },
+    "license": {
+        "type": "MIT",
+        "url": "https://github.com/Wizcorp/node-tomes/raw/master/LICENSE"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Wizcorp/node-tomes.git"
+    },
+    "bugs" : {
+        "url" : "http://github.com/Wizcorp/node-tomes/issues"
+    }
+}
