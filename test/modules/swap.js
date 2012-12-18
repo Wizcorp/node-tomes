@@ -10,7 +10,7 @@ exports.testSwap = function (test) {
 
 	var intermediate = a.b;
 	a.b = a.d;
-	a.d = intermediate;	
+	a.d = intermediate;
 
 	b.swap('b', b.d);
 
@@ -31,7 +31,7 @@ exports.testSwapDiff = function (test) {
 
 	var intermediate = a.b;
 	a.b = a.d;
-	a.d = intermediate;	
+	a.d = intermediate;
 
 	b.swap('b', b.d);
 
