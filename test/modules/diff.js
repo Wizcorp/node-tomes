@@ -313,12 +313,12 @@ exports.testDiffRename = function (test) {
 	var c = Tome.conjure(a);
 
 	b.on('diff', function (diff) {
-		test.deepEqual(diff, { _a: { _b: { rename: { o: 'c', n: 'z' } } } });
+		test.deepEqual(diff, { _a: { _b: { rename: [ { o: 'c', n: 'z' } ] } } });
 		c.consume(diff);
 	});
 
 	c.on('diff', function (diff) {
-		test.deepEqual(diff, { _a: { _b: { rename: { o: 'c', n: 'z' } } } });
+		test.deepEqual(diff, { _a: { _b: { rename: [ { o: 'c', n: 'z' } ] } } });
 	});
 
 	b.on('signal', function (val) {
