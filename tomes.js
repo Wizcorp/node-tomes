@@ -99,64 +99,78 @@ function Tome(parent, key) {
 
 function emitAdd(tome, key) {
 	var buffer = tome.__root__.__buffer__;
-	if (buffer) {
-		var added = { tome: tome, key: key };
-		if (!buffer.add) {
-			buffer.add = [ added ];
-		} else {
-			buffer.add.push(added);
-		}
-	} else {
+
+	if (!buffer) {
 		tome.emit('add', key, tome[key] === undefined ? undefined : tome[key].valueOf());
+		return;
 	}
+
+	var added = { tome: tome, key: key };
+
+	if (buffer.add) {
+		buffer.add.push(added);
+		return;
+	}
+
+	buffer.add = [ added ];
 }
 
 function emitDel(tome, key) {
 	var buffer = tome.__root__.__buffer__;
-	if (buffer) {
-		var deleted = { tome: tome, key: key };
-		if (!buffer.del) {
-			buffer.del = [ deleted ];
-		} else {
-			buffer.del.push(deleted);
-		}
-	} else {
+
+	if (!buffer) {
 		tome.emit('del', key);
+		return;
 	}
+	
+	var deleted = { tome: tome, key: key };
+
+	if (buffer.del) {
+		buffer.del.push(deleted);
+		return;
+	}
+
+	buffer.del = [ deleted ];
 }
 
 function emitRename(tome, val) {
 	var buffer = tome.__root__.__buffer__;
 	var len = val.length;
 	var i;
-	if (buffer) {
-		for (i = 0; i < len; i += 1) {
-			var renamed = { tome: tome, oldKey: val[i].o, newKey: val[i].n };
-			if (!buffer.rename) {
-				buffer.rename = [ renamed ];
-			} else {
-				buffer.rename.push(renamed);
-			}
-		}
-	} else {
+
+	if (!buffer) {
 		for (i = 0; i < len; i += 1) {
 			tome.emit('rename', val[i].o, val[i].n);
 		}
+		return;
+	}
+
+	if (!buffer.rename) {
+		buffer.rename = [];
+	}
+
+	for (i = 0; i < len; i += 1) {
+		var renamed = { tome: tome, oldKey: val[i].o, newKey: val[i].n };
+		buffer.rename.push(renamed);
 	}
 }
 
 function emitDestroy(tome) {
 	var buffer = tome.__root__.__buffer__;
-	if (buffer) {
-		var destroyed = { tome: tome };
-		if (!buffer.destroy) {
-			buffer.destroy = [ destroyed ];
-		} else {
-			buffer.destroy.push(destroyed);
-		}
-	} else {
+
+	if (!buffer) {
 		tome.emit('destroy');
+		return;
 	}
+
+	var destroyed = { tome: tome };
+
+	if (buffer.destroy) {
+		buffer.destroy.push(destroyed);
+		return;
+	}
+
+	buffer.destroy = [ destroyed ];
 }
 
 function destroy(tome) {
