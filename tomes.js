@@ -897,9 +897,19 @@ Tome.prototype.merge = function (diff) {
 	// and Object implement their own merge methods and fall through to this
 	// method when needed.
 
+	var i, len;
+
+	if (Tome.typeOf(diff) === 'array') {
+		len = diff.length;
+		for (i = 0; i < len; i += 1) {
+			this.merge(diff[i]);
+		}
+		return;
+	}
+
 	for (var key in diff) {
 		var val = diff[key];
-		var chain, len, link, i;
+		var chain, link;
 		switch (key) {
 		case 'set':
 			for (var k in val) {
