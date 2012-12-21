@@ -74,6 +74,7 @@ function Tome(parent, key) {
 		__root__: { writable: true, value: parent instanceof Tome ? parent.__root__ : this },
 		__diff__: { writable: true },
 		__version__: { writable: true, value: 1 },
+		__hidden__: { writable: true, value: false },
 		_events: { configurable: true, writable: true }
 	};
 
@@ -98,6 +99,10 @@ function Tome(parent, key) {
 }
 
 function emitAdd(tome, key) {
+	if (tome.__hidden__) {
+		return;
+	}
+
 	var buffer = tome.__root__.__buffer__;
 
 	if (!buffer) {
@@ -116,6 +121,9 @@ function emitAdd(tome, key) {
 }
 
 function emitDel(tome, key) {
+	if (tome.__hidden__) {
+		return;
+	}
 	var buffer = tome.__root__.__buffer__;
 
 	if (!buffer) {
@@ -134,6 +142,10 @@ function emitDel(tome, key) {
 }
 
 function emitRename(tome, val) {
+	if (tome.__hidden__) {
+		return;
+	}
+
 	var buffer = tome.__root__.__buffer__;
 	var len = val.length;
 	var i;
@@ -156,6 +168,10 @@ function emitRename(tome, val) {
 }
 
 function emitDestroy(tome) {
+	if (tome.__hidden__) {
+		return;
+	}
+
 	var buffer = tome.__root__.__buffer__;
 
 	if (!buffer) {
@@ -174,6 +190,9 @@ function emitDestroy(tome) {
 }
 
 function destroy(tome) {
+	if (tome.__hidden__) {
+		return;
+	}
 
 	// When a Tome is deleted we emit a destroy event on it and all of its child
 	// Tomes since they will no longer exist. We go down the Tome chain first and
@@ -196,7 +215,7 @@ function notify(tome) {
 	// signal, change, and diff on all Tomes that need to. We know a Tome needs
 	// to emit because its __diff__ property was set by the diff method.
 
-	if (tome.__diff__ === undefined) {
+	if (tome.__diff__ === undefined || tome.__hidden__) {
 		return false;
 	}
 
@@ -256,6 +275,9 @@ function reset(tome) {
 }
 
 function diff(tome, op, val, chain) {
+	if (tome.__hidden__) {
+		return;
+	}
 
 	// op, val is the actual diff that triggered the diff event, chain holds
 	// the path and grows as we traverse up to the root.
@@ -314,6 +336,8 @@ function diff(tome, op, val, chain) {
 	} else {
 		tome.__diff__ = tDiff;
 	}
+
+	tome.emit('readable');
 
 	// Now we need to build a bigger object to send to the parent.
 
@@ -559,6 +583,10 @@ Tome.conjure = function (val, parent, key) {
 	// It will return a new Tome of the appropriate type for our value with Tome
 	// inherited. This is also how we pass parent into our Tome so we can signal
 	// a parent that its child has been modified.
+	
+	if (val instanceof Tome && val.__hidden__) {
+		return;
+	}
 
 	var vType = Tome.typeOf(val);
 	var ClassRef = tomeMap[vType];
@@ -747,6 +775,12 @@ Tome.prototype.del = function (key) {
 	diff(this, 'del', key);
 
 	return this;
+};
+
+Tome.prototype.read = function () {
+	var out = this.__diff__;
+	this.__diff__ = undefined;
+	return out;
 };
 
 Tome.prototype.pause = function () {
@@ -1077,6 +1111,10 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 	return this;
 };
 
+Tome.prototype.hide = function (f) {
+	this.__hidden__ = f;
+};
+
 
 //   ______
 //  /      \
@@ -1101,10 +1139,16 @@ ArrayTome.isArrayTome = function (o) {
 };
 
 ArrayTome.prototype.valueOf = function () {
-	return this._arr ? this._arr : [];
+	if (!this.__hidden__) {
+		return this._arr ? this._arr : [];
+	}
 };
 
-ArrayTome.prototype.toJSON = ArrayTome.prototype.valueOf;
+ArrayTome.prototype.toJSON = function () {
+	if (!this.__hidden__) {
+		return this._arr ? this._arr : [];
+	}
+};
 
 ArrayTome.prototype.typeOf = function () {
 	return 'array';
@@ -1590,10 +1634,16 @@ BooleanTome.prototype.typeOf = function () {
 };
 
 BooleanTome.prototype.valueOf = function () {
-	return this._val;
+	if (!this.__hidden__) {
+		return this._val;
+	}
 };
 
-BooleanTome.prototype.toJSON = BooleanTome.prototype.valueOf;
+BooleanTome.prototype.toJSON = function () {
+	if (!this.__hidden__) {
+		return this._val;
+	}
+};
 
 
 //  __    __            __  __
@@ -1616,10 +1666,16 @@ NullTome.isNullTome = function (o) {
 };
 
 NullTome.prototype.valueOf = function () {
-	return null;
+	if (!this.__hidden__) {
+		return null;
+	}
 };
 
-NullTome.prototype.toJSON = NullTome.prototype.valueOf;
+NullTome.prototype.toJSON = function () {
+	if (!this.__hidden__) {
+		return null;
+	}
+};
 
 NullTome.prototype.typeOf = function () {
 
@@ -1690,10 +1746,16 @@ NumberTome.prototype.typeOf = function () {
 };
 
 NumberTome.prototype.valueOf = function () {
-	return this._val;
+	if (!this.__hidden__) {
+		return this._val;
+	}
 };
 
-NumberTome.prototype.toJSON = NumberTome.prototype.valueOf;
+NumberTome.prototype.toJSON = function () {
+	if (!this.__hidden__) {
+		return this._val;
+	}
+};
 
 //   ______   __                                      __
 //  /      \ |  \                                    |  \
@@ -1795,6 +1857,18 @@ ObjectTome.prototype.merge = function (diff) {
 	}
 };
 
+ObjectTome.prototype.valueOf = function () {
+	if (!this.__hidden__) {
+		return this;
+	}
+};
+
+ObjectTome.prototype.toJSON = function () {
+	if (!this.__hidden__) {
+		return this;
+	}
+};
+
 
 //   ______     __                __
 //  /      \   |  \              |  \
@@ -1827,10 +1901,16 @@ StringTome.prototype.typeOf = function () {
 };
 
 StringTome.prototype.valueOf = function () {
-	return this._val;
+	if (!this.__hidden__) {
+		return this._val;
+	}
 };
 
-StringTome.prototype.toJSON = StringTome.prototype.valueOf;
+StringTome.prototype.toJSON = function () {
+	if (!this.__hidden__) {
+		return this._val;
+	}
+};
 
 
 //  __    __                  __             ______   __                            __
@@ -1867,7 +1947,9 @@ UndefinedTome.prototype.toJSON = function () {
 	// the behavior of JavaScript. That is the sole reason for UndefinedTome's
 	// existence.
 
-	return null;
+	if (!this.__hidden__) {
+		return null;
+	}
 };
 
 var classMap = {
