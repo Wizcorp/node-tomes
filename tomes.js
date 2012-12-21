@@ -779,7 +779,7 @@ Tome.prototype.del = function (key) {
 
 Tome.prototype.read = function () {
 	var out = this.__diff__;
-	this.__diff__ = {};
+	this.__diff__ = undefined;
 	return out;
 };
 
