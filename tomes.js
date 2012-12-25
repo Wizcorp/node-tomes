@@ -914,6 +914,9 @@ Tome.prototype.merge = function (diff) {
 		case 'assign':
 			this.assign(val);
 			break;
+		case 'del':
+			this.del(val);
+			break;
 		case 'inc':
 			this.inc(val);
 			break;
@@ -928,6 +931,17 @@ Tome.prototype.merge = function (diff) {
 			}
 			this.move(val.key, link, val.newKey);
 			break;
+		case 'pop':
+			for (i = 0; i < val; i += 1) {
+				this.pop();
+			}
+			break;
+		case 'rename':
+			this.rename(val);
+			break;
+		case 'reverse':
+			this.reverse();
+			break;
 		case 'push':
 			this.push(val);
 			break;
@@ -935,6 +949,14 @@ Tome.prototype.merge = function (diff) {
 			for (var k in val) {
 				this.set(k, val[k]);
 			}
+			break;
+		case 'shift':
+			for (i = 0; i < val; i += 1) {
+				this.shift();
+			}
+			break;
+		case 'splice':
+			this.splice(val);
 			break;
 		case 'swap':
 			chain = val.chain;
@@ -946,6 +968,9 @@ Tome.prototype.merge = function (diff) {
 				}
 			}
 			this.swap(val.key, link);
+			break;
+		case 'unshift':
+			this.unshift(val);
 			break;
 		default:
 			if (key.indexOf('_') === 0) {
@@ -1256,55 +1281,6 @@ ArrayTome.prototype.del = function (key) {
 	diff(this, 'del', key);
 
 	return this;
-};
-
-ArrayTome.prototype.merge = function (diff) {
-
-	var i, len;
-
-	if (Tome.typeOf(diff) === 'array') {
-		len = diff.length;
-		for (i = 0; i < len; i += 1) {
-			this.merge(diff[i]);
-		}
-		return;
-	}
-
-	for (var key in diff) {
-		var val = diff[key];
-		switch (key) {
-		case 'del':
-			this.del(val);
-			break;
-		case 'pop':
-			for (i = 0; i < val; i += 1) {
-				this.pop();
-			}
-			break;
-		case 'push':
-			this.push.apply(this, val);
-			break;
-		case 'rename':
-			this.rename(val);
-			break;
-		case 'reverse':
-			this.reverse();
-			break;
-		case 'shift':
-			for (i = 0; i < val; i += 1) {
-				this.shift();
-			}
-			break;
-		case 'splice':
-			this.splice.apply(this, val);
-			break;
-		case 'unshift':
-			this.unshift.apply(this, val);
-			break;
-		default:
-			Tome.prototype.merge.apply(this, arguments);
-		}
-	}
 };
 
 ArrayTome.prototype.shift = function () {
@@ -1841,33 +1817,6 @@ ObjectTome.prototype.rename = function () {
 	diff(this, 'rename', arr);
 
 	return this;
-};
-
-ObjectTome.prototype.merge = function (diff) {
-	for (var key in diff) {
-		var val = diff[key];
-		switch (key) {
-		case 'del':
-			this.del(val);
-			break;
-		case 'rename':
-			this.rename(val);
-			break;
-		case 'move':
-			var chain = val.chain;
-			var len = chain.length;
-			var link = this.__root__;
-			for (var i = 0; i < len; i += 1) {
-				if (link.hasOwnProperty(chain[i])) {
-					link = link[chain[i]];
-				}
-			}
-			this.move(val.key, link, val.newKey);
-			break;
-		default:
-			Tome.prototype.merge.apply(this, arguments);
-		}
-	}
 };
 
 ObjectTome.prototype.valueOf = function () {
