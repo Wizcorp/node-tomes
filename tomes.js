@@ -956,7 +956,7 @@ Tome.prototype.merge = function (diff) {
 			}
 			break;
 		case 'splice':
-			this.splice(val);
+			this.splice.apply(this, val);
 			break;
 		case 'swap':
 			chain = val.chain;
