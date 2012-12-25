@@ -868,9 +868,7 @@ Tome.prototype.resume = function () {
 Tome.prototype.merge = function (diff) {
 
 	// merge is used to apply diffs to our Tomes. Typically the diff would be a
-	// parsed JSON string or come directly from another Tome. Array, Number,
-	// and Object implement their own merge methods and fall through to this
-	// method when needed.
+	// parsed JSON string or come directly from another Tome.
 
 	var i, len;
 
@@ -891,12 +889,6 @@ Tome.prototype.merge = function (diff) {
 			break;
 		case 'del':
 			this.del(val);
-			break;
-		case 'hide':
-			this.hide(val);
-			break;
-		case 'inc':
-			this.inc(val);
 			break;
 		case 'move':
 			chain = val.chain;
@@ -1133,6 +1125,10 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 Tome.prototype.hide = function (h) {
 	if (h === undefined) {
 		h = true;
+	}
+
+	if (this.__hidden__ === h) {
+		return;
 	}
 
 	this.__hidden__ = h;
