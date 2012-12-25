@@ -39,18 +39,16 @@ exports.testNullCreation = function (test) {
 	test.done();
 };
 
-exports.testNullSignal = function (test) {
-	test.expect(3);
+exports.testNullReadable = function (test) {
+	test.expect(2);
 
 	var a = null;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(a, bval); // 1
+	b.on('readable', function () {
+		test.strictEqual(a, b.valueOf()); // 1
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
 	});
-
-	test.strictEqual(a, b.valueOf()); // 2
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
 
 	test.done();
 };
@@ -61,8 +59,8 @@ exports.testNullAssign = function (test) {
 	var a = null;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(a, bval); // 1, 4, 8
+	b.on('readable', function () {
+		test.equal(a, b.valueOf()); // 1, 4, 8
 	});
 
 	test.strictEqual(a, b.valueOf()); // 2
@@ -91,7 +89,7 @@ exports.testNullSet = function (test) {
 	var a = null;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function () {
+	b.on('readable', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 9
 	});
 
@@ -127,8 +125,8 @@ exports.testNullDestroy = function (test) {
 		test.ok(true); // 2
 	});
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 3
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 3
 	});
 
 	a = null;
@@ -147,8 +145,8 @@ exports.testNullDelete = function (test) {
 		test.strictEqual('d', key); // 2
 	});
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 3
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 3
 	});
 
 	a = null;
@@ -160,14 +158,14 @@ exports.testNullDelete = function (test) {
 exports.testNullArrayRepeatSet = function (test) {
 	test.expect(6);
 
-	var signalCount = 0;
+	var readableCount = 0;
 
 	var a = [ 0 ];
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		signalCount += 1;
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
+	b.on('readable', function () {
+		readableCount += 1;
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2
 	});
 
 	a[0] = null;
@@ -176,14 +174,14 @@ exports.testNullArrayRepeatSet = function (test) {
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
 	test.strictEqual(a.hasOwnProperty(0), b.hasOwnProperty(0)); // 4
 
-	test.strictEqual(signalCount, 2); // 5
+	test.strictEqual(readableCount, 2); // 5
 
 	// This should do nothing, we are not changing the value.
 
 	a[0] = null;
 	b.set('0', null);
 
-	test.strictEqual(signalCount, 2); // 6
+	test.strictEqual(readableCount, 2); // 6
 
 	test.done();
 };
@@ -191,14 +189,14 @@ exports.testNullArrayRepeatSet = function (test) {
 exports.testNullArrayRepeatAssign = function (test) {
 	test.expect(6);
 
-	var signalCount = 0;
+	var readableCount = 0;
 
 	var a = [ 0 ];
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		signalCount += 1;
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
+	b.on('readable', function () {
+		readableCount += 1;
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2
 	});
 
 	a[0] = null;
@@ -207,14 +205,14 @@ exports.testNullArrayRepeatAssign = function (test) {
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
 	test.strictEqual(a.hasOwnProperty(0), b.hasOwnProperty(0)); // 4
 
-	test.strictEqual(signalCount, 2); // 5
+	test.strictEqual(readableCount, 2); // 5
 
 	// This should do nothing, we are not changing the value.
 
 	a[0] = null;
 	b[0].assign(null);
 
-	test.strictEqual(signalCount, 2); // 6
+	test.strictEqual(readableCount, 2); // 6
 
 	test.done();
 };

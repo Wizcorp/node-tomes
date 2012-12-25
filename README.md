@@ -23,7 +23,7 @@ var filmData = {
 
 var reservoirDogs = Tome.conjure(filmData);
 
-reservoirDogs.cast[1].on('signal', function (marvinNash) {
+reservoirDogs.cast[1].on('readable', function (marvinNash) {
 	console.log(marvinNash.ears.length);
 });
 // >>> 2
@@ -73,19 +73,13 @@ Assign data to a Tome.
 Delete a key from a Tome.
 
 ###pause( )
-Start buffering all event emissions.
+Start buffering all add/del/destroy/rename event emissions.
 
 ###flush( )
-Emit all buffered events.
+Emit all buffered add/del/destroy/rename events.
 
 ###resume( )
-Emit all buffered events and stop buffering event emission.
-
-###consume( *diff* )
-Pause, merge diff, and then resume. This is a convenience function since most of the time you will want to emit once after your diff has been applied.
-
-###consume( [ *diff*, ... ] )
-Pause, merge each diff, and then resume.
+Emit all buffered add/del/destroy/rename events and stop buffering add/del/destroy/rename event emission.
 
 ###merge( *diff* )
 Applies a diff to a Tome
@@ -98,6 +92,9 @@ Move key to tome. Optionally, give the key a new name.
 
 ###rename( *key*, *newkey* )
 Rename key to newkey.
+
+###hide( [ *boolean* ] )
+Hides a Tome. The Tome still exists in this tome, but will neither stringify nor show up in any events. Shows up as a delete in the diff.
 
 ##Events
 
@@ -113,11 +110,5 @@ Emitted when a Tome is deleted.
 ###rename( *key*, *newkey* )
 Emitted when a key is renamed.
 
-###change( *data* )
-Emitted when a Tome is modified.
-
-###signal( *data* )
-Emitted when a Tome is modified and also when you when you begin listening for the signal event.
-
-###diff( *diff* )
-Emitted when a Tome is modified. Diff contains all changes to the Tome.
+###readable( )
+Emitted when you register a listener on the readable event and on every change to the Tome. 
