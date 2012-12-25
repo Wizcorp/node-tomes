@@ -1253,7 +1253,16 @@ ArrayTome.prototype.del = function (key) {
 };
 
 ArrayTome.prototype.merge = function (diff) {
-	var i;
+
+	var i, len;
+
+	if (Tome.typeOf(diff) === 'array') {
+		len = diff.length;
+		for (i = 0; i < len; i += 1) {
+			this.merge(diff[i]);
+		}
+		return;
+	}
 
 	for (var key in diff) {
 		var val = diff[key];
@@ -1736,6 +1745,17 @@ NumberTome.prototype.inc = function (val) {
 };
 
 NumberTome.prototype.merge = function (diff) {
+
+	var i, len;
+
+	if (Tome.typeOf(diff) === 'array') {
+		len = diff.length;
+		for (i = 0; i < len; i += 1) {
+			this.merge(diff[i]);
+		}
+		return;
+	}
+
 	var key, val;
 	for (key in diff) {
 		val = diff[key];
