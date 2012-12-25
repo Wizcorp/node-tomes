@@ -831,15 +831,15 @@ Tome.prototype.flush = function () {
 				op.tome.emit(opName, op.key);
 			}
 			break;
+		case 'destroy':
+			for (i = 0; i < len; i += 1) {
+				ops[i].tome.emit(opName);
+			}
+			break;
 		case 'rename':
 			for (i = 0; i < len; i += 1) {
 				op = ops[i];
 				op.tome.emit(opName, op.oldKey, op.newKey);
-			}
-			break;
-		case 'destroy':
-			for (i = 0; i < len; i += 1) {
-				ops[i].tome.emit(opName);
 			}
 			break;
 		default:
@@ -911,13 +911,11 @@ Tome.prototype.merge = function (diff) {
 		var val = diff[key];
 		var chain, link;
 		switch (key) {
-		case 'set':
-			for (var k in val) {
-				this.set(k, val[k]);
-			}
-			break;
 		case 'assign':
 			this.assign(val);
+			break;
+		case 'inc':
+			this.inc(val);
 			break;
 		case 'move':
 			chain = val.chain;
@@ -929,6 +927,14 @@ Tome.prototype.merge = function (diff) {
 				}
 			}
 			this.move(val.key, link, val.newKey);
+			break;
+		case 'push':
+			this.push(val);
+			break;
+		case 'set':
+			for (var k in val) {
+				this.set(k, val[k]);
+			}
 			break;
 		case 'swap':
 			chain = val.chain;
@@ -1742,29 +1748,6 @@ NumberTome.prototype.inc = function (val) {
 	diff(this, 'inc', val);
 
 	return this._val;
-};
-
-NumberTome.prototype.merge = function (diff) {
-
-	var i, len;
-
-	if (Tome.typeOf(diff) === 'array') {
-		len = diff.length;
-		for (i = 0; i < len; i += 1) {
-			this.merge(diff[i]);
-		}
-		return;
-	}
-
-	var key, val;
-	for (key in diff) {
-		val = diff[key];
-		if (key === 'inc') {
-			this.inc(val);
-		} else {
-			Tome.prototype.merge.apply(this, arguments);
-		}
-	}
 };
 
 NumberTome.prototype.toString = function () {
