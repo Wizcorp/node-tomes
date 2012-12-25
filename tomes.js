@@ -917,6 +917,9 @@ Tome.prototype.merge = function (diff) {
 		case 'del':
 			this.del(val);
 			break;
+		case 'hide':
+			this.hide(val);
+			break;
 		case 'inc':
 			this.inc(val);
 			break;
@@ -1152,8 +1155,12 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 	return this;
 };
 
-Tome.prototype.hide = function (f) {
-	this.__hidden__ = f;
+Tome.prototype.hide = function (h) {
+	if (h === undefined) {
+		h = true;
+	}
+	this.__hidden__ = h;
+	diff(this, 'hide', h);
 };
 
 
