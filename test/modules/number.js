@@ -179,7 +179,7 @@ exports.testNumberInc = function (test) {
 	var b = Tome.conjure(a);
 
 	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
+		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2, 3
 	});
 
 	a = a + 1;
@@ -198,7 +198,7 @@ exports.testNumberOperand = function (test) {
 	var b = Tome.conjure(a);
 
 	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
+		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2, 3
 	});
 
 	a = a + 5;
@@ -206,6 +206,23 @@ exports.testNumberOperand = function (test) {
 
 	a = a - 10;
 	b.assign(b - 10);
+
+	test.done();
+};
+
+exports.testNumberIncChain = function (test) {
+	test.expect(2);
+
+	var a = 44;
+	var b = Tome.conjure(a);
+
+	a = a + 1 + 2;
+	b.inc(1).inc(2);
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	a = a - 10 - 20;
+	b.inc(-10).inc(-20);
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 
 	test.done();
 };
