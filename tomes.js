@@ -92,8 +92,8 @@ function Tome(parent, key) {
 	// separate logic for initial values and value changes.
 
 	this.on('newListener', function (eventName, listener) {
-		if (eventName === 'signal') {
-			listener.call(this, this.valueOf());
+		if (eventName === 'readable') {
+			listener.call(this);
 		}
 	});
 }
@@ -219,9 +219,9 @@ function notify(tome) {
 		return false;
 	}
 
-	tome.emit('signal', tome.valueOf());
-	tome.emit('change', tome.valueOf());
-	tome.emit('diff', tome.__diff__);
+//	tome.emit('signal', tome.valueOf());
+//	tome.emit('change', tome.valueOf());
+//	tome.emit('diff', tome.__diff__);
 	tome.__diff__ = undefined;
 
 	// Since our Tomes inherit from multiple prototypes, they have a large
@@ -779,7 +779,7 @@ Tome.prototype.del = function (key) {
 
 Tome.prototype.read = function () {
 	var out = this.__diff__;
-	this.__diff__ = undefined;
+	notify(this);
 	return out;
 };
 
