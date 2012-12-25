@@ -219,9 +219,6 @@ function notify(tome) {
 		return false;
 	}
 
-//	tome.emit('signal', tome.valueOf());
-//	tome.emit('change', tome.valueOf());
-//	tome.emit('diff', tome.__diff__);
 	tome.__diff__ = undefined;
 
 	// Since our Tomes inherit from multiple prototypes, they have a large
@@ -329,13 +326,7 @@ function diff(tome, op, val, chain) {
 		}
 	}
 
-	if (!tome.__root__.__buffer__) {
-		tome.emit('signal', tome.valueOf());
-		tome.emit('change', tome.valueOf());
-		tome.emit('diff', tDiff);
-	} else {
-		tome.__diff__ = tDiff;
-	}
+	tome.__diff__ = tDiff;
 
 	tome.emit('readable');
 
@@ -778,6 +769,12 @@ Tome.prototype.del = function (key) {
 };
 
 Tome.prototype.read = function () {
+	// Diffs are automatically buffered by default. When read is called on a
+	// Tome we consider the diff to be consumed and walk down the chain to
+	// remove all buffered diffs. We also need to talk up the chain to remove
+	// the consumed diffs from the parents who may still have other diffs that
+	// have not been consumed yet.
+
 	var out = this.__diff__;
 	notify(this);
 	return out;
@@ -786,8 +783,8 @@ Tome.prototype.read = function () {
 Tome.prototype.pause = function () {
 
 	// The pause method creates a buffer on the root Tome. When this buffer is
-	// in place, all events with go into the buffer instead of being emitted.
-	// The return value indicates whether we were paused or not.
+	// in place, all events go into the buffer instead of being emitted. The
+	// return value indicates whether we were paused or not.
 
 	if (!this.__root__.__buffer__) {
 		this.__root__.__buffer__ = {};
@@ -800,9 +797,7 @@ Tome.prototype.pause = function () {
 Tome.prototype.flush = function () {
 
 	// The flush method goes through all the events in the buffer on the root
-	// Tome and emits them. Once that is done it calls notify on the root Tome
-	// which will walk down the Tome chain and emit signal, change, and diff
-	// events on all Tomes that had changes.
+	// Tome and emits them.
 
 	var buffer = this.__root__.__buffer__;
 
@@ -849,7 +844,7 @@ Tome.prototype.flush = function () {
 
 	this.__root__.__buffer__ = {};
 
-	notify(this.__root__);
+	//notify(this.__root__);
 
 	return true;
 };
@@ -868,26 +863,6 @@ Tome.prototype.resume = function () {
 	this.__root__.__buffer__ = false;
 
 	return true;
-};
-
-Tome.prototype.consume = function (diff) {
-
-	// consume is a helper method that pauses event emission, merges one or
-	// more diffs and then resumes event emission to emit. We don't have to use
-	// this function to merge diffs, but it is the default way that diffs are
-	// handled.
-
-	this.pause();
-
-	if (Tome.typeOf(diff) === 'array') {
-		for (var i = 0, len = diff.length; i < len; i += 1) {
-			this.merge(diff[i]);
-		}
-	} else {
-		this.merge(diff);
-	}
-
-	this.resume();
 };
 
 Tome.prototype.merge = function (diff) {

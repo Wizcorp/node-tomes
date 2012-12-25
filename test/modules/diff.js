@@ -11,11 +11,6 @@ exports.testDiffSimpleString = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	// these pauses will go away...
-
-	b.pause();
-	c.pause();
-
 	b.on('readable', function () {
 		bReadableCount += 1;
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 5
@@ -57,13 +52,10 @@ exports.testDiffStringToNumber = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	b.pause();
-	c.pause();
-
 	b.on('readable', function () {
 		var diff = b.read();
 		if (diff) {
-			c.consume(diff);
+			c.merge(diff);
 		}
 	});
 
@@ -90,13 +82,10 @@ exports.testDiffStringToObject = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	b.pause();
-	c.pause();
-
 	b.on('readable', function () {
 		var diff = b.read();
 		if (diff) {
-			c.consume(diff);
+			c.merge(diff);
 		}
 	});
 
@@ -123,13 +112,10 @@ exports.testDiffObjectToString = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	b.pause();
-	c.pause();
-
 	b.on('readable', function () {
 		var diff = b.read();
 		if (diff) {
-			c.consume(diff);
+			c.merge(diff);
 		}
 	});
 
@@ -156,15 +142,12 @@ exports.testDiffSubObjectAssign = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	b.pause();
-	c.pause();
-
 	b.on('readable', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 		var diff = b.read();
 		if (diff) {
 			test.deepEqual(diff, { _a: { _b: { _c: { _d: { _e: { assign: 100 } } } } } });
-			c.consume(diff);
+			c.merge(diff);
 		}
 	});
 
@@ -192,15 +175,12 @@ exports.testDiffSubObjectSet = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	b.pause();
-	c.pause();
-
 	b.on('readable', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 		var diff = b.read();
 		if (diff) {
 			test.deepEqual(diff, { _a: { _b: { assign: { l: 100 } } } });
-			c.consume(diff);
+			c.merge(diff);
 		}
 	});
 
@@ -228,15 +208,12 @@ exports.testDiffDel = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	b.pause();
-	c.pause();
-
 	b.on('readable', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 		var diff = b.read();
 		if (diff) {
 			test.deepEqual(diff, { _a: { del: 'b' } });
-			c.consume(diff);
+			c.merge(diff);
 		}
 	});
 
@@ -264,15 +241,12 @@ exports.testDiffArraySort = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	b.pause();
-	c.pause();
-
 	b.on('readable', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 		var diff = b.read();
 		if (diff) {
 			test.deepEqual(diff, { rename: [ { o: 9, n: 1 }, { o: 4, n: 2 }, { o: 5, n: 3 }, { o: 1, n: 4 }, { o: 6, n: 5 }, { o: 2, n: 6 }, { o: 8, n: 7 }, { o: 3, n: 8 }, { o: 10, n: 9 }, { o: 7, n: 10 } ] });
-			c.consume(diff);
+			c.merge(diff);
 		}
 	});
 
@@ -307,15 +281,12 @@ exports.testDiffArrayShift = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	b.pause();
-	c.pause();
-
 	b.on('readable', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 		var diff = b.read();
 		if (diff) {
 			test.deepEqual(diff, { "shift": 1 });
-			c.consume(diff);
+			c.merge(diff);
 		}
 	});
 
@@ -349,15 +320,12 @@ exports.testDiffRename = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	b.pause();
-	c.pause();
-
 	b.on('readable', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 		var diff = b.read();
 		if (diff) {
 			test.deepEqual(diff, { _a: { _b: { rename: [ { o: 'c', n: 'z' } ] } } });
-			c.consume(diff);
+			c.merge(diff);
 		}
 	});
 
@@ -386,15 +354,12 @@ exports.testDiffPush = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	b.pause();
-	c.pause();
-
 	b.on('readable', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 		var diff = b.read();
 		if (diff) {
 			test.deepEqual(diff, { push: [ 10, 11, 12, 13 ] });
-			c.consume(diff);
+			c.merge(diff);
 		}
 	});
 
@@ -430,15 +395,12 @@ exports.testDiffUnshift = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	b.pause();
-	c.pause();
-
 	b.on('readable', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 		var diff = b.read();
 		if (diff) {
 			test.deepEqual(diff, { unshift: [ 10, 11, 12, 13 ] });
-			c.consume(diff);
+			c.merge(diff);
 		}
 	});
 
@@ -474,15 +436,12 @@ exports.testDiffSplice = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	b.pause();
-	c.pause();
-
 	b.on('readable', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 		var diff = b.read();
 		if (diff) {
 			test.deepEqual(diff, { splice: [ 3, 2, 12, 13 ] });
-			c.consume(diff);
+			c.merge(diff);
 		}
 	});
 
@@ -518,13 +477,10 @@ exports.testDiffMove = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	b.pause();
-	c.pause();
-
 	b.on('readable', function () {
 		var diff = b.read();
 		if (diff) {
-			c.consume(diff);
+			c.merge(diff);
 		}
 	});
 
@@ -544,13 +500,10 @@ exports.testDiffMoveArray = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	b.pause();
-	c.pause();
-
 	b.on('readable', function () {
 		var diff = b.read();
 		if (diff) {
-			c.consume(diff);
+			c.merge(diff);
 		}
 	});
 
