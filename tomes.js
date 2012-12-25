@@ -1159,8 +1159,14 @@ Tome.prototype.hide = function (h) {
 	if (h === undefined) {
 		h = true;
 	}
+
 	this.__hidden__ = h;
-	diff(this, 'hide', h);
+
+	if (h) {
+		diff(this.__parent__, 'del', this.__key__);
+	} else {
+		diff(this.__parent__, 'set', this.__key__, this.valueOf());
+	}
 };
 
 
