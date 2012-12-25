@@ -943,7 +943,7 @@ Tome.prototype.merge = function (diff) {
 			this.reverse();
 			break;
 		case 'push':
-			this.push(val);
+			this.push.apply(this, val);
 			break;
 		case 'set':
 			for (var k in val) {
@@ -970,7 +970,7 @@ Tome.prototype.merge = function (diff) {
 			this.swap(val.key, link);
 			break;
 		case 'unshift':
-			this.unshift(val);
+			this.unshift.apply(this, val);
 			break;
 		default:
 			if (key.indexOf('_') === 0) {
