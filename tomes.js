@@ -1165,7 +1165,9 @@ Tome.prototype.hide = function (h) {
 	if (h) {
 		diff(this.__parent__, 'del', this.__key__);
 	} else {
-		diff(this.__parent__, 'set', this.__key__, this.valueOf());
+		var tDiff = {};
+		tDiff[this.__key__] = this.valueOf();
+		diff(this.__parent__, 'set', tDiff);
 	}
 };
 
