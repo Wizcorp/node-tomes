@@ -100,16 +100,15 @@ exports.testObjectStringify = function (test) {
 	test.done();
 };
 
-exports.testObjectSignal = function (test) {
-	test.expect(2);
+exports.testObjectReadable = function (test) {
+	test.expect(1);
 
 	var a, b;
 	a = { test: 'is this thing on?' };
 	b = Tome.conjure(a);
 
-	b.on('signal', function (bv) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bv)); // 1
-		test.strictEqual(JSON.stringify(b), JSON.stringify(bv)); // 2
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 	});
 
 	test.done();
@@ -122,16 +121,16 @@ exports.testObjectAssign = function (test) {
 	a = { john: { shirt: 'blue' } };
 	b = Tome.conjure(a);
 
-	b.on('signal', function (bv) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bv)); // 1, 4, 8
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 8
 	});
 
-	b.john.on('signal', function (bjohnv) {
-		test.strictEqual(JSON.stringify(a.john), JSON.stringify(bjohnv)); // 2, 5, 9
+	b.john.on('readable', function () {
+		test.strictEqual(JSON.stringify(a.john), JSON.stringify(b.john)); // 2, 5, 9
 	});
 
-	b.john.shirt.on('signal', function (bjohnshirtv) {
-		test.strictEqual(JSON.stringify(a.john.shirt), JSON.stringify(bjohnshirtv)); // 3, 6
+	b.john.shirt.on('readable', function () {
+		test.strictEqual(JSON.stringify(a.john.shirt), JSON.stringify(b.john.shirt)); // 3, 6
 	});
 
 	b.john.on('del', function (k) {
@@ -162,16 +161,16 @@ exports.testObjectSet = function (test) {
 	a = { john: { shirt: 'blue' } };
 	b = Tome.conjure(a);
 
-	b.on('signal', function (bv) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bv)); // 1, 4, 8
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 8
 	});
 
-	b.john.on('signal', function (bjohnv) {
-		test.strictEqual(JSON.stringify(a.john), JSON.stringify(bjohnv)); // 2, 5, 9
+	b.john.on('readable', function () {
+		test.strictEqual(JSON.stringify(a.john), JSON.stringify(b.john)); // 2, 5, 9
 	});
 
-	b.john.shirt.on('signal', function (bjohnshirtv) {
-		test.strictEqual(JSON.stringify(a.john.shirt), JSON.stringify(bjohnshirtv)); // 3, 6
+	b.john.shirt.on('readable', function () {
+		test.strictEqual(JSON.stringify(a.john.shirt), JSON.stringify(b.john.shirt)); // 3, 6
 	});
 
 	b.john.on('del', function (k) {
@@ -203,11 +202,11 @@ exports.testObjectAdd = function (test) {
 	b = Tome.conjure(a);
 	c = { shirt: 'red' };
 
-	var signalcount = 0;
+	var readableCount = 0;
 
-	b.on('signal', function (bv) {
-		signalcount += 1;
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bv), 'expected ' + JSON.stringify(a)); // 1, 4, 8
+	b.on('readable', function () {
+		readableCount += 1;
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b), 'expected ' + JSON.stringify(a)); // 1, 4, 8
 	});
 
 	b.on('add', function (k, kv) {
@@ -228,7 +227,7 @@ exports.testObjectAdd = function (test) {
 	b.set('dave', c);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 9
 
-	test.strictEqual(3, signalcount); // 10
+	test.strictEqual(3, readableCount); // 10
 
 	test.done();
 };
@@ -240,8 +239,8 @@ exports.testObjectDel = function (test) {
 	a = { john: { shirt: 'blue', pants: 'khaki' }, steve: { shoes: 'brown' } };
 	b = Tome.conjure(a);
 
-	b.on('signal', function (bv) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bv)); // 1, 4, 6
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 6
 	});
 
 	b.john.on('del', function (k) {

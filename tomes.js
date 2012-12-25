@@ -74,6 +74,7 @@ function Tome(parent, key) {
 		__root__: { writable: true, value: parent instanceof Tome ? parent.__root__ : this },
 		__diff__: { writable: true },
 		__version__: { writable: true, value: 1 },
+		__hidden__: { writable: true, value: false },
 		_events: { configurable: true, writable: true }
 	};
 
@@ -91,13 +92,17 @@ function Tome(parent, key) {
 	// separate logic for initial values and value changes.
 
 	this.on('newListener', function (eventName, listener) {
-		if (eventName === 'signal') {
-			listener.call(this, this.valueOf());
+		if (eventName === 'readable') {
+			listener.call(this);
 		}
 	});
 }
 
 function emitAdd(tome, key) {
+	if (tome.__hidden__) {
+		return;
+	}
+
 	var buffer = tome.__root__.__buffer__;
 
 	if (!buffer) {
@@ -116,6 +121,9 @@ function emitAdd(tome, key) {
 }
 
 function emitDel(tome, key) {
+	if (tome.__hidden__) {
+		return;
+	}
 	var buffer = tome.__root__.__buffer__;
 
 	if (!buffer) {
@@ -134,6 +142,10 @@ function emitDel(tome, key) {
 }
 
 function emitRename(tome, val) {
+	if (tome.__hidden__) {
+		return;
+	}
+
 	var buffer = tome.__root__.__buffer__;
 	var len = val.length;
 	var i;
@@ -156,6 +168,10 @@ function emitRename(tome, val) {
 }
 
 function emitDestroy(tome) {
+	if (tome.__hidden__) {
+		return;
+	}
+
 	var buffer = tome.__root__.__buffer__;
 
 	if (!buffer) {
@@ -174,6 +190,9 @@ function emitDestroy(tome) {
 }
 
 function destroy(tome) {
+	if (tome.__hidden__) {
+		return;
+	}
 
 	// When a Tome is deleted we emit a destroy event on it and all of its child
 	// Tomes since they will no longer exist. We go down the Tome chain first and
@@ -196,13 +215,10 @@ function notify(tome) {
 	// signal, change, and diff on all Tomes that need to. We know a Tome needs
 	// to emit because its __diff__ property was set by the diff method.
 
-	if (tome.__diff__ === undefined) {
+	if (tome.__diff__ === undefined || tome.__hidden__) {
 		return false;
 	}
 
-	tome.emit('signal', tome.valueOf());
-	tome.emit('change', tome.valueOf());
-	tome.emit('diff', tome.__diff__);
 	tome.__diff__ = undefined;
 
 	// Since our Tomes inherit from multiple prototypes, they have a large
@@ -256,6 +272,9 @@ function reset(tome) {
 }
 
 function diff(tome, op, val, chain) {
+	if (tome.__hidden__) {
+		return;
+	}
 
 	// op, val is the actual diff that triggered the diff event, chain holds
 	// the path and grows as we traverse up to the root.
@@ -307,13 +326,9 @@ function diff(tome, op, val, chain) {
 		}
 	}
 
-	if (!tome.__root__.__buffer__) {
-		tome.emit('signal', tome.valueOf());
-		tome.emit('change', tome.valueOf());
-		tome.emit('diff', tDiff);
-	} else {
-		tome.__diff__ = tDiff;
-	}
+	tome.__diff__ = tDiff;
+
+	tome.emit('readable');
 
 	// Now we need to build a bigger object to send to the parent.
 
@@ -559,6 +574,10 @@ Tome.conjure = function (val, parent, key) {
 	// It will return a new Tome of the appropriate type for our value with Tome
 	// inherited. This is also how we pass parent into our Tome so we can signal
 	// a parent that its child has been modified.
+	
+	if (val instanceof Tome && val.__hidden__) {
+		return;
+	}
 
 	var vType = Tome.typeOf(val);
 	var ClassRef = tomeMap[vType];
@@ -749,11 +768,23 @@ Tome.prototype.del = function (key) {
 	return this;
 };
 
+Tome.prototype.read = function () {
+	// Diffs are automatically buffered by default. When read is called on a
+	// Tome we consider the diff to be consumed and walk down the chain to
+	// remove all buffered diffs. We also need to talk up the chain to remove
+	// the consumed diffs from the parents who may still have other diffs that
+	// have not been consumed yet.
+
+	var out = this.__diff__;
+	notify(this);
+	return out;
+};
+
 Tome.prototype.pause = function () {
 
 	// The pause method creates a buffer on the root Tome. When this buffer is
-	// in place, all events with go into the buffer instead of being emitted.
-	// The return value indicates whether we were paused or not.
+	// in place, all events go into the buffer instead of being emitted. The
+	// return value indicates whether we were paused or not.
 
 	if (!this.__root__.__buffer__) {
 		this.__root__.__buffer__ = {};
@@ -766,9 +797,7 @@ Tome.prototype.pause = function () {
 Tome.prototype.flush = function () {
 
 	// The flush method goes through all the events in the buffer on the root
-	// Tome and emits them. Once that is done it calls notify on the root Tome
-	// which will walk down the Tome chain and emit signal, change, and diff
-	// events on all Tomes that had changes.
+	// Tome and emits them.
 
 	var buffer = this.__root__.__buffer__;
 
@@ -797,15 +826,15 @@ Tome.prototype.flush = function () {
 				op.tome.emit(opName, op.key);
 			}
 			break;
+		case 'destroy':
+			for (i = 0; i < len; i += 1) {
+				ops[i].tome.emit(opName);
+			}
+			break;
 		case 'rename':
 			for (i = 0; i < len; i += 1) {
 				op = ops[i];
 				op.tome.emit(opName, op.oldKey, op.newKey);
-			}
-			break;
-		case 'destroy':
-			for (i = 0; i < len; i += 1) {
-				ops[i].tome.emit(opName);
 			}
 			break;
 		default:
@@ -815,7 +844,7 @@ Tome.prototype.flush = function () {
 
 	this.__root__.__buffer__ = {};
 
-	notify(this.__root__);
+	//notify(this.__root__);
 
 	return true;
 };
@@ -836,44 +865,30 @@ Tome.prototype.resume = function () {
 	return true;
 };
 
-Tome.prototype.consume = function (diff) {
-
-	// consume is a helper method that pauses event emission, merges one or
-	// more diffs and then resumes event emission to emit. We don't have to use
-	// this function to merge diffs, but it is the default way that diffs are
-	// handled.
-
-	this.pause();
-
-	if (Tome.typeOf(diff) === 'array') {
-		for (var i = 0, len = diff.length; i < len; i += 1) {
-			this.merge(diff[i]);
-		}
-	} else {
-		this.merge(diff);
-	}
-
-	this.resume();
-};
-
 Tome.prototype.merge = function (diff) {
 
 	// merge is used to apply diffs to our Tomes. Typically the diff would be a
-	// parsed JSON string or come directly from another Tome. Array, Number,
-	// and Object implement their own merge methods and fall through to this
-	// method when needed.
+	// parsed JSON string or come directly from another Tome.
+
+	var i, len;
+
+	if (Tome.typeOf(diff) === 'array') {
+		len = diff.length;
+		for (i = 0; i < len; i += 1) {
+			this.merge(diff[i]);
+		}
+		return;
+	}
 
 	for (var key in diff) {
 		var val = diff[key];
-		var chain, len, link, i;
+		var chain, link;
 		switch (key) {
-		case 'set':
-			for (var k in val) {
-				this.set(k, val[k]);
-			}
-			break;
 		case 'assign':
 			this.assign(val);
+			break;
+		case 'del':
+			this.del(val);
 			break;
 		case 'move':
 			chain = val.chain;
@@ -886,6 +901,33 @@ Tome.prototype.merge = function (diff) {
 			}
 			this.move(val.key, link, val.newKey);
 			break;
+		case 'pop':
+			for (i = 0; i < val; i += 1) {
+				this.pop();
+			}
+			break;
+		case 'rename':
+			this.rename(val);
+			break;
+		case 'reverse':
+			this.reverse();
+			break;
+		case 'push':
+			this.push.apply(this, val);
+			break;
+		case 'set':
+			for (var k in val) {
+				this.set(k, val[k]);
+			}
+			break;
+		case 'shift':
+			for (i = 0; i < val; i += 1) {
+				this.shift();
+			}
+			break;
+		case 'splice':
+			this.splice.apply(this, val);
+			break;
 		case 'swap':
 			chain = val.chain;
 			len = chain.length;
@@ -896,6 +938,9 @@ Tome.prototype.merge = function (diff) {
 				}
 			}
 			this.swap(val.key, link);
+			break;
+		case 'unshift':
+			this.unshift.apply(this, val);
 			break;
 		default:
 			if (key.indexOf('_') === 0) {
@@ -1077,6 +1122,26 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 	return this;
 };
 
+Tome.prototype.hide = function (h) {
+	if (h === undefined) {
+		h = true;
+	}
+
+	if (this.__hidden__ === h) {
+		return;
+	}
+
+	this.__hidden__ = h;
+
+	if (h) {
+		diff(this.__parent__, 'del', this.__key__);
+	} else {
+		var tDiff = {};
+		tDiff[this.__key__] = this.valueOf();
+		diff(this.__parent__, 'set', tDiff);
+	}
+};
+
 
 //   ______
 //  /      \
@@ -1101,10 +1166,16 @@ ArrayTome.isArrayTome = function (o) {
 };
 
 ArrayTome.prototype.valueOf = function () {
-	return this._arr ? this._arr : [];
+	if (!this.__hidden__) {
+		return this._arr ? this._arr : [];
+	}
 };
 
-ArrayTome.prototype.toJSON = ArrayTome.prototype.valueOf;
+ArrayTome.prototype.toJSON = function () {
+	if (!this.__hidden__) {
+		return this._arr ? this._arr : [];
+	}
+};
 
 ArrayTome.prototype.typeOf = function () {
 	return 'array';
@@ -1196,46 +1267,6 @@ ArrayTome.prototype.del = function (key) {
 	diff(this, 'del', key);
 
 	return this;
-};
-
-ArrayTome.prototype.merge = function (diff) {
-	var i;
-
-	for (var key in diff) {
-		var val = diff[key];
-		switch (key) {
-		case 'del':
-			this.del(val);
-			break;
-		case 'pop':
-			for (i = 0; i < val; i += 1) {
-				this.pop();
-			}
-			break;
-		case 'push':
-			this.push.apply(this, val);
-			break;
-		case 'rename':
-			this.rename(val);
-			break;
-		case 'reverse':
-			this.reverse();
-			break;
-		case 'shift':
-			for (i = 0; i < val; i += 1) {
-				this.shift();
-			}
-			break;
-		case 'splice':
-			this.splice.apply(this, val);
-			break;
-		case 'unshift':
-			this.unshift.apply(this, val);
-			break;
-		default:
-			Tome.prototype.merge.apply(this, arguments);
-		}
-	}
 };
 
 ArrayTome.prototype.shift = function () {
@@ -1590,10 +1621,16 @@ BooleanTome.prototype.typeOf = function () {
 };
 
 BooleanTome.prototype.valueOf = function () {
-	return this._val;
+	if (!this.__hidden__) {
+		return this._val;
+	}
 };
 
-BooleanTome.prototype.toJSON = BooleanTome.prototype.valueOf;
+BooleanTome.prototype.toJSON = function () {
+	if (!this.__hidden__) {
+		return this._val;
+	}
+};
 
 
 //  __    __            __  __
@@ -1616,10 +1653,16 @@ NullTome.isNullTome = function (o) {
 };
 
 NullTome.prototype.valueOf = function () {
-	return null;
+	if (!this.__hidden__) {
+		return null;
+	}
 };
 
-NullTome.prototype.toJSON = NullTome.prototype.valueOf;
+NullTome.prototype.toJSON = function () {
+	if (!this.__hidden__) {
+		return null;
+	}
+};
 
 NullTome.prototype.typeOf = function () {
 
@@ -1664,21 +1707,9 @@ NumberTome.prototype.inc = function (val) {
 	}
 
 	this._val = this._val + val;
-	diff(this, 'inc', val);
+	diff(this, 'assign', this._val);
 
-	return this._val;
-};
-
-NumberTome.prototype.merge = function (diff) {
-	var key, val;
-	for (key in diff) {
-		val = diff[key];
-		if (key === 'inc') {
-			this.inc(val);
-		} else {
-			Tome.prototype.merge.apply(this, arguments);
-		}
-	}
+	return this;
 };
 
 NumberTome.prototype.toString = function () {
@@ -1690,10 +1721,16 @@ NumberTome.prototype.typeOf = function () {
 };
 
 NumberTome.prototype.valueOf = function () {
-	return this._val;
+	if (!this.__hidden__) {
+		return this._val;
+	}
 };
 
-NumberTome.prototype.toJSON = NumberTome.prototype.valueOf;
+NumberTome.prototype.toJSON = function () {
+	if (!this.__hidden__) {
+		return this._val;
+	}
+};
 
 //   ______   __                                      __
 //  /      \ |  \                                    |  \
@@ -1768,30 +1805,15 @@ ObjectTome.prototype.rename = function () {
 	return this;
 };
 
-ObjectTome.prototype.merge = function (diff) {
-	for (var key in diff) {
-		var val = diff[key];
-		switch (key) {
-		case 'del':
-			this.del(val);
-			break;
-		case 'rename':
-			this.rename(val);
-			break;
-		case 'move':
-			var chain = val.chain;
-			var len = chain.length;
-			var link = this.__root__;
-			for (var i = 0; i < len; i += 1) {
-				if (link.hasOwnProperty(chain[i])) {
-					link = link[chain[i]];
-				}
-			}
-			this.move(val.key, link, val.newKey);
-			break;
-		default:
-			Tome.prototype.merge.apply(this, arguments);
-		}
+ObjectTome.prototype.valueOf = function () {
+	if (!this.__hidden__) {
+		return this;
+	}
+};
+
+ObjectTome.prototype.toJSON = function () {
+	if (!this.__hidden__) {
+		return this;
 	}
 };
 
@@ -1827,10 +1849,16 @@ StringTome.prototype.typeOf = function () {
 };
 
 StringTome.prototype.valueOf = function () {
-	return this._val;
+	if (!this.__hidden__) {
+		return this._val;
+	}
 };
 
-StringTome.prototype.toJSON = StringTome.prototype.valueOf;
+StringTome.prototype.toJSON = function () {
+	if (!this.__hidden__) {
+		return this._val;
+	}
+};
 
 
 //  __    __                  __             ______   __                            __
@@ -1867,7 +1895,9 @@ UndefinedTome.prototype.toJSON = function () {
 	// the behavior of JavaScript. That is the sole reason for UndefinedTome's
 	// existence.
 
-	return null;
+	if (!this.__hidden__) {
+		return null;
+	}
 };
 
 var classMap = {

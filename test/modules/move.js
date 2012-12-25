@@ -62,12 +62,18 @@ exports.testMoveChangeRoots = function (test) {
 	var e = Tome.conjure(a);
 	var f = Tome.conjure(b);
 
-	c.on('diff', function (diff) {
-		e.consume(diff);
+	c.on('readable', function () {
+		var diff = c.read();
+		if (diff) {
+			e.merge(diff);
+		}
 	});
 
-	d.on('diff', function (diff) {
-		f.consume(diff);
+	d.on('readable', function () {
+		var diff = d.read();
+		if (diff) {
+			f.merge(diff);
+		}
 	});
 
 	b.foo = a.foo;
@@ -98,12 +104,18 @@ exports.testMoveArrayChangeRoots = function (test) {
 	var e = Tome.conjure(a);
 	var f = Tome.conjure(b);
 
-	c.on('diff', function (diff) {
-		e.consume(diff);
+	c.on('readable', function () {
+		var diff = c.read();
+		if (diff) {
+			e.merge(diff);
+		}
 	});
 
-	d.on('diff', function (diff) {
-		f.consume(diff);
+	d.on('readable', function () {
+		var diff = d.read();
+		if (diff) {
+			f.merge(diff);
+		}
 	});
 
 	b[5] = a[0];

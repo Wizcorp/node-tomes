@@ -39,14 +39,14 @@ exports.testBooleanCreation = function (test) {
 	test.done();
 };
 
-exports.testBooleanSignal = function (test) {
+exports.testBooleanReadable = function (test) {
 	test.expect(3);
 
 	var a = true;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(a, bval); // 1
+	b.on('readable', function () {
+		test.equal(a, b); // 1
 	});
 
 	test.strictEqual(a, b.valueOf()); // 2
@@ -62,8 +62,8 @@ exports.testBooleanAssign = function (test) {
 	var a = true;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(a, bval); // 1, 4
+	b.on('readable', function () {
+		test.equal(a, b); // 1, 4
 	});
 
 	test.strictEqual(a, b.valueOf()); // 2
@@ -84,7 +84,7 @@ exports.testBooleanSet = function (test) {
 	var a = true;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function () {
+	b.on('readable', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 9
 	});
 
@@ -142,8 +142,8 @@ exports.testBooleanDestroy = function (test) {
 		test.ok(true); // 2
 	});
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 3
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 3
 	});
 
 	a = false;
@@ -162,8 +162,8 @@ exports.testBooleanDelete = function (test) {
 		test.strictEqual('d', key); // 2
 	});
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 3
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 3
 	});
 
 	a = false;
@@ -178,8 +178,8 @@ exports.testBooleanAndOr = function (test) {
 	var a = true;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2, 3
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2, 3
 	});
 
 	a = a || false;

@@ -25,8 +25,11 @@ exports.testSwapDiff = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	b.on('diff', function (diff) {
-		c.consume(diff);
+	b.on('readable', function () {
+		var diff = b.read();
+		if (diff) {
+			c.merge(diff);
+		}
 	});
 
 	var intermediate = a.b;
@@ -57,12 +60,18 @@ exports.testSwapChangeTomes = function (test) {
 	var e = Tome.conjure(a);
 	var f = Tome.conjure(b);
 
-	c.on('diff', function (diff) {
-		e.consume(diff);
+	c.on('readable', function () {
+		var diff = c.read();
+		if (diff) {
+			e.merge(diff);
+		}
 	});
 
-	d.on('diff', function (diff) {
-		f.consume(diff);
+	d.on('readable', function () {
+		var diff = d.read();
+		if (diff) {
+			f.merge(diff);
+		}
 	});
 
 	var intermediate = b[4];

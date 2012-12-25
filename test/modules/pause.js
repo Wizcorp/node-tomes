@@ -3,17 +3,16 @@ var tomes = require('../../tomes');
 var Tome = tomes.Tome;
 
 exports.testPauseSetResume = function (test) {
-	test.expect(15);
+	test.expect(13);
 
-	var signalCount = 0;
+	var readableCount = 0;
 	var addCount = 0;
 
 	var a = { a: 1 };
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (val) {
-		signalCount += 1;
-		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	b.on('readable', function () {
+		readableCount += 1;
 	});
 
 	b.on('add', function (key, val) {
@@ -37,24 +36,23 @@ exports.testPauseSetResume = function (test) {
 	test.strictEqual(addCount, 0);
 	b.resume();
 
-	test.strictEqual(signalCount, 2);
+	test.strictEqual(readableCount, 11);
 	test.strictEqual(addCount, 10);
 
 	test.done();
 };
 
 exports.testPauseDelResume = function (test) {
-	test.expect(15);
+	test.expect(13);
 
-	var signalCount = 0;
+	var readableCount = 0;
 	var delCount = 0;
 
 	var a = { a: 1, b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1, k: 1 };
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (val) {
-		signalCount += 1;
-		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	b.on('readable', function () {
+		readableCount += 1;
 	});
 
 	b.on('del', function (key) {
@@ -79,24 +77,23 @@ exports.testPauseDelResume = function (test) {
 	test.strictEqual(delCount, 0);
 	b.resume();
 
-	test.strictEqual(signalCount, 2);
+	test.strictEqual(readableCount, 11);
 	test.strictEqual(delCount, 10);
 
 	test.done();
 };
 
 exports.testPauseDestroyResume = function (test) {
-	test.expect(5);
+	test.expect(3);
 
-	var signalCount = 0;
+	var readableCount = 0;
 	var destroyCount = 0;
 
 	var a = { a: 1, b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1, k: 1 };
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (val) {
-		signalCount += 1;
-		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	b.on('readable', function () {
+		readableCount += 1;
 	});
 
 	b.b.on('destroy', function () {
@@ -115,7 +112,7 @@ exports.testPauseDestroyResume = function (test) {
 	test.strictEqual(destroyCount, 0);
 	b.resume();
 
-	test.strictEqual(signalCount, 2);
+	test.strictEqual(readableCount, 3);
 	test.strictEqual(destroyCount, 2);
 
 	test.done();

@@ -39,14 +39,14 @@ exports.testNumberCreation = function (test) {
 	test.done();
 };
 
-exports.testNumberSignal = function (test) {
+exports.testNumberReadable = function (test) {
 	test.expect(3);
 
 	var a = -43.75;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(a, bval); // 1
+	b.on('readable', function () {
+		test.equal(a, b); // 1
 	});
 
 	test.strictEqual(a, b.valueOf()); // 2
@@ -62,8 +62,8 @@ exports.testNumberAssign = function (test) {
 	var a = -43.75;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(a, bval); // 1, 4
+	b.on('readable', function () {
+		test.equal(a, b); // 1, 4
 	});
 
 	test.strictEqual(a, b.valueOf()); // 2
@@ -84,7 +84,7 @@ exports.testNumberSet = function (test) {
 	var a = -43.74;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function () {
+	b.on('readable', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 9
 	});
 
@@ -142,8 +142,8 @@ exports.testNumberDestroy = function (test) {
 		test.ok(true); // 2
 	});
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 3
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 3
 	});
 
 	a = false;
@@ -162,8 +162,8 @@ exports.testNumberDelete = function (test) {
 		test.strictEqual('d', key); // 2
 	});
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 3
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 3
 	});
 
 	a = 13413;
@@ -178,8 +178,8 @@ exports.testNumberInc = function (test) {
 	var a = 44;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2, 3
 	});
 
 	a = a + 1;
@@ -197,8 +197,8 @@ exports.testNumberOperand = function (test) {
 	var a = 10;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2, 3
 	});
 
 	a = a + 5;
@@ -206,6 +206,23 @@ exports.testNumberOperand = function (test) {
 
 	a = a - 10;
 	b.assign(b - 10);
+
+	test.done();
+};
+
+exports.testNumberIncChain = function (test) {
+	test.expect(2);
+
+	var a = 44;
+	var b = Tome.conjure(a);
+
+	a = a + 1 + 2;
+	b.inc(1).inc(2);
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	a = a - 10 - 20;
+	b.inc(-10).inc(-20);
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 
 	test.done();
 };
