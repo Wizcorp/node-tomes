@@ -93,6 +93,9 @@ Move key to tome. Optionally, give the key a new name.
 ###rename( *key*, *newkey* )
 Rename key to newkey.
 
+###hide( [ *boolean* ] )
+Hides a Tome. The Tome still exists in this tome, but will neither stringify nor show up in any events. Shows up as a delete in the diff.
+
 ##Events
 
 ###add( *key*, *val* )
