@@ -515,3 +515,19 @@ exports.testDiffMoveArray = function (test) {
 
 	test.done();
 };
+
+exports.testDiffCombine = function (test) {
+	test.expect(1);
+
+	var a = [ { foo: 0, bar: 1 } ];
+	var b = Tome.conjure(a);
+
+	a[0].foo = 100;
+	b[0].foo.inc().inc().inc().inc().set('hi', 0).hide();
+	b[0].bar.inc();
+
+	var diff = b.read();
+	test.strictEqual(JSON.stringify(diff), '{"_0":{"del":"foo","_bar":{"assign":2}}}');
+
+	test.done();
+};
