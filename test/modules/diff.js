@@ -245,7 +245,7 @@ exports.testDiffArraySort = function (test) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 		var diff = b.read();
 		if (diff) {
-			test.deepEqual(diff, { rename: [ { o: 9, n: 1 }, { o: 4, n: 2 }, { o: 5, n: 3 }, { o: 1, n: 4 }, { o: 6, n: 5 }, { o: 2, n: 6 }, { o: 8, n: 7 }, { o: 3, n: 8 }, { o: 10, n: 9 }, { o: 7, n: 10 } ] });
+			test.deepEqual(diff, { rename: { '1': 4, '2': 6, '3': 8, '4': 2, '5': 3, '6': 5, '7': 10, '8': 7, '9': 1, '10': 9 } });
 			c.merge(diff);
 		}
 	});
@@ -254,7 +254,7 @@ exports.testDiffArraySort = function (test) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(c));
 		var diff = c.read();
 		if (diff) {
-			test.deepEqual(diff, { rename: [ { o: 9, n: 1 }, { o: 4, n: 2 }, { o: 5, n: 3 }, { o: 1, n: 4 }, { o: 6, n: 5 }, { o: 2, n: 6 }, { o: 8, n: 7 }, { o: 3, n: 8 }, { o: 10, n: 9 }, { o: 7, n: 10 } ] });
+			test.deepEqual(diff, { rename: { '1': 4, '2': 6, '3': 8, '4': 2, '5': 3, '6': 5, '7': 10, '8': 7, '9': 1, '10': 9 } });
 		}
 	});
 
@@ -324,7 +324,7 @@ exports.testDiffRename = function (test) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 		var diff = b.read();
 		if (diff) {
-			test.deepEqual(diff, { _a: { _b: { rename: [ { o: 'c', n: 'z' } ] } } });
+			test.deepEqual(diff, { _a: { _b: { rename: { c: 'z' } } } });
 			c.merge(diff);
 		}
 	});
@@ -333,7 +333,7 @@ exports.testDiffRename = function (test) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(c));
 		var diff = c.read();
 		if (diff) {
-			test.deepEqual(diff, { _a: { _b: { rename: [ { o: 'c', n: 'z' } ] } } });
+			test.deepEqual(diff, { _a: { _b: { rename: { c: 'z' } } } });
 		}
 	});
 
@@ -528,6 +528,39 @@ exports.testDiffCombine = function (test) {
 
 	var diff = b.read();
 	test.strictEqual(JSON.stringify(diff), '{"_0":{"del":"foo","_bar":{"assign":2}}}');
+
+	test.done();
+};
+
+exports.testDiffRenameCombine = function (test) {
+	test.expect(3);
+
+	var a = [ { foo: 0, bar: 1 } ];
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a[0].boo = 8;
+	a[0].bar += 1;
+	a[0].foo = a[0].bar;
+	delete a[0].bar;
+
+	b[0].foo.inc().inc().inc().inc().set('hi', 0);
+	b[0].rename('foo', 'too');
+	b[0].too.assign(7);
+	b[0].bar.inc();
+	b[0].rename('too', 'boo');
+	b[0].boo.inc();
+	b[0].rename('bar', 'foo');
+
+	var diff = b.read();
+	test.strictEqual(JSON.stringify(diff), '{"_0":{"rename":{"bar":"foo","foo":"boo"},"_boo":{"assign":8},"_foo":{"assign":2}}}');
+
+	c.merge(diff);
+
+	// we get out of order so the strings are not equal... so parse em back and do a deep equal.
+
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+	test.deepEqual(b, c);
 
 	test.done();
 };

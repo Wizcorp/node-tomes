@@ -318,6 +318,28 @@ function diff(tome, op, val, chain) {
 				delete tDiff.assign;
 			}
 			break;
+		case 'rename':
+			var rO = chain[opk];
+			var oldKey, newKey;
+
+			for (oldKey in rO) {
+				if (tDiff.hasOwnProperty('_' + oldKey)) {
+					tDiff['_' + rO[oldKey]] = tDiff['_' + oldKey];
+					delete tDiff['_' + oldKey];
+				}
+			}
+
+			if (tDiff.hasOwnProperty('rename')) {
+				for (oldKey in tDiff.rename) {
+					newKey = tDiff.rename[oldKey];
+					if (rO.hasOwnProperty(newKey)) {
+						rO[oldKey] = rO[newKey];
+						delete rO[newKey];
+					} else {
+						rO[oldKey] = newKey;
+					}
+				}
+			}
 		}
 
 		tDiff[opk] = chain[opk];
@@ -1409,22 +1431,22 @@ ArrayTome.prototype.splice = function (spliceIndex, toRemove) {
 	return out;
 };
 
-ArrayTome.prototype.rename = function (val) {
-	if (Tome.typeOf(val) !== 'array') {
-		throw new Error('ArrayTome.rename - You cannot rename a single element in an array.');
+ArrayTome.prototype.rename = function (rO) {
+	if (Tome.typeOf(rO) !== 'object') {
+		throw new TypeError('ArrayTome.rename - invalid arguments.');
 	}
 
-	var tDiff = [];
+	var tDiff = {};
 
-	for (var i = 0, len = val.length; i < len; i += 1) {
-		var r = val[i];
-		this._arr[r.o].__key__ = r.n;
-		tDiff.push({ 'o': r.o, 'n': r.n });
+	for (var key in rO) {
+		var newKey = rO[key];
+		this._arr[key].__key__ = newKey;
+		tDiff[key] = newKey;
 	}
 
 	this._arr.sort(function (a, b) { return a.__key__ - b.__key__; });
 
-	for (i = 0, len = this._arr.length; i < len; i += 1) {
+	for (var i = 0, len = this._arr.length; i < len; i += 1) {
 		this[i] = this._arr[i];
 	}
 
@@ -1435,18 +1457,18 @@ ArrayTome.prototype.rename = function (val) {
 ArrayTome.prototype.sort = function () {
 	this._arr.sort.apply(this._arr, arguments);
 
-	var tDiff = [];
+	var tDiff = {};
 
 	for (var i = 0, len = this._arr.length; i < len; i += 1) {
 		if (this._arr[i].__key__ !== i) {
-			var oldkey = this._arr[i].__key__;
+			var oldKey = this._arr[i].__key__;
 			this._arr[i].__key__ = i;
 			this[i] = this._arr[i];
-			tDiff.push({ 'o': oldkey, 'n': i });
+			tDiff[oldKey] = i;
 		}
 	}
 
-	if (tDiff.length) {
+	if (Object.keys(tDiff).length) {
 		emitRename(this, tDiff);
 		diff(this, 'rename', tDiff);
 	}
@@ -1764,48 +1786,53 @@ ObjectTome.prototype.typeOf = function () {
 };
 
 ObjectTome.prototype.rename = function () {
-	
+
 	// ObjectTome.rename can take a few different styles of arguments:
-	//  - object: { o: 'oldKey', n: 'newKey' }
-	//  -  array: [ { o: 'oldKey1', n: 'newKey1' }, { o: 'oldKey2', n: 'newKey2' } ]
-	//  - string: 'oldKey', 'newKey'
+	// - object: { oldKey1: newKey1, oldKey2: newKey2 }
+	// - string: 'oldKey', newKey'
 
 	var oType = Tome.typeOf(arguments[0]);
-	var arr;
+	var rO;
 
 	switch (oType) {
 	case 'object':
-		arr = [ arguments[0] ];
-		break;
-	case 'array':
-		arr = arguments[0];
+		rO = arguments[0];
 		break;
 	case 'string':
-		arr = [ { o: arguments[0], n: arguments[1] } ];
+		rO = {};
+		rO[arguments[0]] = arguments[1];
 		break;
 	default:
 		throw new TypeError('ObjectTome.rename - Invalid arguments');
 	}
 
-	for (var i = 0, len = arr.length; i < len; i += 1) {
-		var oldKey = arr[i].o;
-		var newKey = arr[i].n;
+	var key;
+	var temporary = {};
+
+	for (key in rO) {
+		var oldKey = key;
+		var newKey = rO[key];
 
 		if (!this.hasOwnProperty(oldKey)) {
 			throw new ReferenceError('ObjectTome.rename - Key is not defined: ' + oldKey);
 		}
 
-		if (this.hasOwnProperty(newKey)) {
+		this[oldKey].__key__ = newKey;
+		temporary[newKey] = this[oldKey];
+
+		if (this.hasOwnProperty(newKey) && !rO.hasOwnProperty(newKey)) {
 			this.del(newKey);
 		}
 
-		this[newKey] = this[oldKey];
-		this[newKey].__key__ = newKey;
 		delete this[oldKey];
 	}
 
-	emitRename(this, arr);
-	diff(this, 'rename', arr);
+	for (key in temporary) {
+		this[key] = temporary[key];
+	}
+
+	emitRename(this, rO);
+	diff(this, 'rename', rO);
 
 	return this;
 };
