@@ -86,16 +86,6 @@ function Tome(parent, key) {
 	}
 
 	Object.defineProperties(this, properties);
-
-	// When we add a signal listener, we emit once with the current value. This
-	// is helpful when setting up UI components. We shouldn't have to create
-	// separate logic for initial values and value changes.
-
-	this.on('newListener', function (eventName, listener) {
-		if (eventName === 'readable') {
-			listener.call(this);
-		}
-	});
 }
 
 function emitAdd(tome, key) {
