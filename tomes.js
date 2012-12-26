@@ -890,6 +890,9 @@ Tome.prototype.merge = function (diff) {
 			this.assign(val);
 			break;
 		case 'del':
+			if (this.hasOwnProperty(val) && this[val].__hidden__) {
+				throw new Error('Tome.merge - Cannot merge to hidden Tomes.');
+			}
 			this.del(val);
 			break;
 		case 'move':
@@ -919,6 +922,9 @@ Tome.prototype.merge = function (diff) {
 			break;
 		case 'set':
 			for (var k in val) {
+				if (this.hasOwnProperty(k) && this[k].__hidden__) {
+					throw new Error('Tome.merge - Cannot merge to hidden Tomes.');
+				}
 				this.set(k, val[k]);
 			}
 			break;
