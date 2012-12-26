@@ -844,8 +844,6 @@ Tome.prototype.flush = function () {
 
 	this.__root__.__buffer__ = {};
 
-	//notify(this.__root__);
-
 	return true;
 };
 
@@ -869,6 +867,10 @@ Tome.prototype.merge = function (diff) {
 
 	// merge is used to apply diffs to our Tomes. Typically the diff would be a
 	// parsed JSON string or come directly from another Tome.
+
+	if (this.__hidden__) {
+		throw new Error('Tome.merge - Cannot merge to hidden Tomes.');
+	}
 
 	var i, len;
 
