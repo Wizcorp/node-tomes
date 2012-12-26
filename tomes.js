@@ -86,6 +86,16 @@ function Tome(parent, key) {
 	}
 
 	Object.defineProperties(this, properties);
+
+	// When we add a signal listener, we emit once with the current value. This
+	// is helpful when setting up UI components. We shouldn't have to create
+	// separate logic for initial values and value changes.
+
+	this.on('newListener', function (eventName, listener) {
+		if (eventName === 'readable') {
+			listener.call(this);
+		}
+	});
 }
 
 function emitAdd(tome, key) {
@@ -292,28 +302,25 @@ function diff(tome, op, val, chain) {
 		// it will hold diffs for all of its children as well as its own diffs.
 		// Child diffs start with _.
 
-		if (tDiff.hasOwnProperty(opk)) {
-
-			// This Tome already has an entry for opk. We need to augment it.
-			
-			if (Tome.typeOf(tDiff[opk]) === 'array') {
-
-				// this entry already has 2 entries so we can just push.
-
-				tDiff[opk].push(chain[opk]);
-			} else {
-
-				// There is only one entry, so we need to turn it into an array
-				// with the original value at 0.
-
-				tDiff[opk] = [ tDiff[opk], chain[opk] ];
+		switch (opk) {
+		case 'del':
+			if (tDiff.hasOwnProperty('_' + chain[opk])) {
+				delete tDiff['_' + chain[opk]];
 			}
-		} else {
-
-			// This Tome has no entry for opk so we create it.
-
-			tDiff[opk] = chain[opk];
+			break;
+		case 'assign':
+			if (tDiff.hasOwnProperty('set')) {
+				delete tDiff.set;
+			}
+			break;
+		case 'set':
+			if (tDiff.hasOwnProperty('assign')) {
+				delete tDiff.assign;
+			}
+			break;
 		}
+
+		tDiff[opk] = chain[opk];
 	}
 
 	tome.__diff__ = tDiff;
@@ -330,7 +337,7 @@ function diff(tome, op, val, chain) {
 		// chain. This is the opk in our chain for in loop up above referencing
 		// this Tome is a child of that Tome.
 
-		link['_'.concat(tome.__key__)] = chain;
+		link['_'.concat(tome.__key__)] = tDiff;
 	}
 
 	if (tome.hasOwnProperty('__parent__') && tome.__parent__ instanceof Tome) {
