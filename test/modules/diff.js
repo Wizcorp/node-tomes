@@ -285,7 +285,7 @@ exports.testDiffArrayShift = function (test) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 		var diff = b.read();
 		if (diff) {
-			test.deepEqual(diff, { "shift": 1 });
+			test.deepEqual(diff, { "shift": [ 1 ] });
 			c.merge(diff);
 		}
 	});
@@ -294,7 +294,7 @@ exports.testDiffArrayShift = function (test) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(c));
 		var diff = c.read();
 		if (diff) {
-			test.deepEqual(diff, { "shift": 1 });
+			test.deepEqual(diff, { "shift": [ 1 ] });
 		}
 	});
 
@@ -561,6 +561,189 @@ exports.testDiffRenameCombine = function (test) {
 
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 	test.deepEqual(b, c);
+
+	test.done();
+};
+
+exports.testDiffCombinePushPop = function (test) {
+	test.expect(11);
+
+	var a = [ 0, 1, 2, 3, 4 ];
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.push([ 5, 6 ]);
+	a.push(7);
+	a.pop();
+	a.push(8);
+	a.pop();
+	a.pop();
+	a.pop();
+	a.pop();
+	a.push(1);
+
+	b.push([ 5, 6 ]);
+	test.strictEqual(JSON.stringify(b.__diff__), '{"push":[[5,6]]}');
+
+	b.push(7);
+	test.strictEqual(JSON.stringify(b.__diff__), '{"push":[[5,6],7]}');
+	
+	b.pop();
+	test.strictEqual(JSON.stringify(b.__diff__), '{"push":[[5,6]]}');
+	
+	b.push(8);
+	test.strictEqual(JSON.stringify(b.__diff__), '{"push":[[5,6],8]}');
+	
+	b.pop();
+	test.strictEqual(JSON.stringify(b.__diff__), '{"push":[[5,6]]}');
+	
+	b.pop();
+	test.strictEqual(JSON.stringify(b.__diff__), '{}');
+	
+	b.pop();
+	test.strictEqual(JSON.stringify(b.__diff__), '{"pop":[1]}');
+	
+	b.pop();
+	test.strictEqual(JSON.stringify(b.__diff__), '{"pop":[1,1]}');
+	
+	b.push(1);
+
+	var diff = b.read();
+
+	test.strictEqual(JSON.stringify(diff), '{"pop":[1,1],"push":[1]}');
+
+	c.merge(diff);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+
+	test.done();
+};
+
+exports.testDiffCombineAssignDelAssign = function (test) {
+	test.expect(5);
+
+	var a = { foo: 'bar' };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.foo = 'test';
+	delete a.foo;
+	a.foo = 'boo';
+
+	b.foo.assign('test');
+	test.strictEqual(JSON.stringify(b.__diff__), '{"_foo":{"assign":"test"}}');
+
+	b.del('foo');
+	test.strictEqual(JSON.stringify(b.__diff__), '{"del":"foo"}');
+
+	b.set('foo', 'boo');
+
+	// Yes, deleting on object and readding it will kill its listeners.
+
+	var diff = b.read();
+	test.strictEqual(JSON.stringify(diff), '{"set":{"foo":"boo"}}');
+
+	c.merge(diff);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+
+	test.done();
+};
+
+exports.testDiffCombineSetAssign = function (test) {
+	test.expect(4);
+
+	var a = {};
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.foo = 'test';
+	a.foo = 'boo';
+
+	b.set('foo', 'test');
+	test.strictEqual(JSON.stringify(b.__diff__), '{"set":{"foo":"test"}}');
+
+	b.foo.assign('boo');
+
+	var diff = b.read();
+	test.strictEqual(JSON.stringify(diff), '{"set":{"foo":"boo"}}');
+
+	c.merge(diff);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+
+	test.done();
+};
+
+exports.testDiffCombinePushAssign = function (test) {
+	test.expect(6);
+
+	var a = [ 0, 1, 2, 3, 4 ];
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.push(9);
+	a[5] = 100;
+	a.pop();
+	a.push(6);
+
+	b.push(9);
+	test.strictEqual(JSON.stringify(b.__diff__), '{"push":[9]}');
+
+	b[5].assign(100);
+	test.strictEqual(JSON.stringify(b.__diff__), '{"push":[100]}');
+
+	b.pop();
+	test.strictEqual(JSON.stringify(b.__diff__), '{}');
+
+	b.push(6);
+
+	var diff = b.read();
+
+	test.strictEqual(JSON.stringify(diff), '{"push":[6]}');
+
+	c.merge(diff);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+
+	test.done();
+};
+
+exports.testDiffCombineUnshift = function (test) {
+	test.expect(6);
+
+	var a = [ 0, 1, 2, 3, 4 ];
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.unshift(9);
+	a[0] = 100;
+	a.pop();
+	a.unshift(6);
+
+	b.unshift(9);
+	test.strictEqual(JSON.stringify(b.__diff__), '{"unshift":[9]}');
+
+	b[0].assign(100);
+	test.strictEqual(JSON.stringify(b.__diff__), '{"unshift":[100]}');
+
+	b.pop();
+	test.strictEqual(JSON.stringify(b.__diff__), '{"unshift":[100],"pop":[1]}');
+
+	b.unshift(6);
+
+	var diff = b.read();
+
+	test.strictEqual(JSON.stringify(diff), '{"unshift":[6,100],"pop":[1]}');
+
+	c.merge(diff);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
 
 	test.done();
 };

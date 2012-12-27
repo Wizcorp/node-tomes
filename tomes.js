@@ -294,7 +294,8 @@ function diff(tome, op, val, chain) {
 		tDiff = {};
 	}
 
-	// We need to merge chain into this Tome's diff.
+	// We need to merge chain into this Tome's diff. Yeah, this needs to get
+	// refactored.
 
 	for (var opk in chain) {
 
@@ -303,19 +304,41 @@ function diff(tome, op, val, chain) {
 		// Child diffs start with _.
 
 		switch (opk) {
-		case 'del':
-			if (tDiff.hasOwnProperty('_' + chain[opk])) {
-				delete tDiff['_' + chain[opk]];
-			}
-			break;
 		case 'assign':
 			if (tDiff.hasOwnProperty('set')) {
 				delete tDiff.set;
 			}
+			tDiff[opk] = chain[opk];
 			break;
-		case 'set':
-			if (tDiff.hasOwnProperty('assign')) {
-				delete tDiff.assign;
+		case 'del':
+			if (tDiff.hasOwnProperty('_' + chain[opk])) {
+				delete tDiff['_' + chain[opk]];
+			}
+			tDiff[opk] = chain[opk];
+			break;
+		case 'move': // Not implemented yet...
+			tDiff[opk] = chain[opk];
+			break;
+		case 'pop':
+			if (tDiff.push) {
+				if (tDiff.hasOwnProperty('_' + (tome.length + tDiff.push.length - 1))) {
+					delete tDiff['_' + (tome.length + tDiff.push.length - 1)];
+				}
+				tDiff.push.pop();
+				if (!tDiff.push.length) {
+					delete tDiff.push;
+				}
+			} else if (tDiff[opk]) {
+				tDiff[opk] = tDiff[opk].concat(chain[opk]);
+			} else {
+				tDiff[opk] = chain[opk];
+			}
+			break;
+		case 'push':
+			if (tDiff[opk]) {
+				tDiff[opk] = tDiff[opk].concat(chain[opk]);
+			} else {
+				tDiff[opk] = chain[opk];
 			}
 			break;
 		case 'rename':
@@ -340,9 +363,66 @@ function diff(tome, op, val, chain) {
 					}
 				}
 			}
-		}
+			tDiff[opk] = chain[opk];
+			break;
+		case 'set':
+			if (tDiff.hasOwnProperty('assign')) {
+				delete tDiff.assign;
+			}
+			if (tDiff.hasOwnProperty('del')) {
+				delete tDiff.del;
+			}
+			tDiff[opk] = chain[opk];
+			break;
+		case 'shift':
+			if (tDiff.unshift) {
+				if (tDiff.hasOwnProperty('_' + (tome.length + tDiff.unshift.length - 1))) {
+					delete tDiff['_' + (tome.length + tDiff.unshift.length - 1)];
+				}
+				tDiff.unshift.shift();
+				if (!tDiff.unshift.length) {
+					delete tDiff.unshift;
+				}
+			} else if (tDiff[opk]) {
+				tDiff[opk] = chain[opk].concat(tDiff[opk]);
+			} else {
+				tDiff[opk] = chain[opk];
+			}
+			break;
+		case 'splice': //  Not implemented yet...
+			tDiff[opk] = chain[opk];
+			break;
+		case 'swap': // Not implemented yet...
+			tDiff[opk] = chain[opk];
+			break;
+		case 'unshift':
+			if (tDiff[opk]) {
+				tDiff[opk] = chain[opk].concat(tDiff[opk]);
+			} else {
+				tDiff[opk] = chain[opk];
+			}
+			break;
+		default:
+			if (opk.indexOf('_') === 0) {
+				var key = opk.substring(1);
 
-		tDiff[opk] = chain[opk];
+				// Do we have an assign?
+				if (chain[opk].assign && tDiff.set && tDiff.set[key]) {
+					tDiff.set[key] = chain[opk].assign;
+					delete tome[key].__diff__.assign;
+				} else if (chain[opk].assign && tDiff.push && tDiff.push[tome.length - parseInt(key, 10) - 1]) {
+					tDiff.push[tome.length - parseInt(key, 10) - 1] = chain[opk].assign;
+					delete tome[key].__diff__.assign;
+				} else if (chain[opk].assign && tDiff.unshift && tDiff.unshift[key]) {
+					tDiff.unshift[key] = chain[opk].assign;
+					delete tome[key].__diff__.assign;
+				} else {
+					tDiff[opk] = chain[opk];
+				}
+			} else {
+				throw new Error('diff - Invalid operation: ' + opk);
+			}
+		}
 	}
 
 	tome.__diff__ = tDiff;
@@ -926,7 +1006,7 @@ Tome.prototype.merge = function (diff) {
 			this.move(val.key, link, val.newKey);
 			break;
 		case 'pop':
-			for (i = 0; i < val; i += 1) {
+			for (i = 0, len = val.length; i < len; i += 1) {
 				this.pop();
 			}
 			break;
@@ -948,7 +1028,7 @@ Tome.prototype.merge = function (diff) {
 			}
 			break;
 		case 'shift':
-			for (i = 0; i < val; i += 1) {
+			for (i = 0, len = val.length; i < len; i += 1) {
 				this.shift();
 			}
 			break;
@@ -1314,7 +1394,7 @@ ArrayTome.prototype.shift = function () {
 		this.length = this._arr.length;
 		destroy(o);
 		emitDel(this, key);
-		diff(this, 'shift', 1);
+		diff(this, 'shift', [ 1 ]);
 	}
 
 	return out ? out.valueOf() : out;
@@ -1338,7 +1418,7 @@ ArrayTome.prototype.pop = function () {
 		}
 
 		emitDel(this, len);
-		diff(this, 'pop', 1);
+		diff(this, 'pop', [ 1 ]);
 	}
 
 	return out ? out.valueOf() : out;
