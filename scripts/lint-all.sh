@@ -9,7 +9,7 @@
 path=`pwd`
 cd `git rev-parse --show-toplevel`
 
-files=`find . -name "*.js" -not -regex "^\./node_modules\(.*\)"`
+files=`find . ! -wholename '*/node_modules/*' -name '*.js'`
 
 if [[ -z "$files" ]]
 then
