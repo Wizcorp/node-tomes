@@ -494,7 +494,7 @@ exports.testDiffMove = function (test) {
 };
 
 exports.testDiffMoveArray = function (test) {
-	test.expect(3);
+	test.expect(14);
 
 	var a = [ 0, 1, 2, 3, 4];
 	var b = Tome.conjure(a);
@@ -503,15 +503,60 @@ exports.testDiffMoveArray = function (test) {
 	b.on('readable', function () {
 		var diff = b.read();
 		if (diff) {
+			console.log(diff);
 			c.merge(diff);
 		}
 	});
 
+	a[4] = a[0];
+	delete a[0];
+
 	b.move(0, 4);
 
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
-	test.strictEqual(b[4].__key__, 4);
-	test.strictEqual(c[4].__key__, 4);
+
+	test.strictEqual(a.length, b.length);
+	test.strictEqual(b.length, c.length);
+
+	for (var i = 0, len = b.length; i < len; i += 1) {
+		test.equal(b[i].__key__, i);
+		test.equal(c[i].__key__, i);
+	}
+
+	test.done();
+};
+
+exports.testDiffMoveArrayLarger = function (test) {
+	test.expect(26);
+
+	var a = [ 0, 1, 2, 3, 4];
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	b.on('readable', function () {
+		var diff = b.read();
+		if (diff) {
+			console.log(diff);
+			c.merge(diff);
+		}
+	});
+
+	a[10] = a[0];
+	delete a[0];
+
+	b.move(0, 10);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+
+	test.strictEqual(a.length, b.length);
+	test.strictEqual(b.length, c.length);
+
+	for (var i = 0, len = b.length; i < len; i += 1) {
+		test.equal(b[i].__key__, i);
+		test.equal(c[i].__key__, i);
+	}
 
 	test.done();
 };
@@ -561,6 +606,34 @@ exports.testDiffRenameCombine = function (test) {
 
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 	test.deepEqual(b, c);
+
+	test.done();
+};
+
+exports.testDiffCombineMultiDel = function (test) {
+	test.expect(3);
+
+	var a = { a: 1, b: 1, c: 1, d: 1, e: 1, f: 1 };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(b);
+
+	delete a.a;
+	delete a.b;
+	delete a.c;
+	delete a.d;
+
+	b.del('a');
+	b.del('b');
+	b.del('c');
+	b.del('d');
+
+	var diff = b.read();
+	test.strictEqual(JSON.stringify(diff), '{"del":["a","b","c","d"]}');
+
+	c.merge(diff);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
 
 	test.done();
 };
@@ -747,3 +820,520 @@ exports.testDiffCombineUnshift = function (test) {
 
 	test.done();
 };
+
+exports.testDiffMoveBackAndForth = function (test) {
+	test.expect(5);
+
+	var a = { a: 1, b: 1, c: 1 };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.b = a.a;
+	delete a.a;
+	b.move('a', 'b');
+
+	test.strictEqual(JSON.stringify(b.__diff__), '{"del":"b","rename":{"a":"b"}}');
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+
+	a.a = a.b;
+	delete a.b;
+	b.move('b', 'a');
+
+	test.strictEqual(JSON.stringify(b.__diff__), '{"del":"b"}');
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+
+	var diff = b.read();
+
+	c.merge(diff);
+
+	test.deepEqual(b, c);
+
+	test.done();
+};
+
+exports.testDiffMultiSet = function (test) {
+	test.expect(4);
+
+	var a = { };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.a = 1;
+	b.set('a', 1);
+
+	test.strictEqual(JSON.stringify(b.__diff__), '{"set":{"a":1}}');
+
+	a.b = 2;
+	b.set('b', 2);
+
+	test.strictEqual(JSON.stringify(b.__diff__), '{"set":{"a":1,"b":2}}');
+
+	var diff = b.read();
+	c.merge(diff);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+	test.done();
+};
+
+exports.testDiffSetMove = function (test) {
+	test.expect(7);
+
+	var a = { bob: { pants: 'orange' }, scarf: 'green' };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.bob.shirt = false;
+	b.bob.set('shirt', false);
+
+	test.deepEqual(b.__diff__, {"_bob":{"set":{"shirt":false}}});
+	test.deepEqual(b.bob.__diff__, {"set":{"shirt":false}});
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+
+	a.pants = a.bob.shirt;
+	delete a.bob.shirt;
+	b.bob.move('shirt', b,'pants');
+
+	console.log('BDIFF',JSON.stringify(b.__diff__));
+
+	test.deepEqual(b.__diff__, {"set":{"pants":false}});
+	test.deepEqual(b.bob.__diff__, {});
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+
+	var diff = b.read();
+	c.merge(diff);
+
+	test.deepEqual(b, c);	
+
+	test.done();
+};
+
+exports.testDiffRenameMove = function (test) {
+	test.expect(7);
+
+	var a = { bob: { pants: 'orange' }, scarf: 'green' };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.bob.shirt = a.bob.pants;
+	delete a.bob.pants;
+	b.bob.rename('pants', 'shirt');
+
+	test.deepEqual(b.__diff__, {"_bob":{"rename":{"pants":"shirt"}}});
+	test.deepEqual(b.bob.__diff__, {"rename":{"pants":"shirt"}});
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+
+	a.shirt = a.bob.shirt;
+	delete a.bob.shirt;
+	b.bob.move('shirt', b);
+
+	test.deepEqual(b.__diff__, {"_bob":{"move":{"pants":{"chain":[],"to":"shirt"}}},"from":{"shirt":{"chain":["bob"],"was":"pants"}}});
+	test.deepEqual(b.bob.__diff__, {"move":{"pants":{"chain":[],"to":"shirt"}}});
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+
+	var diff = b.read();
+	c.merge(diff);
+
+	test.deepEqual(b, c);	
+
+	test.done();
+};
+
+exports.testDiffMoveUpRename = function (test) {
+	test.expect(6);
+
+	var a = { bob: { shirt: 'red' }, jim: { }, paul: { } };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.shirt = a.bob.shirt;
+	delete a.bob.shirt;
+	b.bob.move('shirt', b);
+
+	test.deepEqual(b.__diff__, {"from":{"shirt":{"chain":["bob"]}},"_bob":{"move":{"shirt":{"chain":[]}}}});
+	test.deepEqual(b.bob.__diff__, {"move":{"shirt":{"chain":[]}}});
+
+	a.pants = a.shirt;
+	delete a.shirt;
+	b.rename('shirt', 'pants');
+
+	test.deepEqual(b.__diff__, {"from":{"pants":{"chain":["bob"],"was":"shirt"}},"_bob":{"move":{"shirt":{"chain":[],"to":"pants"}}}});
+	test.deepEqual(b.bob.__diff__, {"move":{"shirt":{"chain":[],"to":"pants"}}});
+
+	var diff = b.read();
+	console.log('merging');
+	c.merge(diff);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+
+	test.done();
+};
+
+exports.testDiffMoveTwice = function (test) {
+	test.expect(9);
+
+	var a = { bob: { shirt: 'red' }, jim: { }, paul: { } };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.jim.scarf = a.bob.shirt;
+	delete a.bob.shirt;
+	b.bob.move('shirt', b.jim, 'scarf');
+
+	test.deepEqual(b.__diff__, {"_jim":{"from":{"scarf":{"chain":["bob"],"was":"shirt"}}},"_bob":{"move":{"shirt":{"chain":["jim"],"to":"scarf"}}}});
+	test.deepEqual(b.jim.__diff__, {"from":{"scarf":{"chain":["bob"],"was":"shirt"}}});
+	test.deepEqual(b.bob.__diff__, {"move":{"shirt":{"chain":["jim"],"to":"scarf"}}});
+
+	a.paul.shirt = a.jim.scarf;
+	delete a.jim.scarf;
+	b.jim.move('scarf', b.paul, 'shirt');
+
+	test.deepEqual(b.__diff__, {"_bob":{"move":{"shirt":{"chain":["paul"]}}},"_paul":{"from":{"shirt":{"chain":["bob"]}}}});
+	test.deepEqual(b.jim.__diff__, {});
+	test.deepEqual(b.bob.__diff__, {"move":{"shirt":{"chain":["paul"]}}});
+	test.deepEqual(b.paul.__diff__, {"from":{"shirt":{"chain":["bob"]}}});
+
+	var diff = b.read();
+	c.merge(diff);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+
+	test.done();
+};
+
+exports.testDiffMoveUpDownUp = function (test) {
+	test.expect(10);
+
+	var a = { bob: { shirt: 'blue', pants: 'orange' }, scarf: 'green' };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.shirt = a.bob.shirt;
+	delete a.bob.shirt;
+	b.bob.move('shirt', b);
+
+	test.deepEqual(b.__diff__, {"from":{"shirt":{"chain":["bob"]}},"_bob":{"move":{"shirt":{"chain":[]}}}});
+	test.deepEqual(b.bob.__diff__, {"move":{"shirt":{"chain":[]}}});
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+
+	a.bob.shirt = a.shirt;
+	delete a.shirt;
+	b.move('shirt', b.bob);
+
+	test.deepEqual(b.__diff__, {});
+	test.deepEqual(b.bob.__diff__, {});
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+
+	a.shirt = a.bob.shirt;
+	delete a.bob.shirt;
+	b.bob.move('shirt', b);
+
+	test.deepEqual(b.__diff__, {"from":{"shirt":{"chain":["bob"]}},"_bob":{"move":{"shirt":{"chain":[]}}}});
+	test.deepEqual(b.bob.__diff__, {"move":{"shirt":{"chain":[]}}});
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+
+	var diff = b.read();
+	c.merge(diff);
+
+	test.deepEqual(b, c);
+
+	test.done();
+};
+
+exports.testDiffMoveDownUpDown = function (test) {
+	test.expect(15);
+
+	var a = { shirt: 'red', bob: { shorts: 'blue' }, jim: { scarf: 'green' } };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.bob.pants = a.shirt;
+	delete a.shirt;
+	b.move('shirt', b.bob, 'pants');
+
+	test.deepEqual(b.__diff__, {"move":{"shirt":{"chain":["bob"],"to":"pants"}},"_bob":{"from":{"pants":{"chain":[],"was":"shirt"}}}});
+	test.deepEqual(b.bob.__diff__, {"from":{"pants":{"chain":[],"was":"shirt"}}});
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+
+	a.scarf = a.jim.scarf;
+	delete a.jim.scarf;
+	b.jim.move('scarf', b);
+
+	test.deepEqual(b.__diff__, {"move":{"shirt":{"chain":["bob"],"to":"pants"}},"_bob":{"from":{"pants":{"chain":[],"was":"shirt"}}},"from":{"scarf":{"chain":["jim"]}},"_jim":{"move":{"scarf":{"chain":[]}}}});
+	test.deepEqual(b.bob.__diff__, {"from":{"pants":{"chain":[],"was":"shirt"}}});
+	test.deepEqual(b.jim.__diff__, {"move":{"scarf":{"chain":[]}}});
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+
+	a.pants = a.bob.pants;
+	delete a.bob.pants;
+	b.bob.move('pants', b);
+
+	test.deepEqual(b.__diff__, {"from":{"scarf":{"chain":["jim"]}},"_jim":{"move":{"scarf":{"chain":[]}}},"rename":{"shirt":"pants"}});
+	test.deepEqual(b.bob.__diff__, {});
+	test.deepEqual(b.jim.__diff__, {"move":{"scarf":{"chain":[]}}});
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+
+	a.jim.shirt = a.scarf;
+	delete a.scarf;
+	b.move('scarf', b.jim, 'shirt');
+
+	test.deepEqual(b.__diff__, {"rename":{"shirt":"pants"},"_jim":{"rename":{"scarf":"shirt"}}});
+	test.deepEqual(b.bob.__diff__, {});
+	test.deepEqual(b.jim.__diff__, {"rename":{"scarf":"shirt"}});
+
+
+	var diff = b.read();
+	console.log('merging');
+	c.merge(diff);
+
+	test.deepEqual(b, c);
+
+	test.done();
+};
+
+exports.testDiffAssignMove = function (test) {
+	test.expect(9);
+
+	var a = { foo: 'bar', jim: { off: 'on' }, bar: 'baz' };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.jim.off = 'hi';
+	b.jim.off.assign('hi');
+
+	test.deepEqual(b.__diff__, {"_jim":{"_off":{"assign":"hi"}}});
+	test.deepEqual(b.jim.__diff__, {"_off":{"assign":"hi"}});
+	test.deepEqual(b.jim.off.__diff__, {"assign":"hi"});
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	a.off = a.jim.off;
+	b.jim.move('off', b);
+	delete a.jim.off;
+
+	test.deepEqual(b.__diff__, {"_jim":{"move":{"off":{"chain":[]}}},"from":{"off":{"chain":["jim"]}},"_off":{"assign":"hi"}}, JSON.stringify(b.__diff__));
+	test.deepEqual(b.jim.__diff__, {"move":{"off":{"chain":[]}}}, JSON.stringify(b.jim.__diff__));
+	test.deepEqual(b.off.__diff__, {"assign":"hi"});
+
+	var diff = b.read();
+	c.merge(diff);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+
+	test.done();
+};
+
+exports.testDiffMultiMove = function (test) {
+	test.expect(7);
+
+	var a = { a: 1, b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, z: { y: 1 } };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.z.x = a.a;
+	delete a.a;
+
+	b.move('a', b.z, 'x');
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	a.z.x = a.b;
+	delete a.b;
+
+	b.move('b', b.z, 'x');
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	a.z.x = a.c;
+	delete a.c;
+
+	b.move('c', b.z, 'x');
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	a.z.w = a.e;
+	delete a.e;
+
+	b.move('e', b.z, 'w');
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	a.z.x = a.d;
+	delete a.d;
+	b.move('d', b.z, 'x');
+
+	test.deepEqual(b.__diff__, {"del":["a","b","c"],"move":{"e":{"chain":["z"],"to":"w"},"d":{"chain":["z"],"to":"x"}},"_z":{"from":{"x":{"chain":[],"was":"d"},"w":{"chain":[],"was":"e"}}}}, JSON.stringify(b.__diff__));
+
+	var diff = b.read();
+
+	c.merge(diff);
+
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+	test.deepEqual(b, c);
+
+	test.done();
+};
+
+exports.testDiffCombineMove = function (test) {
+	test.expect(12);
+
+	var a = { foo: 'bar', jim: { off: 'on' }, bar: 'baz' };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.jim.foo = a.foo;
+	delete a.foo;
+	b.move('foo', b.jim);
+
+	test.deepEqual(b.__diff__, {"move":{"foo":{"chain":["jim"]}},"_jim":{"from":{"foo":{"chain":[]}}}}, JSON.stringify(b.__diff__));
+	test.deepEqual(b.jim.__diff__, {"from":{"foo":{"chain":[]}}}, JSON.stringify(b.jim.__diff__));
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b), '{"jim":{"off":"on","foo":"bar"},"bar":"baz"}');
+
+	a.jim.foo = 'why';
+	b.jim.foo.assign('why');
+
+	test.deepEqual(b.__diff__, {"move":{"foo":{"chain":["jim"]}},"_jim":{"_foo":{"assign":"why"},"from":{"foo":{"chain":[]}}}}, JSON.stringify(b.__diff__));
+	test.deepEqual(b.jim.__diff__, {"_foo":{"assign":"why"},"from":{"foo":{"chain":[]}}}, JSON.stringify(b.jim.__diff__));
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b), '{"jim":{"off":"on","foo":"why"},"bar":"baz"}');
+
+	a.jim = a.jim.foo;
+	delete a.jim.foo;
+	b.jim.move('foo', b, 'jim');
+
+	console.log('@@@@@',JSON.stringify(b.__diff__));
+
+	test.deepEqual(b.__diff__, {"rename":{"foo":"jim"},"_jim":{"assign":"why"}}, JSON.stringify(b.__diff__));
+	test.deepEqual(b.jim.__diff__, {"assign":"why"}, JSON.stringify(b.jim.__diff__));
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+
+	a.foo = a.jim;
+	delete a.jim;
+	b.move('jim', b, 'foo');
+
+	test.deepEqual(b.__diff__, {"del":"jim","_foo":{"assign":"why"}}, JSON.stringify(b.__diff__));
+
+	console.log('this needs to convert into a delete.');
+	var diff = b.read();
+
+	c.merge(diff);
+
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+	test.deepEqual(b, c);
+
+	test.done();
+};
+
+exports.testDiffOverwrite = function (test) {
+	test.expect(6);
+
+	var a = { bob: 'shirt', sam: 'pants' };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.bob = a.sam;
+	delete a.sam;
+	b.rename('sam', 'bob');
+
+	test.deepEqual(b.__diff__, {"rename":{"sam":"bob"}});
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+
+	a.sam = a.bob;
+	delete a.bob;
+	b.rename('bob', 'sam');
+
+	test.deepEqual(b.__diff__, {"rename":{"sam":"bob"}});
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+
+	var diff = b.read();
+	c.merge(diff);
+
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+	test.deepEqual(JSON.stringify(b), JSON.stringify(c));
+
+	test.done();
+};
+
+/*
+// New move down
+var a = { a: 1, b: { b: 2 }, c: 3, d: 4 };
+
+b.a.assign(5);
+b.__diff__ = {"_a":{"assign":5}}
+//-----
+// { a: 5, b: { b: 2 }, c: 3, d: 4 };
+
+b.move('a', b.b);
+b.__diff__ = {"move":{"a":{"chain":["b"]}},"_b":{"from":{"a":["a"]},"_a":{"assign":5}}}
+b.b.__diff__ = {"from":{"a":["a"]},"_a":{"assign":5}}
+//-----
+// { b: { a: 5, b: 2 }, c: 3, d: 4 };
+
+b.b.rename('a', 'e');
+b.__diff__ = {"move":{"a":{"chain":["b"],"newKey":"e"}},"_b":{"from":{"e":["a"]},"_e":{"assign":5}}}
+b.b.__diff__ = {"from":{"e":["a"]},"_e":{"assign":5}}
+//-----
+// { b: { e: 5, b: 2 }, c: 3, d: 4 };
+*/
+
+/*
+// New move up
+var a = { b: { a: 1, b: 2 }, c: 3, d: 4 };
+
+b.b.move('a', b);
+b.__diff__ = {"from":{"a":["b","a"]},"_b":{"move":{"a":{"chain":[]}}}}
+b.b.__diff__ = {"move":{"a":{"chain":[]}}}
+//-----
+// { a: 1, b: { b: 2 }, c: 3, d: 4 };
+
+b.rename('a', 'e');
+b.__diff__ = {"from":{"e":["b","a"]},"_b":{"move":{"a":{"chain":[],"newKey":"e"}}}}
+b.b.__diff__ = {"move":{"a":{"chain":[],"newKey":"e"}}}
+//-----
+// { b: { b: 2 }, c: 3, d: 4, e: 1 };
+
+b.e.assign(5);
+b.__diff__ = {"from":{"e":["b","a"]},"_b":{"move":{"a":{"chain":[],"newKey":"e"}}},"_e":{"assign":5}}
+b.b.__diff__ = {"move":{"a":{"chain":[],"newKey":"e"}}}
+//-----
+// { b: { b: 2 }, c: 3, d: 4, e: 5 };
+
+b.move('e', b.b);
+b.__diff__ = {"_b":{"rename":{"a":"e"},"_e":{"assign":5}}}
+b.b.__diff__ = {"rename":{"a":"e"},"_e":{"assign":5}}
+*/
+
+/*
+// New rename style
+var a = { a: 1, b: 2, c: 3, d: 4 };
+
+b.rename('a', 'b');
+{"rename":{"a":"b"},"del":"b"}
+//-----
+// { b: 1, c: 3, d: 4 };
+
+b.rename('b', 'e');
+{"rename":{"a":"e"},"del":"b"}
+//-----
+// { c: 3, d: 4, e: 1 };
+
+b.rename('e', 'a');
+{"del":"b"}
+//-----
+// { a: 1, c: 3, d: 4 };
+
+// new swap style
+var a = { a: 1, b: 2, c: 3, d: 4 };
+
+b.swap('a', b.b);
+{"swap":{"a":["b"],"b":["a"]}}
+//-----
+// { a: 2, b: 1, c: 3, d: 4 };
+
+b.swap('a', b.c);
+{"swap":{"a":["b"],"b":["c"],"c":["a"]}}
+//-----
+// { a: 3, b: 1, c: 2, d: 4 };
+
+b.swap('a', b.b);
+{"swap":{"b":["c"],"c":["b"]}}
+//-----
+// { a: 1, b: 3, c: 2, d: 4 };
+*/

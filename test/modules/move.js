@@ -35,7 +35,7 @@ exports.testMoveAndRename = function (test) {
 };
 
 exports.testMoveArray = function (test) {
-	test.expect(1);
+	test.expect(2);
 
 	var a = [ 0, 1, 2, 3, 4 ];
 	var b = Tome.conjure(a);
@@ -45,6 +45,25 @@ exports.testMoveArray = function (test) {
 
 	b.move(0, 4);
 
+	test.strictEqual(a.length, b.length);
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	test.done();
+};
+
+exports.testMoveArrayLarger = function (test) {
+	test.expect(2);
+
+	var a = [ 0, 1, 2, 3, 4 ];
+	var b = Tome.conjure(a);
+
+	a[10] = a[0];
+	delete a[0];
+
+	b.move(0, 10);
+
+
+	test.strictEqual(a.length, b.length);
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 
 	test.done();
