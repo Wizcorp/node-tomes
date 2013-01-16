@@ -232,204 +232,13 @@ function buildChain(tome) {
 	return chain;
 }
 
-function diffMove(tome, op) {
-	for (var k in op) {
-		var mO = op[k];
-
-		// Let's prepare some variables to use once we figure out where k came
-		// from.
-
-		var tDiff = tome.__diff__;
-		var mTarget = resolveChain(tome, mO.chain);
-		var mDiff = mTarget.__diff__;
-		var mChain = mO.chain;
-		var mKey = k;
-		var mTo = mO.to ? mO.to : mKey;
-		var resolved = false;
-		var reassigned = false;
-
-		if (tDiff.hasOwnProperty('_' + mKey)) {
-			mDiff['_' + mTo] = tDiff['_' + mKey];
-			if (mDiff.hasOwnProperty('del')) {
-				var delIndex = mDiff.del.indexOf(mTo);
-				if (delIndex >= 0) {
-					mDiff.del.splice(delIndex, 1);
-					if (isEmpty(mDiff.del)) {
-						delete mDiff.del;
-					}
-				}
-			}
-			delete tDiff['_' + mKey];
-			reassigned = true;
-		}
-
-		var fromOp, mOp, fromChain;
-
-		// We need to figure out if k was not there originally. To do that we
-		// look at the tome's diff and look for any operations that could have
-		// created k: from, rename, set, swap.
-
-		if (tDiff.from && tDiff.from.hasOwnProperty(mKey)) {
-			var fromParent = resolveChain(tome, tDiff.from[mKey].chain);
-			var fDiff = fromParent.__diff__;
-			var realKey = tDiff.from[mKey].was ? tDiff.from[mKey].was : mKey;
-
-			if (mTo !== realKey) {
-				fDiff.move[realKey].to = mTo;
-				tDiff.from[mKey].was = realKey;
-			} else {
-				delete fDiff.move[realKey].to;
-				delete tDiff.from[mKey].was;
-			}
-
-			fromOp = {};
-			fromOp[realKey] = tDiff.from[mKey];
-			delete tDiff.from[mKey];
-
-			if (isEmpty(tDiff.from)) {
-				delete tDiff.from;
-			}
-
-			if (mTarget === fromParent) {
-				delete fDiff.move[realKey];
-
-				if (isEmpty(fDiff.move)) {
-					delete fDiff.move;
-				}
-
-				if (realKey === mTo) {
-					diff(mTarget, '_' + mTarget.__key__, mDiff);
-				} else {
-					var rO = {};
-					rO[realKey] = mTo;
-
-					if (!mDiff.rename) {
-						mDiff.rename = {};
-					}
-
-					mDiff.rename[realKey] = mTo;
-					if (tDiff.hasOwnProperty('_' + realKey)) {
-						tDiff = tDiff['_' + realKey];
-					}
-				}
-			} else {
-				mOp = { chain: mChain };
-				
-				if (mTo !== realKey) {
-					mOp.to = mTo;
-				}
-				
-				fDiff.move[realKey] = mOp;
-
-				diff(mTarget, 'from', fromOp);
-			}
-			resolved = true;
-		}
-
-		if (tDiff.rename) {
-			for (var rOldKey in tDiff.rename) {
-				if (tDiff.rename[rOldKey] === mKey) {
-					if (!tDiff.move) {
-						tDiff.move = {};
-					}
-					var moveOp = { chain: mChain, to: mTo };
-
-					tDiff.move[rOldKey] = moveOp;
-
-					delete tDiff.rename[rOldKey];
-
-					if (isEmpty(tDiff.rename)) {
-						delete tDiff.rename;
-					}
-
-					fromChain = buildChain(tome);
-
-					fromOp = {};
-					fromOp[mTo] = {};
-					fromOp[mTo].chain = fromChain;
-					fromOp[mTo].was = rOldKey;
-
-					diff(mTarget, 'from', fromOp);
-
-					resolved = true;
-				}
-			}
-		}
-
-		if (tDiff.set && tDiff.set.hasOwnProperty(k)) {
-			var setOp = {};
-			setOp[mTo] = tDiff.set[k];
-
-			delete tDiff.set[k];
-			if (isEmpty(tDiff.set)) {
-				delete tDiff.set;
-			}
-
-			diff(mTarget, 'set', setOp);
-
-			resolved = true;
-		}
-
-		if (tDiff.swap && tDiff.swap.hasOwnProperty(k)) {
-			resolved = true; // in progres...
-		}
-
-		if (!resolved) {
-			if (!tDiff.move) {
-				tDiff.move = {};
-			}
-
-			mOp = { chain: mChain };
-			
-			if (mTo !== mKey) {
-				mOp.to = mTo;
-			}
-			
-			tDiff.move[mKey] = mOp;
-
-			fromChain = buildChain(tome);
-			fromOp = {};
-
-			fromOp[mTo] = {};
-			fromOp[mTo].chain = fromChain;
-
-			if (mTo !== mKey) {
-				fromOp[mTo].was = mKey;
-			}
-
-			diff(mTarget, 'from', fromOp);
-		}
-	}
-}
-
 function diffDel(tome, op) {
 
 	var tDiff = tome.__diff__;
 
 	for (var i = 0, len = op.length; i < len; i += 1) {
 		var delKey = op[i];
-		var resolved = false;
 		var realKey;
-
-		if (tDiff.from && tDiff.from.hasOwnProperty(delKey)) {
-			realKey = tDiff.from[delKey].hasOwnProperty('was') ? tDiff.from[delKey].was : delKey;
-
-			var fromParent = resolveChain(tome, tDiff.from[delKey].chain);
-			var fDiff = fromParent.__diff__;
-
-			if (fDiff.hasOwnProperty('del')) {
-				if (fDiff.del.indexOf(realKey) < 0) {
-					fDiff.del.push(realKey);
-				}
-			} else {
-				fDiff.del = [ realKey ];
-			}
-
-			delete fDiff.move[realKey];
-			delete tDiff.from[delKey];
-
-			resolved = true;
-		}
 
 		if (tDiff.hasOwnProperty('rename')) {
 			for (var rOldKey in tDiff.rename) {
@@ -447,14 +256,12 @@ function diffDel(tome, op) {
 			delKey = realKey;
 		}
 
-		if (!resolved) {
-			if (tDiff.hasOwnProperty('del')) {
-				if (tDiff.del.indexOf(delKey) < 0) {
-					tDiff.del.push(delKey);
-				}
-			} else {
-				tDiff.del = [ delKey ];
+		if (tDiff.hasOwnProperty('del')) {
+			if (tDiff.del.indexOf(delKey) < 0) {
+				tDiff.del.push(delKey);
 			}
+		} else {
+			tDiff.del = [ delKey ];
 		}
 
 		if (tDiff.hasOwnProperty('_' + delKey)) {
@@ -502,18 +309,6 @@ function diff(tome, op, val, chain) {
 			break;
 		case 'del':
 			diffDel(tome, chain.del);
-			break;
-		case 'from':
-			if (tDiff[opk]) {
-				for (k in chain.from) {
-					tDiff.from[k] = chain.from[k];
-				}
-			} else {
-				tDiff[opk] = chain[opk];
-			}
-            break;
-		case 'move': // implementation in progress....
-			diffMove(tome, chain.move);
 			break;
 		case 'pop':
 			if (tDiff.push) {
@@ -567,29 +362,6 @@ function diff(tome, op, val, chain) {
 
 				tDiff[opk] = chain[opk];
 				resolved = true;
-			}
-
-			if (tDiff.from) {
-				for (oldKey in rO) {
-					newKey = rO[oldKey];
-					if (tDiff.from[oldKey]) {
-						var fromParent = resolveChain(tome, tDiff.from[oldKey].chain);
-						var fDiff = fromParent.__diff__;
-						var realKey = tDiff.from[oldKey].was ? tDiff.from[oldKey].was : oldKey;
-
-						if (newKey !== realKey) {
-							fDiff.move[realKey].to = newKey;
-							tDiff.from[oldKey].was = realKey;
-						} else {
-							delete fDiff.move[realKey].to;
-						}
-
-						tDiff.from[newKey] = tDiff.from[oldKey];
-						delete tDiff.from[oldKey];
-
-						resolved = true;
-					}
-				}
 			}
 
 			if (!resolved) {
@@ -1188,15 +960,6 @@ Tome.prototype.merge = function (diff) {
 				this.del(k);
 			}
 			break;
-		case 'from':
-			val = val;
-			break;
-		case 'move':
-			for (k in val) {
-				target = resolveChain(this, val[k].chain);
-				this.move(k, target, val[k].to);
-			}
-			break;
 		case 'pop':
 			for (i = 0, len = val.length; i < len; i += 1) {
 				this.pop();
@@ -1305,103 +1068,6 @@ Tome.prototype.swap = function (key, target) {
 		tDiff = {};
 		tDiff[key] = this[key].valueOf();
 		diff(this, 'set', tDiff);
-	}
-
-	return this;
-};
-
-Tome.prototype.move = function (key, newParent, onewKey) {
-	if (!this.hasOwnProperty(key)) {
-		throw new ReferenceError('Tome.move - Key is not defined: ' + key);
-	}
-
-	if (onewKey !== undefined && !(newParent instanceof Tome)) {
-		throw new TypeError('Tome.move - new parent must be a Tome');
-	} else if (onewKey === undefined && !(newParent instanceof Tome)) {
-		onewKey = newParent;
-		newParent = this;
-	}
-
-	if (newParent === this) {
-		var rO = {};
-		rO[key] = onewKey;
-		return this.rename(rO);
-	}
-
-	if (onewKey === undefined) {
-		onewKey = key;
-	}
-
-	var newKey = parseInt(onewKey, 10);
-
-	if (newKey < 0 && newParent instanceof ArrayTome) {
-		return this;
-	}
-
-	if (onewKey.toString() === newKey.toString() && newParent instanceof ArrayTome) {
-		var a = 9; // this is to stop lint from complaining, could be refactored.
-		a = 8;
-	} else if (onewKey.toString() !== newKey.toString()) {
-		newKey = onewKey;
-		if (!(newParent instanceof ObjectTome)) {
-			reset(newParent);
-			newParent.__proto__ = ObjectTome.prototype;
-		}
-	}
-
-	if (newParent.hasOwnProperty(newKey)) {
-		newParent.del(newKey);
-		//emitDel(newParent, newKey);
-	}
-
-	if (newParent instanceof ArrayTome) {
-		var arr = newParent._arr;
-		var len = arr.length;
-
-		arr[newKey] = this[key];
-		newParent[newKey] = arr[newKey];
-
-		if (newKey >= len) {
-			for (var i = len; i < newKey - 1; i += 1) {
-				arr[i] = Tome.conjure(undefined, this, i);
-				emitAdd(this, i);
-			}
-			this.length = arr.length;
-		}
-	} else {
-		newParent[newKey] = this[key];
-	}
-
-	if (this instanceof ArrayTome) {
-		this._arr[key] = Tome.conjure(undefined, this, key);
-		this[key] = this._arr[key];
-	} else {
-		delete this[key];
-	}
-
-	newParent[newKey].__parent__ = newParent;
-	newParent[newKey].__key__ = newKey;
-	newParent[newKey].__root__ = newParent.__root__;
-
-	emitDel(this, key);
-	emitAdd(newParent, newKey);
-
-	if (this.__root__ === newParent.__root__) {
-		var chain = buildChain(newParent);
-
-		var moveOp = {};
-		moveOp[key] = {};
-		moveOp[key].chain = chain;
-		if (newKey !== key) {
-			moveOp[key].to = newKey;
-		}
-
-		diff(this, 'move', moveOp);
-	} else {
-		diff(this, 'del', [ key ]);
-		var tDiff = {};
-		tDiff[newKey] = newParent[newKey].valueOf();
-		diff(newParent, 'set', tDiff);
 	}
 
 	return this;
