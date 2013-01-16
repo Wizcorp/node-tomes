@@ -40,83 +40,81 @@ exports.testNullCreation = function (test) {
 };
 
 exports.testNullReadable = function (test) {
-	test.expect(2);
+	test.expect(0);
 
 	var a = null;
 	var b = Tome.conjure(a);
 
 	b.on('readable', function () {
-		test.strictEqual(a, b.valueOf()); // 1
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // This should not happen.
 	});
 
 	test.done();
 };
 
 exports.testNullAssign = function (test) {
+	test.expect(10);
+
+	var a = null;
+	var b = Tome.conjure(a);
+
+	b.on('readable', function () {
+		test.equal(a, b.valueOf()); // 3, 7
+	});
+
+	test.strictEqual(a, b.valueOf()); // 1
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
+
+	a = 'orange';
+	b.assign('orange');
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 4
+	test.ok(instanceOf(b, StringTome)); // 5
+	test.strictEqual(typeof a, b.typeOf()); // 6
+
+	a = null;
+	b.assign(null);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 8
+	test.ok(instanceOf(b, NullTome)); // 9
+	test.strictEqual(Tome.typeOf(a), Tome.typeOf(b)); // 10
+
+	test.done();
+};
+
+exports.testNullSet = function (test) {
 	test.expect(11);
 
 	var a = null;
 	var b = Tome.conjure(a);
 
 	b.on('readable', function () {
-		test.equal(a, b.valueOf()); // 1, 4, 8
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3, 8
 	});
 
-	test.strictEqual(a, b.valueOf()); // 2
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
+	test.strictEqual(a, b.valueOf()); // 1
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
 
-	a = 'orange';
-	b.assign('orange');
+	a = { d: null };
+	b.set('d', null);
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 5
-	test.ok(instanceOf(b, StringTome)); // 6
-	test.strictEqual(typeof a, b.typeOf()); // 7
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 4
+	test.ok(notInstanceOf(b, NullTome)); // 5
+	test.ok(instanceOf(b, ObjectTome)); // 6
+	test.ok(instanceOf(b.d, NullTome)); // 7
 
 	a = null;
 	b.assign(null);
 
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 9
 	test.ok(instanceOf(b, NullTome)); // 10
-	test.strictEqual(Tome.typeOf(a), Tome.typeOf(b)); // 11
-
-	test.done();
-};
-
-exports.testNullSet = function (test) {
-	test.expect(12);
-
-	var a = null;
-	var b = Tome.conjure(a);
-
-	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 9
-	});
-
-	test.strictEqual(a, b.valueOf()); // 2
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
-
-	a = { d: null };
-	b.set('d', null);
-
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 5
-	test.ok(notInstanceOf(b, NullTome)); // 6
-	test.ok(instanceOf(b, ObjectTome)); // 7
-	test.ok(instanceOf(b.d, NullTome)); // 8
-
-	a = null;
-	b.assign(null);
-
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 10
-	test.ok(instanceOf(b, NullTome)); // 11
-	test.ok(notInstanceOf(b.d, NullTome)); // 12
-
+	test.ok(notInstanceOf(b.d, NullTome)); // 11
 
 	test.done();
 };
 
 exports.testNullDestroy = function (test) {
-	test.expect(3);
+	test.expect(2);
 
 	var a = { d: null};
 	var b = Tome.conjure(a);
@@ -126,7 +124,7 @@ exports.testNullDestroy = function (test) {
 	});
 
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 3
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 	});
 
 	a = null;
@@ -136,7 +134,7 @@ exports.testNullDestroy = function (test) {
 };
 
 exports.testNullDelete = function (test) {
-	test.expect(3);
+	test.expect(2);
 
 	var a = { d: null};
 	var b = Tome.conjure(a);
@@ -146,7 +144,7 @@ exports.testNullDelete = function (test) {
 	});
 
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 3
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 	});
 
 	a = null;
@@ -156,7 +154,7 @@ exports.testNullDelete = function (test) {
 };
 
 exports.testNullArrayRepeatSet = function (test) {
-	test.expect(6);
+	test.expect(5);
 
 	var readableCount = 0;
 
@@ -165,29 +163,29 @@ exports.testNullArrayRepeatSet = function (test) {
 
 	b.on('readable', function () {
 		readableCount += 1;
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 	});
 
 	a[0] = null;
 	b.set('0', null);
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
-	test.strictEqual(a.hasOwnProperty(0), b.hasOwnProperty(0)); // 4
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
+	test.strictEqual(a.hasOwnProperty(0), b.hasOwnProperty(0)); // 3
 
-	test.strictEqual(readableCount, 2); // 5
+	test.strictEqual(readableCount, 1); // 4
 
 	// This should do nothing, we are not changing the value.
 
 	a[0] = null;
 	b.set('0', null);
 
-	test.strictEqual(readableCount, 2); // 6
+	test.strictEqual(readableCount, 1); // 5
 
 	test.done();
 };
 
 exports.testNullArrayRepeatAssign = function (test) {
-	test.expect(6);
+	test.expect(5);
 
 	var readableCount = 0;
 
@@ -196,23 +194,23 @@ exports.testNullArrayRepeatAssign = function (test) {
 
 	b.on('readable', function () {
 		readableCount += 1;
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 	});
 
 	a[0] = null;
 	b[0].assign(null);
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
-	test.strictEqual(a.hasOwnProperty(0), b.hasOwnProperty(0)); // 4
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
+	test.strictEqual(a.hasOwnProperty(0), b.hasOwnProperty(0)); // 3
 
-	test.strictEqual(readableCount, 2); // 5
+	test.strictEqual(readableCount, 1); // 4
 
 	// This should do nothing, we are not changing the value.
 
 	a[0] = null;
 	b[0].assign(null);
 
-	test.strictEqual(readableCount, 2); // 6
+	test.strictEqual(readableCount, 1); // 5
 
 	test.done();
 };
