@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/bjornstar/tomes.png)](https://travis-ci.org/bjornstar/tomes)
+[![Build Status](https://travis-ci.org/bjornstar/tomes.png?branch=develop)](https://travis-ci.org/bjornstar/tomes)
 
 Tomes
 =========
@@ -72,14 +72,8 @@ Assign data to a Tome.
 ###del( *key* )
 Delete a key from a Tome.
 
-###pause( )
-Start buffering all add/del/destroy/rename event emissions.
-
-###flush( )
-Emit all buffered add/del/destroy/rename events.
-
-###resume( )
-Emit all buffered add/del/destroy/rename events and stop buffering add/del/destroy/rename event emission.
+###read( )
+Get the diff from a Tome, removing the diff in the process.
 
 ###merge( *diff* )
 Applies a diff to a Tome
@@ -96,9 +90,12 @@ Rename key to newkey.
 ###hide( [ *boolean* ] )
 Hides a Tome. The Tome still exists in this tome, but will neither stringify nor show up in any events. Shows up as a delete in the diff.
 
+###isDirty( )
+Returns whether a Tome has been changed.
+
 ##Events
 
-###add( *key*, *val* )
+###add( *key* )
 Emitted when a Tome receives a new key.
 
 ###del( *key* )
@@ -107,8 +104,11 @@ Emitted when a key is deleted from a Tome.
 ###destroy( )
 Emitted when a Tome is deleted.
 
-###rename( *key*, *newkey* )
+###rename( { oldKey1: newKey1, oldKey2: newKey2, ... } )
 Emitted when a key is renamed.
 
 ###readable( )
-Emitted when you register a listener on the readable event and on every change to the Tome. 
+Emitted on every change to a Tome. 
+
+###dirty()
+Emitted on every change to a Tome.
