@@ -57,10 +57,6 @@ function Tome(parent, key) {
 	// __version__ is a number that increments whenever a Tome or any of its
 	// child Tomes changes. It exists on all Tomes.
 
-	// __buffer__ holds copies of all of the add, del, destroy, and rename
-	// events that have occurred since the pause method was called. It only
-	// exists on the root Tome.
-
 	// __parent__ holds a reference to the Tome's parent object so we can
 	// signal up the Tome chain. It only exists on Tomes with parents.
 
@@ -72,7 +68,7 @@ function Tome(parent, key) {
 
 	var properties = {
 		__root__: { writable: true, value: parent instanceof Tome ? parent.__root__ : this },
-		__diff__: { writable: true },
+		__diff__: { writable: true, value: {} },
 		__version__: { writable: true, value: 1 },
 		__hidden__: { writable: true, value: false },
 		_events: { configurable: true, writable: true }
@@ -81,21 +77,9 @@ function Tome(parent, key) {
 	if (parent instanceof Tome) {
 		properties.__parent__ = { writable: true, value: parent };
 		properties.__key__ = { writable: true, value: key };
-	} else {
-		properties.__buffer__ = { writable: true, value: false };
 	}
 
 	Object.defineProperties(this, properties);
-
-	// When we add a signal listener, we emit once with the current value. This
-	// is helpful when setting up UI components. We shouldn't have to create
-	// separate logic for initial values and value changes.
-
-	this.on('newListener', function (eventName, listener) {
-		if (eventName === 'readable') {
-			listener.call(this);
-		}
-	});
 }
 
 function emitAdd(tome, key) {
@@ -103,67 +87,24 @@ function emitAdd(tome, key) {
 		return;
 	}
 
-	var buffer = tome.__root__.__buffer__;
-
-	if (!buffer) {
-		tome.emit('add', key, tome[key] === undefined ? undefined : tome[key].valueOf());
-		return;
-	}
-
-	var added = { tome: tome, key: key };
-
-	if (buffer.add) {
-		buffer.add.push(added);
-		return;
-	}
-
-	buffer.add = [ added ];
+	tome.emit('add', key);
 }
 
 function emitDel(tome, key) {
 	if (tome.__hidden__) {
 		return;
 	}
-	var buffer = tome.__root__.__buffer__;
 
-	if (!buffer) {
-		tome.emit('del', key);
-		return;
-	}
-	
-	var deleted = { tome: tome, key: key };
-
-	if (buffer.del) {
-		buffer.del.push(deleted);
-		return;
-	}
-
-	buffer.del = [ deleted ];
+	tome.emit('del', key);
 }
 
-function emitRename(tome, val) {
+function emitRename(tome, rO) {
 	if (tome.__hidden__) {
 		return;
 	}
 
-	var buffer = tome.__root__.__buffer__;
-	var len = val.length;
-	var i;
-
-	if (!buffer) {
-		for (i = 0; i < len; i += 1) {
-			tome.emit('rename', val[i].o, val[i].n);
-		}
-		return;
-	}
-
-	if (!buffer.rename) {
-		buffer.rename = [];
-	}
-
-	for (i = 0; i < len; i += 1) {
-		var renamed = { tome: tome, oldKey: val[i].o, newKey: val[i].n };
-		buffer.rename.push(renamed);
+	for (var oldKey in rO) {
+		tome.emit('rename', oldKey, rO[oldKey]);
 	}
 }
 
@@ -172,21 +113,7 @@ function emitDestroy(tome) {
 		return;
 	}
 
-	var buffer = tome.__root__.__buffer__;
-
-	if (!buffer) {
-		tome.emit('destroy');
-		return;
-	}
-
-	var destroyed = { tome: tome };
-
-	if (buffer.destroy) {
-		buffer.destroy.push(destroyed);
-		return;
-	}
-
-	buffer.destroy = [ destroyed ];
+	tome.emit('destroy');
 }
 
 function destroy(tome) {
@@ -200,39 +127,47 @@ function destroy(tome) {
 
 	var keys = Object.keys(tome);
 	for (var i = 0, len = keys.length; i < len; i += 1) {
-		var key = keys[i];
-		if (tome[key] instanceof Tome) {
-			destroy(tome[key]);
+		var k = keys[i];
+		if (tome[k] instanceof Tome) {
+			destroy(tome[k]);
 		}
 	}
 
 	emitDestroy(tome);
 }
 
+function isEmpty(o) {
+	for (var k in o) {
+		k = k;
+		return false;
+	}
+	return true;
+}
+
 function notify(tome) {
 
-	// The notify method is called on the root Tome when we resume to emit
-	// signal, change, and diff on all Tomes that need to. We know a Tome needs
-	// to emit because its __diff__ property was set by the diff method.
+	// The notify function is called on a Tome when we use the read method. It
+	// is used to clear out the diffs that have built up since the last read.
 
-	if (tome.__diff__ === undefined || tome.__hidden__) {
+	if (isEmpty(tome.__diff__) || tome.__hidden__) {
 		return false;
 	}
 
-	tome.__diff__ = undefined;
+	tome.__diff__ = {};
 
 	// Since our Tomes inherit from multiple prototypes, they have a large
-	// number of properties. We use Object.keys to only get its own enumerable
-	// properties, this is much faster than using for ... in which would
-	// iterate over all properties in the prototype chain.
+	// number of methods. We use Object.keys to only get a Tome's actual
+	// enumarable properties, this is much faster than using for ... in which
+	// would iterate over all methods in the prototype chain.
 
 	var keys = Object.keys(tome);
 	for (var i = 0, len = keys.length; i < len; i += 1) {
 		var k = keys[i];
-		if (tome[k] && tome[k].__diff__) {
+		if (tome[k] && !isEmpty(tome[k].__diff__)) {
 			notify(tome[k]);
 		}
 	}
+	return true;
 }
 
 function reset(tome) {
@@ -271,6 +206,70 @@ function reset(tome) {
 	}
 }
 
+function resolveChain(tome, chain) {
+	var len = chain.length;
+	var target = tome.__root__;
+
+	for (var i = 0; i < len; i += 1) {
+		if (target.hasOwnProperty(chain[i])) {
+			target = target[chain[i]];
+		}
+	}
+
+	return target;
+}
+
+function buildChain(tome) {
+	var link = tome;
+	var chain = [];
+
+	while (link.hasOwnProperty('__key__')) {
+		chain.push(link.__key__);
+		link = link.__parent__;
+	}
+
+	chain.reverse();
+	return chain;
+}
+
+function diffDel(tome, op) {
+
+	var tDiff = tome.__diff__;
+
+	for (var i = 0, len = op.length; i < len; i += 1) {
+		var delKey = op[i];
+		var realKey;
+
+		if (tDiff.hasOwnProperty('rename')) {
+			for (var rOldKey in tDiff.rename) {
+				if (tDiff.rename[rOldKey] === delKey) {
+					realKey = rOldKey;
+				}
+			}
+			
+			delete tDiff.rename[realKey];
+
+			if (isEmpty(tDiff.rename)) {
+				delete tDiff.rename;
+			}
+
+			delKey = realKey;
+		}
+
+		if (tDiff.hasOwnProperty('del')) {
+			if (tDiff.del.indexOf(delKey) < 0) {
+				tDiff.del.push(delKey);
+			}
+		} else {
+			tDiff.del = [ delKey ];
+		}
+
+		if (tDiff.hasOwnProperty('_' + delKey)) {
+			delete tDiff['_' + delKey];
+		}
+	}
+}
+
 function diff(tome, op, val, chain) {
 	if (tome.__hidden__) {
 		return;
@@ -290,10 +289,6 @@ function diff(tome, op, val, chain) {
 
 	var tDiff = tome.__diff__;
 
-	if (tDiff === undefined) {
-		tDiff = {};
-	}
-
 	// We need to merge chain into this Tome's diff. Yeah, this needs to get
 	// refactored.
 
@@ -303,6 +298,8 @@ function diff(tome, op, val, chain) {
 		// it will hold diffs for all of its children as well as its own diffs.
 		// Child diffs start with _.
 
+		var k;
+
 		switch (opk) {
 		case 'assign':
 			if (tDiff.hasOwnProperty('set')) {
@@ -311,13 +308,7 @@ function diff(tome, op, val, chain) {
 			tDiff[opk] = chain[opk];
 			break;
 		case 'del':
-			if (tDiff.hasOwnProperty('_' + chain[opk])) {
-				delete tDiff['_' + chain[opk]];
-			}
-			tDiff[opk] = chain[opk];
-			break;
-		case 'move': // Not implemented yet...
-			tDiff[opk] = chain[opk];
+			diffDel(tome, chain.del);
 			break;
 		case 'pop':
 			if (tDiff.push) {
@@ -352,27 +343,65 @@ function diff(tome, op, val, chain) {
 				}
 			}
 
-			if (tDiff.hasOwnProperty('rename')) {
+			var resolved = false;
+
+			if (tDiff.rename) {
 				for (oldKey in tDiff.rename) {
 					newKey = tDiff.rename[oldKey];
 					if (rO.hasOwnProperty(newKey)) {
-						rO[oldKey] = rO[newKey];
-						delete rO[newKey];
+						if (rO[newKey] === oldKey) {
+							delete rO[newKey];
+						} else {
+							rO[oldKey] = rO[newKey];
+							delete rO[newKey];
+						}
 					} else {
 						rO[oldKey] = newKey;
 					}
 				}
+
+				tDiff[opk] = chain[opk];
+				resolved = true;
 			}
-			tDiff[opk] = chain[opk];
+
+			if (!resolved) {
+				if (!tDiff.rename) {
+					tDiff.rename = {};
+				}
+
+				for (k in chain.rename) {
+					tDiff.rename[k] = chain.rename[k];
+				}
+			}
+			
+			if (isEmpty(tDiff[opk])) {
+				delete tDiff[opk];
+			}
+
 			break;
 		case 'set':
+			// Doing a set on a tome will wipe out any assigns
+
 			if (tDiff.hasOwnProperty('assign')) {
 				delete tDiff.assign;
 			}
+
+			// Doing a set on a tome will wipe out any deletes
+
 			if (tDiff.hasOwnProperty('del')) {
 				delete tDiff.del;
 			}
-			tDiff[opk] = chain[opk];
+
+			// Merge our set into this diff.
+
+			if (tDiff[opk]) {
+				for (k in chain.set) {
+					tDiff.set[k] = chain.set[k];
+				}
+			} else {
+				tDiff[opk] = chain[opk];
+			}
+
 			break;
 		case 'shift':
 			if (tDiff.unshift) {
@@ -417,7 +446,13 @@ function diff(tome, op, val, chain) {
 					tDiff.unshift[key] = chain[opk].assign;
 					delete tome[key].__diff__.assign;
 				} else {
-					tDiff[opk] = chain[opk];
+					if (isEmpty(chain[opk])) {
+						if (isEmpty(tDiff[opk])) {
+							delete tDiff[opk];
+						}
+					} else {
+						tDiff[opk] = chain[opk];
+					}
 				}
 			} else {
 				throw new Error('diff - Invalid operation: ' + opk);
@@ -428,13 +463,13 @@ function diff(tome, op, val, chain) {
 	tome.__diff__ = tDiff;
 
 	tome.emit('readable');
+	tome.emit('dirty');
 
 	// Now we need to build a bigger object to send to the parent.
 
 	var link = {};
 
 	if (tome.hasOwnProperty('__key__')) {
-
 		// We have a key, so we aren't on the root Tome stick that on the
 		// chain. This is the opk in our chain for in loop up above referencing
 		// this Tome is a child of that Tome.
@@ -470,9 +505,9 @@ function arrayInit(tome, val) {
 	tome.length = len;
 
 	// We go through each element in val and conjure a new Tome based on that
-	// value with a reference to this as its parent. We also assign
+	// value with a reference to this tome as its parent. We also assign
 	// properties with references to those new array elements. We need this
-	// so we can do things like myTome[3].on('signal', function () {});
+	// so we can do things like myTome[3].on('readable', function () {});
 
 	// One additional special case that bears mentioning here is when an
 	// array element has undefined as its value. When that element goes
@@ -695,6 +730,10 @@ Tome.conjure = function (val, parent, key) {
 	return newTome;
 };
 
+Tome.prototype.isDirty = function () {
+	return !isEmpty(this.__diff__);
+};
+
 Tome.prototype.set = function (key, val) {
 
 	// We use this to set a property on a Tome to the specified value. This can
@@ -862,7 +901,7 @@ Tome.prototype.del = function (key) {
 	destroy(o);
 
 	emitDel(this, key);
-	diff(this, 'del', key);
+	diff(this, 'del', [ key ]);
 
 	return this;
 };
@@ -870,96 +909,17 @@ Tome.prototype.del = function (key) {
 Tome.prototype.read = function () {
 	// Diffs are automatically buffered by default. When read is called on a
 	// Tome we consider the diff to be consumed and walk down the chain to
-	// remove all buffered diffs. We also need to talk up the chain to remove
+	// remove all buffered diffs. We also need to walk up the chain to remove
 	// the consumed diffs from the parents who may still have other diffs that
 	// have not been consumed yet.
+
+	if (isEmpty(this.__diff__)) {
+		return undefined;
+	}
 
 	var out = this.__diff__;
 	notify(this);
 	return out;
-};
-
-Tome.prototype.pause = function () {
-
-	// The pause method creates a buffer on the root Tome. When this buffer is
-	// in place, all events go into the buffer instead of being emitted. The
-	// return value indicates whether we were paused or not.
-
-	if (!this.__root__.__buffer__) {
-		this.__root__.__buffer__ = {};
-		return false;
-	}
-
-	return true;
-};
-
-Tome.prototype.flush = function () {
-
-	// The flush method goes through all the events in the buffer on the root
-	// Tome and emits them.
-
-	var buffer = this.__root__.__buffer__;
-
-	if (!buffer) {
-		return false;
-	}
-
-	for (var opName in buffer) {
-		var ops = buffer[opName];
-		var len = ops.length;
-
-		var op, i;
-
-		switch (opName) {
-		case 'add':
-			for (i = 0; i < len; i += 1) {
-				op = ops[i];
-				var k = op.key;
-				var t = op.tome;
-				t.emit(opName, k, t[k] === undefined ? undefined : t[k].valueOf());
-			}
-			break;
-		case 'del':
-			for (i = 0; i < len; i += 1) {
-				op = ops[i];
-				op.tome.emit(opName, op.key);
-			}
-			break;
-		case 'destroy':
-			for (i = 0; i < len; i += 1) {
-				ops[i].tome.emit(opName);
-			}
-			break;
-		case 'rename':
-			for (i = 0; i < len; i += 1) {
-				op = ops[i];
-				op.tome.emit(opName, op.oldKey, op.newKey);
-			}
-			break;
-		default:
-			throw new TypeError('Tome.resume - unhandled event type: ' + op);
-		}
-	}
-
-	this.__root__.__buffer__ = {};
-
-	return true;
-};
-
-Tome.prototype.resume = function () {
-
-	// resume causes all buffered events to emit and then turns off buffering
-	// by setting buffer on the root Tome to false.
-
-	if (!this.__root__.__buffer__) {
-		return false;
-	}
-
-	this.flush();
-
-	this.__root__.__buffer__ = false;
-
-	return true;
 };
 
 Tome.prototype.merge = function (diff) {
@@ -971,7 +931,7 @@ Tome.prototype.merge = function (diff) {
 		throw new Error('Tome.merge - Cannot merge to hidden Tomes.');
 	}
 
-	var i, len;
+	var i, len, k;
 
 	if (Tome.typeOf(diff) === 'array') {
 		len = diff.length;
@@ -983,27 +943,22 @@ Tome.prototype.merge = function (diff) {
 
 	for (var key in diff) {
 		var val = diff[key];
-		var chain, link;
+		var target;
 		switch (key) {
 		case 'assign':
 			this.assign(val);
 			break;
 		case 'del':
-			if (this.hasOwnProperty(val) && this[val].__hidden__) {
-				throw new Error('Tome.merge - Cannot merge to hidden Tomes.');
+			if (Tome.typeOf(val) !== 'array') {
+				val = [ val ];
 			}
-			this.del(val);
-			break;
-		case 'move':
-			chain = val.chain;
-			len = chain.length;
-			link = this.__root__;
-			for (i = 0; i < len; i += 1) {
-				if (link.hasOwnProperty(chain[i])) {
-					link = link[chain[i]];
+			for (i = 0, len = val.length; i < len; i += 1) {
+				k = val[i];
+				if (this.hasOwnProperty(k) && this[k].__hidden__) {
+					throw new Error('Tome.merge - Cannot merge to hidden Tomes.');
 				}
+				this.del(k);
 			}
-			this.move(val.key, link, val.newKey);
 			break;
 		case 'pop':
 			for (i = 0, len = val.length; i < len; i += 1) {
@@ -1020,7 +975,7 @@ Tome.prototype.merge = function (diff) {
 			this.push.apply(this, val);
 			break;
 		case 'set':
-			for (var k in val) {
+			for (k in val) {
 				if (this.hasOwnProperty(k) && this[k].__hidden__) {
 					throw new Error('Tome.merge - Cannot merge to hidden Tomes.');
 				}
@@ -1036,15 +991,8 @@ Tome.prototype.merge = function (diff) {
 			this.splice.apply(this, val);
 			break;
 		case 'swap':
-			chain = val.chain;
-			len = chain.length;
-			link = this.__root__;
-			for (i = 0; i < len; i += 1) {
-				if (link.hasOwnProperty(chain[i])) {
-					link = link[chain[i]];
-				}
-			}
-			this.swap(val.key, link);
+			target = resolveChain(this, val.chain);
+			this.swap(val.key, target);
 			break;
 		case 'unshift':
 			this.unshift.apply(this, val);
@@ -1080,15 +1028,7 @@ Tome.prototype.swap = function (key, target) {
 		throw new ReferenceError('Tome.swap - Cannot swap to a root Tome');
 	}
 
-	var link = target;
-	var chain = [];
-
-	while (link.hasOwnProperty('__key__')) {
-		chain.push(link.__key__);
-		link = link.__parent__;
-	}
-
-	chain.reverse();
+	var chain = buildChain(target);
 
 	var op = {};
 	op.key = key;
@@ -1133,102 +1073,6 @@ Tome.prototype.swap = function (key, target) {
 	return this;
 };
 
-Tome.prototype.move = function (key, newParent, onewKey) {
-	if (!this.hasOwnProperty(key)) {
-		throw new ReferenceError('Tome.move - Key is not defined: ' + key);
-	}
-
-	if (onewKey !== undefined && !(newParent instanceof Tome)) {
-		throw new TypeError('Tome.move - new parent must be a Tome');
-	} else if (onewKey === undefined && !(newParent instanceof Tome)) {
-		onewKey = newParent;
-		newParent = this;
-	}
-
-	if (onewKey === undefined) {
-		onewKey = key;
-	}
-
-	var newKey = parseInt(onewKey, 10);
-
-	if (newKey < 0) {
-		return this;
-	}
-
-	if (onewKey.toString() === newKey.toString() && newParent instanceof ArrayTome) {
-		var a = 9;
-		a = 8;
-	} else if (onewKey.toString() !== newKey.toString()) {
-		newKey = onewKey;
-		if (!(newParent instanceof ObjectTome)) {
-			reset(newParent);
-			newParent.__proto__ = ObjectTome.prototype;
-		}
-	}
-
-	if (newParent.hasOwnProperty(newKey)) {
-		newParent.del(newKey);
-	}
-
-	if (newParent instanceof ArrayTome) {
-		var arr = newParent._arr;
-		var len = arr.length;
-
-		arr[newKey] = this[key];
-		newParent[newKey] = arr[newKey];
-
-		if (newKey >= len) {
-			for (var i = len; i < newKey - 1; i += 1) {
-				arr[i] = Tome.conjure(undefined, this, i);
-				emitAdd(this, i);
-			}
-			this.length = arr.length;
-		}
-	} else {
-		newParent[newKey] = this[key];
-	}
-
-	if (this instanceof ArrayTome) {
-		this._arr[key] = Tome.conjure(undefined, this, key);
-		this[key] = this._arr[key];
-	} else {
-		delete this[key];
-	}
-
-	newParent[newKey].__parent__ = newParent;
-	newParent[newKey].__key__ = newKey;
-	newParent[newKey].__root__ = newParent.__root__;
-
-	emitDel(this, key);
-	emitAdd(newParent, newKey);
-
-	if (this.__root__ === newParent.__root__) {
-		var link = newParent;
-		var chain = [];
-
-		while (link.hasOwnProperty('__key__')) {
-			chain.push(link.__key__);
-			link = link.__parent__;
-		}
-
-		chain.reverse();
-
-		var op = {};
-		op.key = key;
-		op.chain = chain;
-		op.newKey = newKey === key ? undefined : newKey;
-
-		diff(this, 'move', op);
-	} else {
-		diff(this, 'del', key);
-		var tDiff = {};
-		tDiff[newKey] = newParent[newKey].valueOf();
-		diff(newParent, 'set', tDiff);
-	}
-
-	return this;
-};
-
 Tome.prototype.hide = function (h) {
 	if (h === undefined) {
 		h = true;
@@ -1241,7 +1085,7 @@ Tome.prototype.hide = function (h) {
 	this.__hidden__ = h;
 
 	if (h) {
-		diff(this.__parent__, 'del', this.__key__);
+		diff(this.__parent__, 'del', [ this.__key__ ]);
 	} else {
 		var tDiff = {};
 		tDiff[this.__key__] = this.valueOf();
@@ -1516,22 +1360,50 @@ ArrayTome.prototype.rename = function (rO) {
 		throw new TypeError('ArrayTome.rename - invalid arguments.');
 	}
 
-	var tDiff = {};
+	var key, oldKey, newKey, i;
 
-	for (var key in rO) {
-		var newKey = rO[key];
-		this._arr[key].__key__ = newKey;
-		tDiff[key] = newKey;
+	var temporary = {};
+
+	for (key in rO) {
+		oldKey = key;
+		newKey = rO[key];
+
+		if (!this.hasOwnProperty(oldKey)) {
+			throw new ReferenceError('ObjectTome.rename - Key is not defined: ' + oldKey);
+		}
+
+		this._arr[oldKey].__key__ = newKey;
+		temporary[newKey] = this._arr[oldKey];
+
+		if (this.hasOwnProperty(newKey) && !rO.hasOwnProperty(newKey)) {
+			this.del(newKey);
+		}
+
+		delete this._arr[oldKey];
+	}
+
+	for (key in temporary) {
+		this._arr[key] = temporary[key];
+	}
+
+	this.length = this._arr.length;
+
+	for (i = 0; i < this.length; i += 1) {
+		if (this._arr[i] === undefined) {
+			this._arr[i] = Tome.conjure(undefined, this, i);
+		}
 	}
 
 	this._arr.sort(function (a, b) { return a.__key__ - b.__key__; });
 
-	for (var i = 0, len = this._arr.length; i < len; i += 1) {
+	for (i = 0; i < this.length; i += 1) {
 		this[i] = this._arr[i];
 	}
 
-	emitRename(this, tDiff);
-	diff(this, 'rename', tDiff);
+	emitRename(this, rO);
+	diff(this, 'rename', rO);
+
+	return this;
 };
 
 ArrayTome.prototype.sort = function () {
@@ -1548,7 +1420,7 @@ ArrayTome.prototype.sort = function () {
 		}
 	}
 
-	if (Object.keys(tDiff).length) {
+	if (!isEmpty(tDiff)) {
 		emitRename(this, tDiff);
 		diff(this, 'rename', tDiff);
 	}
@@ -1902,6 +1774,7 @@ ObjectTome.prototype.rename = function () {
 
 		if (this.hasOwnProperty(newKey) && !rO.hasOwnProperty(newKey)) {
 			this.del(newKey);
+			//emitDel(this, newKey);
 		}
 
 		delete this[oldKey];

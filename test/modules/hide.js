@@ -27,9 +27,7 @@ exports.testHideSignal = function (test) {
 
 	b.b.hide(true);
 
-	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
-	});
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 
 	test.done();
 };
