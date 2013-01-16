@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/bjornstar/node-tomes.png)](https://travis-ci.org/bjornstar/node-tomes)
+[![Build Status](https://travis-ci.org/bjornstar/tomes.png)](https://travis-ci.org/bjornstar/tomes)
 
-node-tomes
+Tomes
 =========
 
 *Evented Storage Agnostic Data API*
@@ -9,7 +9,7 @@ Problem: You've got data and you want to do something whenever it changes.
 
 Access and modify your data through the Tomes API and you'll get change events.
 
-Play with a live demo here - http://bjornstar.github.com/node-tomes/
+Play with a live demo here - http://bjornstar.github.com/tomes/
 
 Example
 =======
