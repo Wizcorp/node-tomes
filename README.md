@@ -81,9 +81,6 @@ Applies a diff to a Tome
 ###swap( *key*, *tome* )
 Swap key with tome.
 
-###move( *key*, *tome*, [ *newkey* ] )
-Move key to tome. Optionally, give the key a new name.
-
 ###rename( *key*, *newkey* )
 Rename key to newkey.
 
