@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/bjornstar/tomes.png?branch=develop)](https://travis-ci.org/bjornstar/tomes)
+[![Build Status](https://travis-ci.org/Wizcorp/node-tomes.png)](https://travis-ci.org/Wizcorp/node-tomes)
 
 Tomes
 =========
