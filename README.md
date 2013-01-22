@@ -105,7 +105,4 @@ Emitted when a key is deleted from a Tome.
 Emitted when a Tome is deleted.
 
 ###readable( )
-Emitted on every change to a Tome. 
-
-###dirty()
-Emitted on every change to a Tome.
+Emitted on every time a Tome or any of it's child Tomes are altered. 

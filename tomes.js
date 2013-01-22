@@ -283,7 +283,6 @@ function touchDiff(tome, chain) {
 	}
 
 	tome.emit('readable');
-	tome.emit('dirty');
 
 	var link = {};
 
@@ -853,24 +852,8 @@ inherits(Tome, EventEmitter);
 //             interested parties that the Tome no longer exists and will not
 //             emit any more events.
 //
-//  -  rename: Emitted when a Tome's property is renamed.
+//  - readable: Emitted when a Tome or any of its child Tomes are altered.
 //
-//  -  signal: Emitted when a Tome is modified. This is our bread and butter
-//             event when dealing with the UI. A signal is emitted by a Tome
-//             when it or any of its child Tomes change. It is also emitted
-//             when we register an event listener for the signal event. When an
-//             operation occurs that changes multiple children of a Tome, we
-//             only emit signal once.
-//
-//  -  change: Emitted when a Tome is modified. Just like with signal change
-//             gets emitted when a Tome or any of its child Tomes are altered.
-//             Change will only be emitted once per Tome even if a multiple
-//             changes occurred.
-//
-//  -    diff: Emitted when a Tome is modified. A diff is emitted by a Tome
-//             when it or any of its child Tomes change. This diff is used by
-//             by Tomes operating in different environments to stay in sync.
-
 
 exports.Tome = Tome;
 
