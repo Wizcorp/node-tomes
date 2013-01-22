@@ -155,11 +155,11 @@ function notify(tome) {
 	// enumarable properties, this is much faster than using for ... in which
 	// would iterate over all methods in the prototype chain.
 
-	var keys = Object.keys(tome);
-	for (var i = 0, len = keys.length; i < len; i += 1) {
-		var k = keys[i];
-		if (tome[k] && !isEmpty(tome[k].__diff__)) {
-			notify(tome[k]);
+	var children = Object.keys(tome);
+	for (var i = 0, len = children.length; i < len; i += 1) {
+		var childTome = tome[i];
+		if (childTome && !isEmpty(childTome.__diff__)) {
+			notify(childTome);
 		}
 	}
 	return true;
@@ -186,8 +186,8 @@ function reset(tome) {
 	for (i = 0; i < len; i += 1) {
 		key = keys[i];
 		var o = tome[key];
+		delete tome[key];
 		if (o instanceof Tome) {
-			delete tome[key];
 			destroy(o);
 		}
 	}
@@ -206,9 +206,10 @@ function resolveChain(tome, chain) {
 	var target = tome.__root__;
 
 	for (var i = 0; i < len; i += 1) {
-		if (target.hasOwnProperty(chain[i])) {
-			target = target[chain[i]];
+		if (!target.hasOwnProperty(chain[i])) {
+			throw new ReferenceError('resolveChain - Error resolving chain.');
 		}
+		target = target[chain[i]];
 	}
 
 	return target;
@@ -229,7 +230,7 @@ function buildChain(tome) {
 
 function uAdd(diff, op, k) {
 	if (!diff.hasOwnProperty(op)) {
-		return diff[op] = [ k ];
+		return diff[op] = [k];
 	}
 	if (diff[op].indexOf(k) === -1) {
 		return diff[op].push(k);
@@ -254,10 +255,15 @@ function getRenameMap(diff) {
 }
 
 function touchDiff(tome, chain) {
+
+	// touchDiff recursively goes up the chain tacking on changes to child
+	// Tomes and cleaning up deleted assigns. It is called in two places: diff
+	// and diffFrom (because diffFrom modifies two Tomes, the movee and mover).
+
 	var tDiff = tome.__diff__;
 
 	for (var opk in chain) {
-		if (opk.indexOf('_') === 0) {
+		if (opk[0] === '_') {
 			var key = opk.substring(1);
 
 			// Do we have an assign?
@@ -284,15 +290,14 @@ function touchDiff(tome, chain) {
 
 	tome.emit('readable');
 
+	if (!tome.hasOwnProperty('__key__')) {
+		return;
+	}
+	
 	var link = {};
+	link['_'.concat(tome.__key__)] = tDiff;
 
-	if (tome.hasOwnProperty('__key__')) {
-		link['_'.concat(tome.__key__)] = tDiff;
-	}
-
-	if (tome.hasOwnProperty('__parent__') && tome.__parent__ instanceof Tome) {
-		touchDiff(tome.__parent__, link);
-	}
+	touchDiff(tome.__parent__, link);
 }
 
 function diffFrom(tome, fO) {
@@ -470,9 +475,6 @@ function diffRename(tome, rO) {
 		if (tDiff.hasOwnProperty('from') && tDiff.from.hasOwnProperty(oldKey)) {
 			// this key came from somewhere.
 			var fromKey = tDiff.from[oldKey].hasOwnProperty('was') ? tDiff.from[oldKey].was : oldKey;
-//			var fromParent = resolveChain(tome, tDiff.from[oldKey].chain);
-//			var fromOver = tDiff.from[oldKey].hasOwnProperty('over');
-//			var fDiff = fromParent.__diff__;
 
 			if (newKey === fromKey) {
 				delete tDiff.from[oldKey].was;
@@ -487,7 +489,7 @@ function diffRename(tome, rO) {
 		}
 
 		if (!resolved) {
-			if (!tDiff.rename) {
+			if (!tDiff.hasOwnProperty('rename')) {
 				tDiff.rename = {};
 			}
 
@@ -1081,7 +1083,7 @@ Tome.prototype.del = function (key) {
 	destroy(o);
 
 	emitDel(this, key);
-	diff(this, 'del', [ key ]);
+	diff(this, 'del', [key]);
 
 	return this;
 };
@@ -1179,7 +1181,7 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 
 		diff(newParent, 'from', fromOp);
 	} else {
-		diff(this, 'del', [ key ]);
+		diff(this, 'del', [key]);
 		var tDiff = {};
 		tDiff[newKey] = newParent[newKey].valueOf();
 		diff(newParent, 'set', tDiff);
@@ -1424,7 +1426,7 @@ Tome.prototype.hide = function (h) {
 	this.__hidden__ = h;
 
 	if (h) {
-		diff(this.__parent__, 'del', [ this.__key__ ]);
+		diff(this.__parent__, 'del', [this.__key__]);
 	} else {
 		var tDiff = {};
 		tDiff[this.__key__] = this.valueOf();
@@ -1577,7 +1579,7 @@ ArrayTome.prototype.shift = function () {
 		this.length = this._arr.length;
 		destroy(o);
 		emitDel(this, key);
-		diff(this, 'shift', [ 1 ]);
+		diff(this, 'shift', [1]);
 	}
 
 	return out ? out.valueOf() : out;
@@ -1601,7 +1603,7 @@ ArrayTome.prototype.pop = function () {
 		}
 
 		emitDel(this, len);
-		diff(this, 'pop', [ 1 ]);
+		diff(this, 'pop', [1]);
 	}
 
 	return out ? out.valueOf() : out;
