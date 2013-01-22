@@ -1,6 +1,4 @@
-var tomes = require('../../tomes');
-
-var Tome = tomes.Tome;
+var Tome = require('../../tomes').Tome;
 
 exports.testDiffSimpleString = function (test) {
 	test.expect(10);
@@ -232,14 +230,14 @@ exports.testDiffArraySort = function (test) {
 	b.on('readable', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 		var diff = b.read();
-		test.deepEqual(diff, { rename: { '1': 4, '2': 6, '3': 8, '4': 2, '5': 3, '6': 5, '7': 10, '8': 7, '9': 1, '10': 9 } }); // 2
+		test.deepEqual(diff, { rename: { '1': { to: 4 }, '2': { to: 6 }, '3': { to: 8 }, '4': { to: 2 }, '5': { to: 3 }, '6': { to: 5 }, '7': { to: 10 }, '8': { to: 7 }, '9': { to: 1 }, '10': { to: 9 } } }); // 2
 		c.merge(diff);
 	});
 
 	c.on('readable', function () {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(c)); // 3
 		var diff = c.read();
-		test.deepEqual(diff, { rename: { '1': 4, '2': 6, '3': 8, '4': 2, '5': 3, '6': 5, '7': 10, '8': 7, '9': 1, '10': 9 } }); // 4
+		test.deepEqual(diff, { rename: { '1': { to: 4 }, '2': { to: 6 }, '3': { to: 8 }, '4': { to: 2 }, '5': { to: 3 }, '6': { to: 5 }, '7': { to: 10 }, '8': { to: 7 }, '9': { to: 1 }, '10': { to: 9 } } }); // 4
 	});
 
 	a.sort();
@@ -304,7 +302,7 @@ exports.testDiffRename = function (test) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 		var diff = b.read();
 		if (diff) {
-			test.deepEqual(diff, { _a: { _b: { rename: { c: 'z' } } } }); // 2
+			test.deepEqual(diff, { _a: { _b: { rename: { c: { to: 'z' } } } } }); // 2
 			c.merge(diff);
 		}
 	});
@@ -313,7 +311,7 @@ exports.testDiffRename = function (test) {
 		test.strictEqual(JSON.stringify(a), JSON.stringify(c)); // 3
 		var diff = c.read();
 		if (diff) {
-			test.deepEqual(diff, { _a: { _b: { rename: { c: 'z' } } } }); // 4
+			test.deepEqual(diff, { _a: { _b: { rename: { c: { to: 'z' } } } } }); // 4
 		}
 	});
 
@@ -487,7 +485,7 @@ exports.testDiffRenameCombine = function (test) {
 	b[0].rename('bar', 'foo');
 
 	var diff = b.read();
-	test.strictEqual(JSON.stringify(diff), '{"_0":{"rename":{"bar":"foo","foo":"boo"},"_boo":{"assign":8},"_foo":{"assign":2}}}');
+	test.deepEqual(diff, { '_0': { rename: { bar: { to: 'foo' }, foo: { to: 'boo' } }, '_boo': { 'assign': 8 }, '_foo': { assign: 2 } } });
 
 	c.merge(diff);
 
@@ -746,7 +744,7 @@ exports.testDiffOverwrite = function (test) {
 	delete a.sam;
 	b.rename('sam', 'bob');
 
-	test.deepEqual(b.__diff__, { rename: { sam: 'bob' }, del: [ 'bob' ]});
+	test.deepEqual(b.__diff__, { rename: { sam: { to: 'bob', over: true } } });
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 
 	a.sam = a.bob;
@@ -792,5 +790,80 @@ exports.testDiffRenameDelete = function (test) {
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 	test.deepEqual(b, c);
 
+	test.done();
+};
+
+exports.testDiffReverse = function (test) {
+	test.expect(3);
+
+	var a = [ 0, 1, 2, 3, 4, 5 ];
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(b);
+
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
+	});
+
+	a.reverse();
+	b.reverse();
+
+	var diff = b.read();
+	c.merge(diff);
+
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 2
+	test.deepEqual(b, c); // 3
+	
+	test.done();
+};
+
+exports.testDiffReverseAssign = function (test) {
+	test.expect(4);
+
+	var a = [ 0, 1, 2, 3, 4, 5 ];
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(b);
+
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2
+	});
+
+	a.reverse();
+	b.reverse();
+
+	a[0] = 10;
+	b[0].assign(10);
+
+	var diff = b.read();
+	c.merge(diff);
+
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 3
+	test.deepEqual(b, c); // 4
+	
+	test.done();
+};
+
+exports.testDiffAssignReverse = function (test) {
+	test.expect(4);
+
+	var a = [ 0, 1, 2, 3, 4, 5 ];
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(b);
+
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2
+	});
+
+	a[0] = 10;
+	b[0].assign(10);
+	
+	a.reverse();
+	b.reverse();
+
+	var diff = b.read();
+	c.merge(diff);
+
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 3
+	test.deepEqual(b, c); // 4
+	
 	test.done();
 };
