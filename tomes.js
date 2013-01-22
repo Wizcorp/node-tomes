@@ -621,6 +621,9 @@ function diff(tome, op, val, chain) {
 		case 'rename':
 			diffRename(tome, chain.rename);
 			break;
+		case 'reverse':
+			tDiff[opk] = chain[opk];
+			break;
 		case 'set':
 			// Doing a set on a tome will wipe out any assigns
 
@@ -660,10 +663,10 @@ function diff(tome, op, val, chain) {
 				tDiff[opk] = chain[opk];
 			}
 			break;
-		case 'splice': //  Not implemented yet...
+		case 'splice':
 			tDiff[opk] = chain[opk];
 			break;
-		case 'swap': // Not implemented yet...
+		case 'swap':
 			tDiff[opk] = chain[opk];
 			break;
 		case 'unshift':

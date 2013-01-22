@@ -664,3 +664,57 @@ exports.testDiffMoveRename = function (test) {
 
 	test.done();
 };
+
+exports.testDiffReverseMove = function (test) {
+	test.expect(5);
+
+	var a = { a: [ 0, 1, 2, 3, 4, 5 ], b: [ 0 ] };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(b);
+
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2
+	});
+
+	a.a.reverse();
+	b.a.reverse();
+
+	a.b[1] = a.a[5];
+	delete a.a[5];
+	b.a.move(5, b.b, 1);
+
+	var diff = b.read();
+	c.merge(diff);
+
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 3
+	test.deepEqual(b, c); // 4
+	
+	test.done();
+};
+
+exports.testDiffMoveReverse = function (test) {
+	test.expect(5);
+
+	var a = { a: [ 0, 1, 2, 3, 4, 5 ], b: [ 0 ] };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(b);
+
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2
+	});
+
+	a.b[1] = a.a[5];
+	delete a.a[5];
+	b.a.move(5, b.b, 1);
+
+	a.a.reverse();
+	b.a.reverse();
+
+	var diff = b.read();
+	c.merge(diff);
+
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 3
+	test.deepEqual(b, c); // 4
+	
+	test.done();
+};

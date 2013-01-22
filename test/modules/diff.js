@@ -792,3 +792,78 @@ exports.testDiffRenameDelete = function (test) {
 
 	test.done();
 };
+
+exports.testDiffReverse = function (test) {
+	test.expect(3);
+
+	var a = [ 0, 1, 2, 3, 4, 5 ];
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(b);
+
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
+	});
+
+	a.reverse();
+	b.reverse();
+
+	var diff = b.read();
+	c.merge(diff);
+
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 2
+	test.deepEqual(b, c); // 3
+	
+	test.done();
+};
+
+exports.testDiffReverseAssign = function (test) {
+	test.expect(4);
+
+	var a = [ 0, 1, 2, 3, 4, 5 ];
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(b);
+
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2
+	});
+
+	a.reverse();
+	b.reverse();
+
+	a[0] = 10;
+	b[0].assign(10);
+
+	var diff = b.read();
+	c.merge(diff);
+
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 3
+	test.deepEqual(b, c); // 4
+	
+	test.done();
+};
+
+exports.testDiffAssignReverse = function (test) {
+	test.expect(4);
+
+	var a = [ 0, 1, 2, 3, 4, 5 ];
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(b);
+
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2
+	});
+
+	a[0] = 10;
+	b[0].assign(10);
+	
+	a.reverse();
+	b.reverse();
+
+	var diff = b.read();
+	c.merge(diff);
+
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 3
+	test.deepEqual(b, c); // 4
+	
+	test.done();
+};

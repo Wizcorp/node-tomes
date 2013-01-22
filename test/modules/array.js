@@ -868,3 +868,19 @@ exports.testArraySet = function (test) {
 
 	test.done();
 };
+
+exports.testArrayReverse = function (test) {
+	test.expect(1);
+
+	var a = [ 0, 1, 2, 3, 4, 5 ];
+	var b = Tome.conjure(a);
+
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
+	});
+
+	a.reverse();
+	b.reverse();
+
+	test.done();
+};
