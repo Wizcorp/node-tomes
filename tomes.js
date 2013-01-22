@@ -63,6 +63,9 @@ function Tome(parent, key) {
 	// __key__ is the key that our Tome is referred to by its parent. It only
 	// exists on Tomes with parents.
 
+	// __chain__ is the chain to our tome. We use this when handling diffs that
+	// deal with references, like rename and move.
+
 	// If you're using the node.js event emitter, we need to make the _events
 	// non-enumerable. Ideally, node.js would make this the default behavior.
 
@@ -98,16 +101,6 @@ function emitDel(tome, key) {
 	}
 
 	tome.emit('del', key);
-}
-
-function emitRename(tome, rO) {
-	if (tome.__hidden__) {
-		return;
-	}
-
-	for (var oldKey in rO) {
-		tome.emit('rename', oldKey, rO[oldKey].to);
-	}
 }
 
 function emitDestroy(tome) {
@@ -1743,6 +1736,8 @@ ArrayTome.prototype.rename = function (rO) {
 		}
 
 		delete this._arr[oldKey];
+		emitDel(this, oldKey);
+		emitAdd(this, newKey);
 	}
 
 	for (var k in temporary) {
@@ -1765,7 +1760,6 @@ ArrayTome.prototype.rename = function (rO) {
 		this[i] = this._arr[i];
 	}
 
-	emitRename(this, rO);
 	diff(this, 'rename', rO);
 
 	return this;
@@ -1783,11 +1777,12 @@ ArrayTome.prototype.sort = function () {
 			this._arr[i].__key__ = i;
 			this[i] = this._arr[i];
 			tDiff[oldKey] = { to: i };
+			emitDel(this, oldKey);
+			emitAdd(this, i);
 		}
 	}
 
 	if (!isEmpty(tDiff)) {
-		emitRename(this, tDiff);
 		diff(this, 'rename', tDiff);
 	}
 
@@ -2143,13 +2138,14 @@ ObjectTome.prototype.rename = function () {
 		}
 
 		delete this[oldKey];
+		emitDel(this, oldKey);
+		emitAdd(this, newKey);
 	}
 
 	for (key in temporary) {
 		this[key] = temporary[key];
 	}
 
-	emitRename(this, rO);
 	diff(this, 'rename', rO);
 
 	return this;

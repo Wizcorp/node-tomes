@@ -104,9 +104,6 @@ Emitted when a key is deleted from a Tome.
 ###destroy( )
 Emitted when a Tome is deleted.
 
-###rename( { oldKey1: newKey1, oldKey2: newKey2, ... } )
-Emitted when a key is renamed.
-
 ###readable( )
 Emitted on every change to a Tome. 
 
