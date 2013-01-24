@@ -39,30 +39,30 @@ exports.testStringCreation = function (test) {
 	test.done();
 };
 
-exports.testStringSignal = function (test) {
-	test.expect(3);
+exports.testStringReadable = function (test) {
+	test.expect(2);
 
 	var a = 'green';
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(a, bval); // 1
+	b.on('readable', function () {
+		test.equal(a, b); // This should not happen.
 	});
 
-	test.strictEqual(a, b.valueOf()); // 2
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
+	test.strictEqual(a, b.valueOf()); // 1
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
 
 	test.done();
 };
 
 exports.testStringAssign = function (test) {
-	test.expect(6);
+	test.expect(5);
 
 	var a = 'red';
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(a, bval); // 1, 4
+	b.on('readable', function () {
+		test.equal(a, b); // 1
 	});
 
 	test.strictEqual(a, b.valueOf()); // 2
@@ -71,20 +71,20 @@ exports.testStringAssign = function (test) {
 	a = 'orange';
 	b.assign('orange');
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 5
-	test.ok(instanceOf(b, StringTome)); // 6
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 4
+	test.ok(instanceOf(b, StringTome)); // 5
 
 	test.done();
 };
 
 exports.testStringSet = function (test) {
-	test.expect(11);
+	test.expect(10);
 
 	var a = 'red';
 	var b = Tome.conjure(a);
 
-	b.on('signal', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 8
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4
 	});
 
 	test.strictEqual(a, b.valueOf()); // 2
@@ -100,9 +100,9 @@ exports.testStringSet = function (test) {
 	a = 'yellow';
 	b.assign('yellow');
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 9
-	test.ok(instanceOf(b, StringTome)); // 10
-	test.ok(notInstanceOf(b.d, StringTome)); // 11
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 8
+	test.ok(instanceOf(b, StringTome)); // 9
+	test.ok(notInstanceOf(b.d, StringTome)); // 10
 
 	test.done();
 };
@@ -130,7 +130,7 @@ exports.testStringValueOf = function (test) {
 };
 
 exports.testStringDestroy = function (test) {
-	test.expect(3);
+	test.expect(2);
 
 	var a = { d: 'turquoise'};
 	var b = Tome.conjure(a);
@@ -139,8 +139,8 @@ exports.testStringDestroy = function (test) {
 		test.ok(true); // 2
 	});
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 3
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 	});
 
 	a = 'beige';
@@ -150,7 +150,7 @@ exports.testStringDestroy = function (test) {
 };
 
 exports.testStringDelete = function (test) {
-	test.expect(3);
+	test.expect(2);
 
 	var a = { d: 'turquoise'};
 	var b = Tome.conjure(a);
@@ -159,8 +159,8 @@ exports.testStringDelete = function (test) {
 		test.strictEqual('d', key); // 2
 	});
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 3
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 	});
 
 	a = 'beige';
@@ -170,13 +170,13 @@ exports.testStringDelete = function (test) {
 };
 
 exports.testStringAppend = function (test) {
-	test.expect(2);
+	test.expect(1);
 
 	var a = 'foo';
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 	});
 
 	a = a + 'bar';

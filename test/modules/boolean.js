@@ -39,73 +39,73 @@ exports.testBooleanCreation = function (test) {
 	test.done();
 };
 
-exports.testBooleanSignal = function (test) {
-	test.expect(3);
+exports.testBooleanReadable = function (test) {
+	test.expect(2);
 
 	var a = true;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(a, bval); // 1
+	b.on('readable', function () {
+		test.equal(a, b); // This should not happen.
 	});
 
-	test.strictEqual(a, b.valueOf()); // 2
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
+	test.strictEqual(a, b.valueOf()); // 1
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
 
 	test.done();
 };
 
 
 exports.testBooleanAssign = function (test) {
-	test.expect(6);
+	test.expect(5);
 
 	var a = true;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(a, bval); // 1, 4
+	b.on('readable', function () {
+		test.equal(a, b); // 3
 	});
 
-	test.strictEqual(a, b.valueOf()); // 2
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
+	test.strictEqual(a, b.valueOf()); // 1
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
 
 	a = false;
 	b.assign(false);
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 5
-	test.ok(instanceOf(b, BooleanTome)); // 6
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 4
+	test.ok(instanceOf(b, BooleanTome)); // 5
 
 	test.done();
 };
 
 exports.testBooleanSet = function (test) {
-	test.expect(13);
+	test.expect(12);
 
 	var a = true;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 9
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3, 4, 8
 	});
 
-	test.strictEqual(a, b.valueOf()); // 2
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
+	test.strictEqual(a, b.valueOf()); // 1
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
 
 	a = { d: true };
 	b.set('d', true);
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 5
-	test.ok(notInstanceOf(b, BooleanTome)); // 6
-	test.ok(instanceOf(b, ObjectTome)); // 7
-	test.ok(instanceOf(b.d, BooleanTome)); // 8
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 4
+	test.ok(notInstanceOf(b, BooleanTome)); // 5
+	test.ok(instanceOf(b, ObjectTome)); // 6
+	test.ok(instanceOf(b.d, BooleanTome)); // 7
 
 	a = false;
 	b.assign(false);
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 10
-	test.ok(instanceOf(b, BooleanTome)); // 11
-	test.ok(notInstanceOf(b, ObjectTome)); // 12
-	test.ok(notInstanceOf(b.d, BooleanTome)); // 13
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 9
+	test.ok(instanceOf(b, BooleanTome)); // 10
+	test.ok(notInstanceOf(b, ObjectTome)); // 11
+	test.ok(notInstanceOf(b.d, BooleanTome)); // 12
 
 	test.done();
 };
@@ -133,7 +133,7 @@ exports.testBooleanValueOf = function (test) {
 };
 
 exports.testBooleanDestroy = function (test) {
-	test.expect(3);
+	test.expect(2);
 
 	var a = { d: true };
 	var b = Tome.conjure(a);
@@ -142,8 +142,8 @@ exports.testBooleanDestroy = function (test) {
 		test.ok(true); // 2
 	});
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 3
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 	});
 
 	a = false;
@@ -153,7 +153,7 @@ exports.testBooleanDestroy = function (test) {
 };
 
 exports.testBooleanDelete = function (test) {
-	test.expect(3);
+	test.expect(2);
 
 	var a = { d: true };
 	var b = Tome.conjure(a);
@@ -162,8 +162,8 @@ exports.testBooleanDelete = function (test) {
 		test.strictEqual('d', key); // 2
 	});
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 3
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 	});
 
 	a = false;
@@ -173,20 +173,20 @@ exports.testBooleanDelete = function (test) {
 };
 
 exports.testBooleanAndOr = function (test) {
-	test.expect(2);
+	test.expect(1);
 
 	var a = true;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2, 3
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 	});
 
 	a = a || false;
-	b.assign(b || false);
+	b.assign(b || false); // true or false = true so no update.
 
 	a = a && false;
-	b.assign(b && false);
+	b.assign(b && false); // true and false = false so update.
 
 	test.done();
 };

@@ -2,23 +2,22 @@ var tomes = require('../../tomes');
 
 var Tome = tomes.Tome;
 
-exports.testPauseSetResume = function (test) {
-	test.expect(15);
+exports.testChainSet = function (test) {
+	test.expect(12);
 
-	var signalCount = 0;
+	var readableCount = 0;
 	var addCount = 0;
 
 	var a = { a: 1 };
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (val) {
-		signalCount += 1;
-		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	b.on('readable', function () {
+		readableCount += 1;
 	});
 
-	b.on('add', function (key, val) {
+	b.on('add', function (key) {
 		addCount += 1;
-		test.strictEqual(a[key], val);
+		test.strictEqual(a[key], b[key].valueOf());
 	});
 
 	a.b = 1;
@@ -32,34 +31,30 @@ exports.testPauseSetResume = function (test) {
 	a.j = 1;
 	a.k = 1;
 
-	b.pause();
 	b.set('b', 1).set('c', 1).set('d', 1).set('e', 1).set('f', 1).set('g', 1).set('h', 1).set('i', 1).set('j', 1).set('k', 1);
-	test.strictEqual(addCount, 0);
-	b.resume();
 
-	test.strictEqual(signalCount, 2);
+	test.strictEqual(readableCount, 10);
 	test.strictEqual(addCount, 10);
 
 	test.done();
 };
 
-exports.testPauseDelResume = function (test) {
-	test.expect(15);
+exports.testChainDel = function (test) {
+	test.expect(12);
 
-	var signalCount = 0;
+	var readableCount = 0;
 	var delCount = 0;
 
 	var a = { a: 1, b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1, k: 1 };
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (val) {
-		signalCount += 1;
-		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	b.on('readable', function () {
+		readableCount += 1;
 	});
 
 	b.on('del', function (key) {
 		delCount += 1;
-		test.strictEqual(a[key], undefined);
+		test.strictEqual(a[key], b[key]);
 	});
 
 	delete a.b;
@@ -74,29 +69,25 @@ exports.testPauseDelResume = function (test) {
 	delete a.j;
 	delete a.k;
 
-	b.pause();
 	b.del('b').del('c').del('d').del('e').del('f').del('g').del('h').del('i').del('j').del('k');
-	test.strictEqual(delCount, 0);
-	b.resume();
 
-	test.strictEqual(signalCount, 2);
+	test.strictEqual(readableCount, 10);
 	test.strictEqual(delCount, 10);
 
 	test.done();
 };
 
-exports.testPauseDestroyResume = function (test) {
-	test.expect(5);
+exports.testChainDestroy = function (test) {
+	test.expect(2);
 
-	var signalCount = 0;
+	var readableCount = 0;
 	var destroyCount = 0;
 
 	var a = { a: 1, b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, h: 1, i: 1, j: 1, k: 1 };
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (val) {
-		signalCount += 1;
-		test.strictEqual(JSON.stringify(a), JSON.stringify(val));
+	b.on('readable', function () {
+		readableCount += 1;
 	});
 
 	b.b.on('destroy', function () {
@@ -110,12 +101,9 @@ exports.testPauseDestroyResume = function (test) {
 	delete a.b;
 	delete a.c;
 
-	b.pause();
 	b.del('b').del('c');
-	test.strictEqual(destroyCount, 0);
-	b.resume();
 
-	test.strictEqual(signalCount, 2);
+	test.strictEqual(readableCount, 2);
 	test.strictEqual(destroyCount, 2);
 
 	test.done();

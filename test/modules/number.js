@@ -39,73 +39,73 @@ exports.testNumberCreation = function (test) {
 	test.done();
 };
 
-exports.testNumberSignal = function (test) {
-	test.expect(3);
+exports.testNumberReadable = function (test) {
+	test.expect(2);
 
 	var a = -43.75;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(a, bval); // 1
+	b.on('readable', function () {
+		test.equal(a, b); // This should not happen.
 	});
 
-	test.strictEqual(a, b.valueOf()); // 2
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
+	test.strictEqual(a, b.valueOf()); // 1
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
 
 	test.done();
 };
 
 
 exports.testNumberAssign = function (test) {
-	test.expect(6);
+	test.expect(5);
 
 	var a = -43.75;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(a, bval); // 1, 4
+	b.on('readable', function () {
+		test.equal(a, b); // 3
 	});
 
-	test.strictEqual(a, b.valueOf()); // 2
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
+	test.strictEqual(a, b.valueOf()); // 1
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
 
 	a = 3;
 	b.assign(3);
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 5
-	test.ok(instanceOf(b, NumberTome)); // 6
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 4
+	test.ok(instanceOf(b, NumberTome)); // 5
 
 	test.done();
 };
 
 exports.testNumberSet = function (test) {
-	test.expect(13);
+	test.expect(12);
 
 	var a = -43.74;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 9
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3, 8
 	});
 
-	test.strictEqual(a, b.valueOf()); // 2
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
+	test.strictEqual(a, b.valueOf()); // 1
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
 
 	a = { d: 6600 };
 	b.set('d', 6600);
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 5
-	test.ok(notInstanceOf(b, NumberTome)); // 6
-	test.ok(instanceOf(b, ObjectTome)); // 7
-	test.ok(instanceOf(b.d, NumberTome)); // 8
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 4
+	test.ok(notInstanceOf(b, NumberTome)); // 5
+	test.ok(instanceOf(b, ObjectTome)); // 6
+	test.ok(instanceOf(b.d, NumberTome)); // 7
 
 	a = -9.81;
 	b.assign(-9.81);
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 10
-	test.ok(instanceOf(b, NumberTome)); // 11
-	test.ok(notInstanceOf(b, ObjectTome)); // 12
-	test.ok(notInstanceOf(b.d, NumberTome)); // 13
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 9
+	test.ok(instanceOf(b, NumberTome)); // 10
+	test.ok(notInstanceOf(b, ObjectTome)); // 11
+	test.ok(notInstanceOf(b.d, NumberTome)); // 12
 
 	test.done();
 };
@@ -133,7 +133,7 @@ exports.testNumberValueOf = function (test) {
 };
 
 exports.testNumberDestroy = function (test) {
-	test.expect(3);
+	test.expect(2);
 
 	var a = { d: -44.23 };
 	var b = Tome.conjure(a);
@@ -142,8 +142,8 @@ exports.testNumberDestroy = function (test) {
 		test.ok(true); // 2
 	});
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 3
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 	});
 
 	a = false;
@@ -153,7 +153,7 @@ exports.testNumberDestroy = function (test) {
 };
 
 exports.testNumberDelete = function (test) {
-	test.expect(3);
+	test.expect(2);
 
 	var a = { d: -88.89876 };
 	var b = Tome.conjure(a);
@@ -162,8 +162,8 @@ exports.testNumberDelete = function (test) {
 		test.strictEqual('d', key); // 2
 	});
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 3
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 	});
 
 	a = 13413;
@@ -173,13 +173,13 @@ exports.testNumberDelete = function (test) {
 };
 
 exports.testNumberInc = function (test) {
-	test.expect(3);
+	test.expect(2);
 
 	var a = 44;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2
 	});
 
 	a = a + 1;
@@ -192,13 +192,13 @@ exports.testNumberInc = function (test) {
 };
 
 exports.testNumberOperand = function (test) {
-	test.expect(3);
+	test.expect(2);
 
 	var a = 10;
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2
 	});
 
 	a = a + 5;
@@ -206,6 +206,23 @@ exports.testNumberOperand = function (test) {
 
 	a = a - 10;
 	b.assign(b - 10);
+
+	test.done();
+};
+
+exports.testNumberIncChain = function (test) {
+	test.expect(2);
+
+	var a = 44;
+	var b = Tome.conjure(a);
+
+	a = a + 1 + 2;
+	b.inc(1).inc(2);
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	a = a - 10 - 20;
+	b.inc(-10).inc(-20);
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 
 	test.done();
 };
