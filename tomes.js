@@ -21,7 +21,12 @@
 
 
 var EventEmitter = typeof require === 'function' ? require('events').EventEmitter : EventEmitter;
-var inherits = typeof require === 'function' ? require('util').inherits : inherits;
+
+function inherits(Child, Parent) {
+	Child.prototype = Object.create(Parent.prototype, {
+		constructor: { value: Child, enumerable: false, writable: true, configurable: true }
+	});
+}
 
 var exports = exports || {};
 var isArray = Array.isArray;
