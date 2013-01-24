@@ -68,48 +68,52 @@ exports.testUndefinedObjectSet = function (test) {
 };
 
 exports.testUndefinedObjectAssign = function (test) {
-	test.expect(2);
+	test.expect(1);
 
 	var a = { c: true };
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // This should not happen
 	});
 
+	// You can only assign undefined to array elements.
+
 	a.c = undefined;
-	test.throws(function () { b.c.assign(undefined); }, TypeError); // 2
+	test.throws(function () { b.c.assign(undefined); }, TypeError); // 1
 
 	test.done();
 };
 
 exports.testUndefinedStringAssign = function (test) {
-	test.expect(2);
+	test.expect(1);
 
 	var a = 'a string.';
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // This should not happen
 	});
 
+	// You can only assign undefined to array elements.
+
 	a = undefined;
-	test.throws(function () { b.assign(undefined); }, TypeError); // 2
+	test.throws(function () { b.assign(undefined); }, TypeError); // 1
 
 	test.done();
 };
 
 exports.testUndefinedStringSet = function (test) {
-	test.expect(5);
+	test.expect(4);
 
-	var signalCount = 0;
+	var readableCount = 0;
 
 	var a = 'a string.';
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		signalCount += 1;
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1
+	b.on('readable', function () {
+		readableCount += 1;
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // This should not happen
 	});
 
 	// This does absolutely nothing... a is still a string, b is still a
@@ -118,73 +122,73 @@ exports.testUndefinedStringSet = function (test) {
 	a.c = undefined;
 	b.set('c', undefined);
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b), 'Expected \'a string.\''); // 2
-	test.strictEqual(a.hasOwnProperty('c'), b.hasOwnProperty('c'), 'Expected no property called c'); // 3
-	test.strictEqual(Tome.typeOf(a), Tome.typeOf(b), 'Expected typeof \'string\''); // 4
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b), 'Expected \'a string.\''); // 1
+	test.strictEqual(a.hasOwnProperty('c'), b.hasOwnProperty('c'), 'Expected no property called c'); // 2
+	test.strictEqual(Tome.typeOf(a), Tome.typeOf(b), 'Expected typeof \'string\''); // 3
 
-	test.strictEqual(signalCount, 1, 'expected signal 1 time.'); // 5
+	test.strictEqual(readableCount, 0, 'expected readable 0 times.'); // 4
 
 	test.done();
 };
 
 exports.testUndefinedArrayRepeatSet = function (test) {
-	test.expect(6);
+	test.expect(5);
 
-	var signalCount = 0;
+	var readableCount = 0;
 
 	var a = [ 0 ];
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		signalCount += 1;
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
+	b.on('readable', function () {
+		readableCount += 1;
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 	});
 
 	a[0] = undefined;
-	b.set('0', undefined);
+	b.set('0', undefined); // This should cause b to emit readable.
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
-	test.strictEqual(a.hasOwnProperty(0), b.hasOwnProperty(0)); // 4
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
+	test.strictEqual(a.hasOwnProperty(0), b.hasOwnProperty(0)); // 3
 
-	test.strictEqual(signalCount, 2); // 5
+	test.strictEqual(readableCount, 1); // 4
 
 	// This should do nothing, we are not changing the value.
 
 	a[0] = undefined;
 	b.set('0', undefined);
 
-	test.strictEqual(signalCount, 2); // 6
+	test.strictEqual(readableCount, 1); // 5
 
 	test.done();
 };
 
 exports.testUndefinedArrayRepeatAssign = function (test) {
-	test.expect(6);
+	test.expect(5);
 
-	var signalCount = 0;
+	var readableCount = 0;
 
 	var a = [ 0 ];
 	var b = Tome.conjure(a);
 
-	b.on('signal', function (bval) {
-		signalCount += 1;
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bval)); // 1, 2
+	b.on('readable', function () {
+		readableCount += 1;
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
 	});
 
 	a[0] = undefined;
-	b[0].assign(undefined);
+	b[0].assign(undefined); // This should cause b to emit readable
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
-	test.strictEqual(a.hasOwnProperty(0), b.hasOwnProperty(0)); // 4
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
+	test.strictEqual(a.hasOwnProperty(0), b.hasOwnProperty(0)); // 3
 
-	test.strictEqual(signalCount, 2); // 5
+	test.strictEqual(readableCount, 1); // 4
 
 	// This should do nothing, we are not changing the value.
 
 	a[0] = undefined;
 	b[0].assign(undefined);
 
-	test.strictEqual(signalCount, 2); // 6
+	test.strictEqual(readableCount, 1); // 5
 
 	test.done();
 };

@@ -100,148 +100,147 @@ exports.testObjectStringify = function (test) {
 	test.done();
 };
 
-exports.testObjectSignal = function (test) {
-	test.expect(2);
+exports.testObjectReadable = function (test) {
+	test.expect(0);
 
 	var a, b;
 	a = { test: 'is this thing on?' };
 	b = Tome.conjure(a);
 
-	b.on('signal', function (bv) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bv)); // 1
-		test.strictEqual(JSON.stringify(b), JSON.stringify(bv)); // 2
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // This should not happen.
 	});
 
 	test.done();
 };
 
 exports.testObjectAssign = function (test) {
-	test.expect(12);
+	test.expect(9);
 
 	var a, b;
 	a = { john: { shirt: 'blue' } };
 	b = Tome.conjure(a);
 
-	b.on('signal', function (bv) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bv)); // 1, 4, 8
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 5
 	});
 
-	b.john.on('signal', function (bjohnv) {
-		test.strictEqual(JSON.stringify(a.john), JSON.stringify(bjohnv)); // 2, 5, 9
+	b.john.on('readable', function () {
+		test.strictEqual(JSON.stringify(a.john), JSON.stringify(b.john)); // 2, 6
 	});
 
-	b.john.shirt.on('signal', function (bjohnshirtv) {
-		test.strictEqual(JSON.stringify(a.john.shirt), JSON.stringify(bjohnshirtv)); // 3, 6
+	b.john.shirt.on('readable', function () {
+		test.strictEqual(JSON.stringify(a.john.shirt), JSON.stringify(b.john.shirt)); // 3
 	});
 
 	b.john.on('del', function (k) {
-		test.strictEqual('shirt', k); // 10
+		test.strictEqual('shirt', k); // 7
 	});
 
 	b.john.shirt.on('destroy', function () {
-		test.ok(true); // 11
+		test.ok(true); // 8
 	});
 
 	a.john.shirt = 'red';
 	b.john.shirt.assign('red');
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 7
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 4
 
 	var c = { pants: 'green' };
 
 	a.john = c;
 	b.john.assign(c);
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 12
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 9
 
 	test.done();
 };
 
 exports.testObjectSet = function (test) {
-	test.expect(12);
+	test.expect(9);
 
 	var a, b;
 	a = { john: { shirt: 'blue' } };
 	b = Tome.conjure(a);
 
-	b.on('signal', function (bv) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bv)); // 1, 4, 8
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 5
 	});
 
-	b.john.on('signal', function (bjohnv) {
-		test.strictEqual(JSON.stringify(a.john), JSON.stringify(bjohnv)); // 2, 5, 9
+	b.john.on('readable', function () {
+		test.strictEqual(JSON.stringify(a.john), JSON.stringify(b.john)); // 2, 6
 	});
 
-	b.john.shirt.on('signal', function (bjohnshirtv) {
-		test.strictEqual(JSON.stringify(a.john.shirt), JSON.stringify(bjohnshirtv)); // 3, 6
+	b.john.shirt.on('readable', function () {
+		test.strictEqual(JSON.stringify(a.john.shirt), JSON.stringify(b.john.shirt)); // 3
 	});
 
 	b.john.on('del', function (k) {
-		test.strictEqual('shirt', k); // 10
+		test.strictEqual('shirt', k); // 7
 	});
 
 	b.john.shirt.on('destroy', function () {
-		test.ok(true); // 11
+		test.ok(true); // 8
 	});
 
 	a.john.shirt = 'red';
 	b.john.set('shirt', 'red');
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 7
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 4
 
 	var c = { pants: 'green' };
 
 	a.john = c;
 	b.set('john', c);
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 12
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 9
 
 	test.done();
 };
 
 exports.testObjectAdd = function (test) {
-	test.expect(10);
+	test.expect(9);
 
 	var a, b, c;
 	a = { john: { shirt: 'blue' } };
 	b = Tome.conjure(a);
 	c = { shirt: 'red' };
 
-	var signalcount = 0;
+	var readableCount = 0;
 
-	b.on('signal', function (bv) {
-		signalcount += 1;
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bv), 'expected ' + JSON.stringify(a)); // 1, 4, 8
+	b.on('readable', function () {
+		readableCount += 1;
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b), 'expected ' + JSON.stringify(a)); // 1, 5
 	});
 
-	b.on('add', function (k, kv) {
+	b.on('add', function (k) {
 		test.strictEqual('dave', k, 'expected dave'); // 6
-		test.strictEqual(JSON.stringify(c), JSON.stringify(kv), 'expected ' + JSON.stringify(c)); // 7
+		test.strictEqual(JSON.stringify(c), JSON.stringify(b[k]), 'expected ' + JSON.stringify(c)); // 7
 	});
 
-	b.john.on('add', function (k, kv) {
+	b.john.on('add', function (k) {
 		test.strictEqual('pants', k, 'expected pants'); // 2
-		test.strictEqual('green', kv, 'expected green'); // 3
+		test.equal('green', b.john[k], 'expected green'); // 3
 	});
 
 	a.john.pants = 'green';
 	b.john.set('pants', 'green');
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 5
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 4
 
 	a.dave = c;
 	b.set('dave', c);
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 9
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 8
 
-	test.strictEqual(3, signalcount); // 10
+	test.strictEqual(2, readableCount); // 9
 
 	test.done();
 };
 
 exports.testObjectDel = function (test) {
-	test.expect(8);
+	test.expect(7);
 
 	var a, b;
 	a = { john: { shirt: 'blue', pants: 'khaki' }, steve: { shoes: 'brown' } };
 	b = Tome.conjure(a);
 
-	b.on('signal', function (bv) {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(bv)); // 1, 4, 6
+	b.on('readable', function () {
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 5
 	});
 
 	b.john.on('del', function (k) {
@@ -253,16 +252,16 @@ exports.testObjectDel = function (test) {
 	});
 
 	b.john.pants.on('destroy', function () {
-		test.ok(true); // 7
+		test.ok(true); // 6
 	});
 
 	delete a.john.shirt;
 	b.john.del('shirt');
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 5
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 4
 
 	delete a.john;
 	b.del('john');
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 8
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 7
 
 	test.done();
 };
