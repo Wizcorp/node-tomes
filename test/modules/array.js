@@ -1,13 +1,13 @@
 var tomes = require('../../tomes');
 
-var Tome = tomes.Tome,
-	ArrayTome = tomes.ArrayTome,
-	BooleanTome = tomes.BooleanTome,
-	NumberTome = tomes.NumberTome,
-	ObjectTome = tomes.ObjectTome,
-	StringTome = tomes.StringTome,
-	NullTome = tomes.NullTome,
-	UndefinedTome = tomes.UndefinedTome;
+var Tome = tomes.Tome;
+var ArrayTome = tomes.ArrayTome;
+var BooleanTome = tomes.BooleanTome;
+var NumberTome = tomes.NumberTome;
+var ObjectTome = tomes.ObjectTome;
+var StringTome = tomes.StringTome;
+var NullTome = tomes.NullTome;
+var UndefinedTome = tomes.UndefinedTome;
 
 var instanceOf = function (actual, expected) {
 	if (actual instanceof expected) {
@@ -92,7 +92,8 @@ exports.testArrayReadable = function (test) {
 	var a = [1, 2, 3, 4];
 	var b = Tome.conjure(a);
 	b.on('readable', function () {
-		test.ok(false, 'unexpected readable'); // This should not happen.
+		// This should not happen.
+		test.ok(false, 'unexpected readable');
 	});
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	test.strictEqual(a.length, b.length);
@@ -271,56 +272,81 @@ exports.testArrayPop = function (test) {
 	
 	b.on('del', function (key) {
 		if (key === b.valueOf().length) {
-			test.ok(true, 'expected del'); // 2, 6, 10, 13, 16, 19, 22, 26
+			// 2, 6, 10, 13, 16, 19, 22, 26
+			test.ok(true, 'expected del');
 		}
 	});
 	
 	b.on('readable', function () {
 		switch (b.length) {
 		case 7:
-			test.equal(b[6].valueOf(), undefined, 'expected undefined'); // 3
+			// 3
+			test.equal(b[6].valueOf(), undefined, 'expected undefined');
 			break;
 		case 6:
-			test.equal(b[5].valueOf(), null, 'expected null'); // 7
+			// 7
+			test.equal(b[5].valueOf(), null, 'expected null');
 			break;
 		case 5:
-			test.equal(b[4].f, undefined, 'expected {f:undefined}'); // 11
+			// 11
+			test.equal(b[4].f, undefined, 'expected {f:undefined}');
 			break;
 		case 4:
-			test.equal(b[3].f.valueOf(), null, 'expected {f:null}'); // 14
+			// 14
+			test.equal(b[3].f.valueOf(), null, 'expected {f:null}');
 			break;
 		case 3:
-			test.equal(b[2], 4, 'expected 4'); // 17
+			// 17
+			test.equal(b[2], 4, 'expected 4');
 			break;
 		case 2:
-			test.equal(b[1], 'asdf', 'expected \'asdf\''); // 20
+			// 20
+			test.equal(b[1], 'asdf', 'expected \'asdf\'');
 			break;
 		case 1:
-			test.equal(b[0], true, 'expected true'); // 23
+			// 23
+			test.equal(b[0], true, 'expected true');
 			break;
 		case 0:
-			test.deepEqual(b.valueOf(), [], 'expected empty array'); // 27
+			// 27
+			test.deepEqual(b.valueOf(), [], 'expected empty array');
 			break;
 		default:
-			test.ok(false, 'unexpected readable'); // This should not happen.
+			// This should not happen.
+			test.ok(false, 'unexpected readable');
 		}
 	});
 
-	test.strictEqual(a.pop().f, b.pop().f.valueOf(), 'expected {f:1}'); // 1
-	test.strictEqual(a.length, b.length); // 4
-	test.strictEqual(a.pop(), b.pop(), 'expected undefined'); // 5
-	test.strictEqual(a.length, b.length); // 8
-	test.strictEqual(a.pop(), b.pop(), 'expected null'); // 9
-	test.strictEqual(a.pop().f, b.pop().f, 'expected {f:undefined}'); // 12
-	test.strictEqual(a.pop().f, b.pop().f.valueOf(), 'expected {f:null}'); // 15
-	test.strictEqual(a.length, b.length); // 18
-	test.strictEqual(a.pop(), b.pop(), 'expected 4'); // 19
-	test.strictEqual(a.pop(), b.pop(), 'expected asdf'); // 22
-	test.strictEqual(a.pop(), b.pop(), 'expected true'); // 25
-	test.strictEqual(a.pop(), b.pop(), 'expected undefined'); // 28
-	test.strictEqual(a.pop(), b.pop(), 'expected undefined'); // 29
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 30
-	test.strictEqual(a.length, b.length); // 31
+	// 1
+	test.strictEqual(a.pop().f, b.pop().f.valueOf(), 'expected {f:1}');
+	// 4
+	test.strictEqual(a.length, b.length);
+	// 5
+	test.strictEqual(a.pop(), b.pop(), 'expected undefined');
+	// 8
+	test.strictEqual(a.length, b.length);
+	// 9
+	test.strictEqual(a.pop(), b.pop(), 'expected null');
+	// 12
+	test.strictEqual(a.pop().f, b.pop().f, 'expected {f:undefined}');
+	// 15
+	test.strictEqual(a.pop().f, b.pop().f.valueOf(), 'expected {f:null}');
+	// 18
+	test.strictEqual(a.length, b.length);
+	// 19
+	test.strictEqual(a.pop(), b.pop(), 'expected 4');
+	// 22
+	test.strictEqual(a.pop(), b.pop(), 'expected asdf');
+	// 25
+	test.strictEqual(a.pop(), b.pop(), 'expected true');
+	// 28
+	test.strictEqual(a.pop(), b.pop(), 'expected undefined');
+	// 29
+	test.strictEqual(a.pop(), b.pop(), 'expected undefined');
+	// 30
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 31
+	test.strictEqual(a.length, b.length);
 	
 	test.done();
 };
@@ -333,56 +359,81 @@ exports.testArrayShift = function (test) {
 	
 	b.on('del', function (key) {
 		if (key === 0) {
-			test.ok(true, 'expected del'); // 2, 6, 10, 13, 16, 19, 22, 26
+			// 2, 6, 10, 13, 16, 19, 22, 26
+			test.ok(true, 'expected del');
 		}
 	});
 	
 	b.on('readable', function () {
 		switch (b.length) {
 		case 0:
-			test.deepEqual(b.valueOf(), [], 'expected empty array'); // 27
+			// 27
+			test.deepEqual(b.valueOf(), [], 'expected empty array');
 			break;
 		case 1:
-			test.equal(b[0].f.valueOf(), 1, 'expected {f:1}'); // 23
+			// 23
+			test.equal(b[0].f.valueOf(), 1, 'expected {f:1}');
 			break;
 		case 2:
-			test.equal(b[0].valueOf(), undefined, 'expected undefined'); // 20
+			// 20
+			test.equal(b[0].valueOf(), undefined, 'expected undefined');
 			break;
 		case 3:
-			test.equal(b[0].valueOf(), null, 'expected null'); // 17
+			// 17
+			test.equal(b[0].valueOf(), null, 'expected null');
 			break;
 		case 4:
-			test.equal(b[0].f, undefined, 'expected {f:undefined}'); // 14
+			// 14
+			test.equal(b[0].f, undefined, 'expected {f:undefined}');
 			break;
 		case 5:
-			test.equal(b[0].f.valueOf(), null, 'expected {f:null}'); // 11
+			// 11
+			test.equal(b[0].f.valueOf(), null, 'expected {f:null}');
 			break;
 		case 6:
-			test.equal(b[0], 4, 'expected 4'); // 7
+			// 7
+			test.equal(b[0], 4, 'expected 4');
 			break;
 		case 7:
-			test.equal(b[0], 'asdf', 'expected \'asdf\''); // 3
+			// 3
+			test.equal(b[0], 'asdf', 'expected \'asdf\'');
 			break;
 		default:
-			test.ok(false, 'unexpected readable'); // This should not happen.
+			// This should not happen.
+			test.ok(false, 'unexpected readable');
 		}
 	});
 
-	test.equal(a.shift(), b.shift(), 'expected true'); // 1
-	test.strictEqual(a.length, b.length); // 4
-	test.equal(a.shift(), b.shift(), 'expected \'asdf\''); // 5
-	test.strictEqual(a.length, b.length); // 8
-	test.equal(a.shift(), b.shift(), 'expected 4'); // 9
-	test.equal(a.shift().f, b.shift().f.valueOf(), 'expected {f:null}'); // 12
-	test.equal(a.shift().f, b.shift().f, 'expected {f:undefined}'); // 15
-	test.equal(a.shift(), b.shift(), 'expected null'); // 18
-	test.equal(a.shift(), b.shift(), 'expected undefined'); // 21
-	test.strictEqual(a.length, b.length); // 24
-	test.equal(a.shift().f, b.shift().f.valueOf(), 'expected {f:1}'); // 25
-	test.equal(a.shift(), b.shift(), 'expected undefined'); // 28
-	test.equal(a.shift(), b.shift(), 'expected undefined'); // 29
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 30
-	test.strictEqual(a.length, b.length); // 31
+	// 1
+	test.equal(a.shift(), b.shift(), 'expected true');
+	// 4
+	test.strictEqual(a.length, b.length);
+	// 5
+	test.equal(a.shift(), b.shift(), 'expected \'asdf\'');
+	// 8
+	test.strictEqual(a.length, b.length);
+	// 9
+	test.equal(a.shift(), b.shift(), 'expected 4');
+	// 12
+	test.equal(a.shift().f, b.shift().f.valueOf(), 'expected {f:null}');
+	// 15
+	test.equal(a.shift().f, b.shift().f, 'expected {f:undefined}');
+	// 18
+	test.equal(a.shift(), b.shift(), 'expected null');
+	// 21
+	test.equal(a.shift(), b.shift(), 'expected undefined');
+	// 24
+	test.strictEqual(a.length, b.length);
+	// 25
+	test.equal(a.shift().f, b.shift().f.valueOf(), 'expected {f:1}');
+	// 28
+	test.equal(a.shift(), b.shift(), 'expected undefined');
+	// 29
+	test.equal(a.shift(), b.shift(), 'expected undefined');
+	// 30
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 31
+	test.strictEqual(a.length, b.length);
 
 	test.done();
 };
@@ -394,14 +445,17 @@ exports.testArraySort = function (test) {
 	var b = Tome.conjure(a);
 	
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 5
+		// 1, 4, 5
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	});
 	
 	a.sort(function (a, b) { return a.valueOf() - b.valueOf(); });
 	b.sort(function (a, b) { return a.valueOf() - b.valueOf(); });
 	
-	test.strictEqual(a.length, b.length); // 2
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
+	// 2
+	test.strictEqual(a.length, b.length);
+	// 3
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	
 	a.push('asdf', 'foo', 'bar', 'zebra', 'banana', 'kangaroo');
 	b.push('asdf', 'foo', 'bar', 'zebra', 'banana', 'kangaroo');
@@ -409,8 +463,10 @@ exports.testArraySort = function (test) {
 	a.sort(function (a, b) { return a.valueOf() - b.valueOf(); });
 	b.sort(function (a, b) { return a.valueOf() - b.valueOf(); });
 	
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 6
-	test.strictEqual(a.length, b.length); // 7
+	// 6
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 7
+	test.strictEqual(a.length, b.length);
 	
 	test.done();
 };
@@ -422,7 +478,8 @@ exports.testArrayMapSqrt = function (test) {
 	var b = Tome.conjure(a);
 	
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // This should not happen.
+		// This should not happen.
+		test.ok(false);
 	});
 	
 	var x = a.map(Math.sqrt);
@@ -444,7 +501,8 @@ exports.testArrayMapParseInt = function (test) {
 	var b = Tome.conjure(a);
 	
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // This should not happen.
+		// This should not happen.
+		test.ok(false);
 	});
 	
 	function returnInt(element) {
@@ -454,11 +512,16 @@ exports.testArrayMapParseInt = function (test) {
 	var x = a.map(returnInt);
 	var y = b.map(returnInt);
 	
-	test.strictEqual(JSON.stringify(x), JSON.stringify(y)); // 1
-	test.strictEqual(x.length, y.length); // 2
-	test.strictEqual(Tome.typeOf(x), Tome.typeOf(y)); // 3
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 4
-	test.strictEqual(a.length, b.length); // 5
+	// 1
+	test.strictEqual(JSON.stringify(x), JSON.stringify(y));
+	// 2
+	test.strictEqual(x.length, y.length);
+	// 3
+	test.strictEqual(Tome.typeOf(x), Tome.typeOf(y));
+	// 4
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 5
+	test.strictEqual(a.length, b.length);
 	
 	test.done();
 };
@@ -470,17 +533,26 @@ exports.testArrayIndexOf = function (test) {
 	var b = Tome.conjure(a);
 	
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // This should not happen.
+		// This should not happen.
+		test.ok(false);
 	});
 	
-	test.strictEqual(a.indexOf('49'), b.indexOf('49'), 'expected 6'); // 1
-	test.strictEqual(a.indexOf(null), b.indexOf(null), 'expected 12'); // 2
-	test.strictEqual(a.indexOf(true), b.indexOf(true), 'expected 11'); // 3
-	test.strictEqual(a.indexOf(undefined), b.indexOf(undefined), 'expected 13'); // 4
-	test.strictEqual(a.indexOf('100', 11), b.indexOf('100', 11), 'expected 16'); // 5
-	test.strictEqual(a.indexOf('not found'), b.indexOf('not found')); // 6
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 7
-	test.strictEqual(a.length, b.length); // 8
+	// 1
+	test.strictEqual(a.indexOf('49'), b.indexOf('49'), 'expected 6');
+	// 2
+	test.strictEqual(a.indexOf(null), b.indexOf(null), 'expected 12');
+	// 3
+	test.strictEqual(a.indexOf(true), b.indexOf(true), 'expected 11');
+	// 4
+	test.strictEqual(a.indexOf(undefined), b.indexOf(undefined), 'expected 13');
+	// 5
+	test.strictEqual(a.indexOf('100', 11), b.indexOf('100', 11), 'expected 16');
+	// 6
+	test.strictEqual(a.indexOf('not found'), b.indexOf('not found'));
+	// 7
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 8
+	test.strictEqual(a.length, b.length);
 	
 	test.done();
 };
@@ -492,16 +564,24 @@ exports.testArrayLastIndexOf = function (test) {
 	var b = Tome.conjure(a);
 	
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // This should not happen.
+		// This should not happen.
+		test.ok(false);
 	});
 	
-	test.strictEqual(a.lastIndexOf('49'), b.lastIndexOf('49'), 'expected 14'); // 1
-	test.strictEqual(a.lastIndexOf(null), b.lastIndexOf(null), 'expected 15'); // 2
-	test.strictEqual(a.lastIndexOf(true), b.lastIndexOf(true), 'expected 11'); // 3
-	test.strictEqual(a.lastIndexOf(undefined), b.lastIndexOf(undefined), 'expected 13'); // 4
-	test.strictEqual(a.lastIndexOf('100', 11), b.lastIndexOf('100', 11), 'expected 16'); // 5
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 6
-	test.strictEqual(a.length, b.length); // 7
+	// 1
+	test.strictEqual(a.lastIndexOf('49'), b.lastIndexOf('49'), 'expected 14');
+	// 2
+	test.strictEqual(a.lastIndexOf(null), b.lastIndexOf(null), 'expected 15');
+	// 3
+	test.strictEqual(a.lastIndexOf(true), b.lastIndexOf(true), 'expected 11');
+	// 4
+	test.strictEqual(a.lastIndexOf(undefined), b.lastIndexOf(undefined), 'expected 13');
+	// 5
+	test.strictEqual(a.lastIndexOf('100', 11), b.lastIndexOf('100', 11), 'expected 16');
+	// 6
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 7
+	test.strictEqual(a.length, b.length);
 	
 	test.done();
 };
@@ -509,23 +589,34 @@ exports.testArrayLastIndexOf = function (test) {
 exports.testArraySlice = function (test) {
 	test.expect(10);
 
-	var a = [ { 1: 2, 3: { 4: 5 } }, 'six', false, [1, 2], {}, [], null, undefined];
+	var a = [{ 1: 2, 3: { 4: 5 } }, 'six', false, [1, 2], {}, [], null, undefined];
 	var b = Tome.conjure(a);
 
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // This should not happen.
+		// This should not happen.
+		test.ok(false);
 	});
 
-	test.strictEqual(JSON.stringify(a.slice(1, 4)), JSON.stringify(b.slice(1, 4))); // 1
-	test.strictEqual(a.slice(1, 4).length, b.slice(1, 4).length); // 2
-	test.strictEqual(JSON.stringify(a.slice(-1, 2)), JSON.stringify(b.slice(-1, 2)), 'expected []'); // 3
-	test.strictEqual(a.slice(-1, 2).length, b.slice(-1, 2).length); // 4
-	test.strictEqual(JSON.stringify(a.slice(1, -2)), JSON.stringify(b.slice(1, -2)), 'expected ["six",false,[1,2],{},[]]'); // 5
-	test.strictEqual(a.slice(1, -2).length, b.slice(1, -2).length); // 6
-	test.strictEqual(JSON.stringify(a.slice(2)), JSON.stringify(b.slice(2)), 'expected [false,[1,2],{},[],null,null]'); // 7
-	test.strictEqual(a.slice(2).length, b.slice(2).length); // 8
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 9
-	test.strictEqual(a.length, b.length); // 10
+	// 1
+	test.strictEqual(JSON.stringify(a.slice(1, 4)), JSON.stringify(b.slice(1, 4)));
+	// 2
+	test.strictEqual(a.slice(1, 4).length, b.slice(1, 4).length);
+	// 3
+	test.strictEqual(JSON.stringify(a.slice(-1, 2)), JSON.stringify(b.slice(-1, 2)), 'expected []');
+	// 4
+	test.strictEqual(a.slice(-1, 2).length, b.slice(-1, 2).length);
+	// 5
+	test.strictEqual(JSON.stringify(a.slice(1, -2)), JSON.stringify(b.slice(1, -2)), 'expected ["six",false,[1,2],{},[]]');
+	// 6
+	test.strictEqual(a.slice(1, -2).length, b.slice(1, -2).length);
+	// 7
+	test.strictEqual(JSON.stringify(a.slice(2)), JSON.stringify(b.slice(2)), 'expected [false,[1,2],{},[],null,null]');
+	// 8
+	test.strictEqual(a.slice(2).length, b.slice(2).length);
+	// 9
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 10
+	test.strictEqual(a.length, b.length);
 
 	test.done();
 };
@@ -533,26 +624,38 @@ exports.testArraySlice = function (test) {
 exports.testArrayConcat = function (test) {
 	test.expect(11);
 
-	var a = [ { 1: 2, 3: { 4: 5 } }, 'six', false, [1, 2], {}, [], null, undefined];
+	var a = [{ 1: 2, 3: { 4: 5 } }, 'six', false, [1, 2], {}, [], null, undefined];
 	var b = Tome.conjure(a);
-	var c = [ 1, 2, 3, 4, 5, 6, [ 7, 8, 9] ];
-	var d = { d: 1, e: 'e', f: [ 1, 2, 3, 4]};
+	var c = [1, 2, 3, 4, 5, 6, [7, 8, 9]];
+	var d = { d: 1, e: 'e', f: [1, 2, 3, 4]};
 
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // This should not happen.
+		// This should not happen.
+		test.ok(false);
 	});
 
-	test.strictEqual(JSON.stringify(a.concat(c)), JSON.stringify(b.concat(c))); // 1
-	test.strictEqual(a.concat(c).length, b.concat(c).length); // 2
-	test.strictEqual(Array.isArray(a.concat(c)), ArrayTome.isArrayTome(b.concat(c))); // 3
-	test.strictEqual(JSON.stringify(a.concat(d)), JSON.stringify(b.concat(d))); // 4
-	test.strictEqual(a.concat(d).length, b.concat(d).length); // 5
-	test.strictEqual(Array.isArray(a.concat(d)), ArrayTome.isArrayTome(b.concat(d))); // 6
-	test.strictEqual(JSON.stringify(a.concat(d, c, a)), JSON.stringify(b.concat(d, c, a))); // 7
-	test.strictEqual(a.concat(d, c, a).length, b.concat(d, c, a).length); // 8
-	test.strictEqual(Array.isArray(a.concat(d, c, a)), ArrayTome.isArrayTome(b.concat(d, c, a))); // 9
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 10
-	test.strictEqual(a.length, b.length); // 11
+	// 1
+	test.strictEqual(JSON.stringify(a.concat(c)), JSON.stringify(b.concat(c)));
+	// 2
+	test.strictEqual(a.concat(c).length, b.concat(c).length);
+	// 3
+	test.strictEqual(Array.isArray(a.concat(c)), ArrayTome.isArrayTome(b.concat(c)));
+	// 4
+	test.strictEqual(JSON.stringify(a.concat(d)), JSON.stringify(b.concat(d)));
+	// 5
+	test.strictEqual(a.concat(d).length, b.concat(d).length);
+	// 6
+	test.strictEqual(Array.isArray(a.concat(d)), ArrayTome.isArrayTome(b.concat(d)));
+	// 7
+	test.strictEqual(JSON.stringify(a.concat(d, c, a)), JSON.stringify(b.concat(d, c, a)));
+	// 8
+	test.strictEqual(a.concat(d, c, a).length, b.concat(d, c, a).length);
+	// 9
+	test.strictEqual(Array.isArray(a.concat(d, c, a)), ArrayTome.isArrayTome(b.concat(d, c, a)));
+	// 10
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 11
+	test.strictEqual(a.length, b.length);
 
 	test.done();
 };
@@ -568,13 +671,18 @@ exports.testArrayReduce = function (test) {
 	var b = Tome.conjure(a);
 	
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+		// This should not happen.
+		test.ok(false);
 	});
 	
-	test.strictEqual(JSON.stringify(a.reduce(sum)), JSON.stringify(b.reduce(sum))); // 1
-	test.strictEqual(a.reduce(sum).length, b.reduce(sum).length); // 2
-	test.strictEqual(JSON.stringify(a.reduce(sum, 10)), JSON.stringify(b.reduce(sum, 10))); // 3
-	test.strictEqual(a.length, b.length); // 4
+	// 1
+	test.strictEqual(JSON.stringify(a.reduce(sum)), JSON.stringify(b.reduce(sum)));
+	// 2
+	test.strictEqual(a.reduce(sum).length, b.reduce(sum).length);
+	// 3
+	test.strictEqual(JSON.stringify(a.reduce(sum, 10)), JSON.stringify(b.reduce(sum, 10)));
+	// 4
+	test.strictEqual(a.length, b.length);
 	
 	test.done();
 };
@@ -590,12 +698,16 @@ exports.testArrayReduceRight = function (test) {
 	var b = Tome.conjure(a);
 	
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // This should not happen.
+		// This should not happen.
+		test.ok(false);
 	});
 	
-	test.strictEqual(JSON.stringify(a.reduceRight(sum)), JSON.stringify(b.reduceRight(sum))); // 1
-	test.strictEqual(JSON.stringify(a.reduceRight(sum, 10)), JSON.stringify(b.reduceRight(sum, 10))); // 2
-	test.strictEqual(a.length, b.length); // 3
+	// 1
+	test.strictEqual(JSON.stringify(a.reduceRight(sum)), JSON.stringify(b.reduceRight(sum)));
+	// 2
+	test.strictEqual(JSON.stringify(a.reduceRight(sum, 10)), JSON.stringify(b.reduceRight(sum, 10)));
+	// 3
+	test.strictEqual(a.length, b.length);
 	
 	test.done();
 };
@@ -611,14 +723,19 @@ exports.testArrayFilter = function (test) {
 	var b = Tome.conjure(a);
 	
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // This should not happen.
+		// This should not happen.
+		test.ok(false);
 	});
 	
-	test.strictEqual(JSON.stringify(a.filter(isBigEnough)), JSON.stringify(b.filter(isBigEnough))); // 1
-	test.strictEqual(a.filter(isBigEnough).length, b.filter(isBigEnough).length); // 2
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 3
-	test.strictEqual(a.length, b.length); // 4
-	
+	// 1
+	test.strictEqual(JSON.stringify(a.filter(isBigEnough)), JSON.stringify(b.filter(isBigEnough)));
+	// 2
+	test.strictEqual(a.filter(isBigEnough).length, b.filter(isBigEnough).length);
+	// 3
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 4
+	test.strictEqual(a.length, b.length);
+
 	test.done();
 };
 
@@ -633,16 +750,20 @@ exports.testArraySome = function (test) {
 	var b = Tome.conjure(a);
 	
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
+		// 2
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	});
 	
-	test.strictEqual(JSON.stringify(a.some(isBigEnough)), JSON.stringify(b.some(isBigEnough)), 'expected true'); // 1
-	
+	// 1
+	test.strictEqual(JSON.stringify(a.some(isBigEnough)), JSON.stringify(b.some(isBigEnough)), 'expected true');
+
 	a.shift();
 	b.shift();
 	
-	test.strictEqual(JSON.stringify(a.some(isBigEnough)), JSON.stringify(b.some(isBigEnough)), 'expected false'); // 3
-	test.strictEqual(a.length, b.length); // 4
+	// 3
+	test.strictEqual(JSON.stringify(a.some(isBigEnough)), JSON.stringify(b.some(isBigEnough)), 'expected false');
+	// 4
+	test.strictEqual(a.length, b.length);
 	
 	test.done();
 };
@@ -658,21 +779,26 @@ exports.testArrayEvery = function (test) {
 	var b = Tome.conjure(a);
 
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
+		// 2
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	});
 
-	test.strictEqual(JSON.stringify(a.every(isBigEnough)), JSON.stringify(b.every(isBigEnough)), 'expected false'); // 1
+	// 1
+	test.strictEqual(JSON.stringify(a.every(isBigEnough)), JSON.stringify(b.every(isBigEnough)), 'expected false');
 
 	a.pop();
 	b.pop();
 
-	test.strictEqual(JSON.stringify(a.every(isBigEnough)), JSON.stringify(b.every(isBigEnough)), 'expected true'); // 3
+	// 3
+	test.strictEqual(JSON.stringify(a.every(isBigEnough)), JSON.stringify(b.every(isBigEnough)), 'expected true');
 
 	a = [];
 	b = Tome.conjure(a);
 
-	test.strictEqual(JSON.stringify(a.every(isBigEnough)), JSON.stringify(b.every(isBigEnough)), 'expected true'); // 4
-	test.strictEqual(a.length, b.length); // 5
+	// 4
+	test.strictEqual(JSON.stringify(a.every(isBigEnough)), JSON.stringify(b.every(isBigEnough)), 'expected true');
+	// 5
+	test.strictEqual(a.length, b.length);
 
 	test.done();
 };
@@ -688,16 +814,20 @@ exports.testArrayForEach = function (test) {
 	var b = Tome.conjure(a);
 	
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 11
+		// 11
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	});
 	
-	test.strictEqual(JSON.stringify(a.forEach(inc)), JSON.stringify(b.forEach(inc))); // 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+	// 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+	test.strictEqual(JSON.stringify(a.forEach(inc)), JSON.stringify(b.forEach(inc)));
 	
 	a.pop();
 	b.pop();
 	
-	test.strictEqual(JSON.stringify(a.forEach(inc)), JSON.stringify(b.forEach(inc))); // 12, 13, 14, 15, 16, 17, 18, 19, 20, 21
-	test.strictEqual(a.length, b.length); // 22
+	// 12, 13, 14, 15, 16, 17, 18, 19, 20, 21
+	test.strictEqual(JSON.stringify(a.forEach(inc)), JSON.stringify(b.forEach(inc)));
+	// 22
+	test.strictEqual(a.length, b.length);
 
 	test.done();
 };
@@ -710,13 +840,15 @@ exports.testArraySliceSubObjectModify = function (test) {
 	var b = Tome.conjure(a);
 	
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
+		// 1
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	});
 	
 	a.slice(4)[0].john.pants = 'red';
 	b.slice(4)[0].john.pants.assign('red');
 	
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
+	// 2
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	
 	test.done();
 };
@@ -733,13 +865,15 @@ exports.testArrayFilterSubObjectModify = function (test) {
 	var b = Tome.conjure(a);
 	
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
+		// 1
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	});
 	
 	a.filter(isnotanumber)[0].john.pants = 'red';
 	b.filter(isnotanumber)[0].john.pants.assign('red');
 	
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
+	// 2
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 
 	test.done();
 };
@@ -752,13 +886,15 @@ exports.testArrayConcatSubObjectModify = function (test) {
 	var b = Tome.conjure(a);
 	
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
+		// 1
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	});
 	
 	a.concat([6, 7, 8, 9])[4].john.pants = 'red';
 	b.concat([6, 7, 8, 9])[4].john.pants.assign('red');
 	
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
+	// 2
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	
 	test.done();
 };
@@ -766,19 +902,21 @@ exports.testArrayConcatSubObjectModify = function (test) {
 exports.testArraySubObjectModify = function (test) {
 	test.expect(2);
 
-	var a = [ 1, 2, 3, 4, { john: { pants: 'blue' } } ];
+	var a = [1, 2, 3, 4, { john: { pants: 'blue' } }];
 	var b = Tome.conjure(a);
 	var x = a[4];
 	var y = b[4];
 	
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
+		// 1
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	});
 	
 	x.john = { shirt: 'red' };
 	y.john.assign({ shirt: 'red' });
 	
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
+	// 2
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	
 	test.done();
 };
@@ -786,42 +924,53 @@ exports.testArraySubObjectModify = function (test) {
 exports.testArrayAssign = function (test) {
 	test.expect(15);
 
-	var a = [ 1, 2, 3, 4, { john: { pants: 'blue' } } ];
+	var a = [1, 2, 3, 4, { john: { pants: 'blue' } }];
 	var b = Tome.conjure(a);
 	
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 7, 10, 13
+		// 1, 4, 7, 10, 13
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	});
 	
 	a = 'string';
 	b.assign('string');
 	
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
-	test.strictEqual(Tome.typeOf(a), Tome.typeOf(b)); // 3
+	// 2
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 3
+	test.strictEqual(Tome.typeOf(a), Tome.typeOf(b));
 	
 	a = 1;
 	b.assign(1);
 	
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 5
-	test.strictEqual(Tome.typeOf(a), Tome.typeOf(b)); // 6
-	
+	// 5
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 6
+	test.strictEqual(Tome.typeOf(a), Tome.typeOf(b));
+
 	a = true;
 	b.assign(true);
 	
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 8
-	test.strictEqual(Tome.typeOf(a), Tome.typeOf(b)); // 9
+	// 8
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 9
+	test.strictEqual(Tome.typeOf(a), Tome.typeOf(b));
 	
 	a = { asdf: { asdf: true } };
 	b.assign({ asdf: { asdf: true } });
 	
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 11
-	test.strictEqual(Tome.typeOf(a), Tome.typeOf(b)); // 12
+	// 11
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 12
+	test.strictEqual(Tome.typeOf(a), Tome.typeOf(b));
 	
-	a = [ 1, 2, 3, 4, { john: { pants: 'blue' } } ];
-	b.assign([ 1, 2, 3, 4, { john: { pants: 'blue' } } ]);
+	a = [1, 2, 3, 4, { john: { pants: 'blue' } }];
+	b.assign([1, 2, 3, 4, { john: { pants: 'blue' } }]);
 	
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 15
-	test.strictEqual(Tome.typeOf(a), Tome.typeOf(b)); //15
+	// 14
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 15
+	test.strictEqual(Tome.typeOf(a), Tome.typeOf(b));
 	
 	test.done();
 };
@@ -829,42 +978,53 @@ exports.testArrayAssign = function (test) {
 exports.testArraySet = function (test) {
 	test.expect(15);
 
-	var a = [ 1, 2, 3, 4, { john: { pants: 'blue' } } ];
+	var a = [1, 2, 3, 4, { john: { pants: 'blue' } }];
 	var b = Tome.conjure(a);
 
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 4, 7, 10, 13
+		// 1, 4, 7, 10, 13
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	});
 
 	a[1] = 'string';
 	b.set(1, 'string');
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 2
-	test.strictEqual(Tome.typeOf(a[1]), Tome.typeOf(b[1])); // 3
+	// 2
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 3
+	test.strictEqual(Tome.typeOf(a[1]), Tome.typeOf(b[1]));
 
 	a[1] = 1;
 	b.set(1, 1);
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 5
-	test.strictEqual(Tome.typeOf(a[1]), Tome.typeOf(b[1])); // 6
+	// 5
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 6
+	test.strictEqual(Tome.typeOf(a[1]), Tome.typeOf(b[1]));
 
 	a[1] = true;
 	b.set(1, true);
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 8
-	test.strictEqual(Tome.typeOf(a[1]), Tome.typeOf(b[1])); // 9
+	// 8
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 9
+	test.strictEqual(Tome.typeOf(a[1]), Tome.typeOf(b[1]));
 
 	a[1] = { asdf: { asdf: true } };
 	b.set(1, { asdf: { asdf: true } });
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 11
-	test.strictEqual(Tome.typeOf(a[1]), Tome.typeOf(b[1])); // 12
+	// 11
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 12
+	test.strictEqual(Tome.typeOf(a[1]), Tome.typeOf(b[1]));
 
-	a[1] = [ 1, 2, 3, 4, { john: { pants: 'blue' } } ];
-	b.set(1, [ 1, 2, 3, 4, { john: { pants: 'blue' } } ]);
+	a[1] = [1, 2, 3, 4, { john: { pants: 'blue' } }];
+	b.set(1, [1, 2, 3, 4, { john: { pants: 'blue' } }]);
 
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 14
-	test.strictEqual(Tome.typeOf(a[1]), Tome.typeOf(b[1])); // 15
+	// 14
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	// 15
+	test.strictEqual(Tome.typeOf(a[1]), Tome.typeOf(b[1]));
 
 	test.done();
 };
@@ -872,11 +1032,12 @@ exports.testArraySet = function (test) {
 exports.testArrayReverse = function (test) {
 	test.expect(1);
 
-	var a = [ 0, 1, 2, 3, 4, 5 ];
+	var a = [0, 1, 2, 3, 4, 5];
 	var b = Tome.conjure(a);
 
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1
+		// 1
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	});
 
 	a.reverse();

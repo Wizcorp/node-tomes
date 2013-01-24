@@ -42,7 +42,6 @@ Returns a new Tome containing your data.
 
 ###Tome.typeOf( data )
 Returns data's type as a string. Tomes only has types that exist in JSON which are:
-
  - array
  - boolean
  - null
@@ -62,6 +61,9 @@ Returns a boolean indicating whether data is a Tome or not.
  - ObjectTome
  - StringTome
  - UndefinedTome
+
+###Tome.destroy( *tome* )
+Make a tome and all of it's sub-tomes emit destroy.
 
 ###set( *key*, *data* )
 Assign data to key on a Tome. Set will create a Tome on the key if it does not exist.
@@ -102,7 +104,7 @@ Emitted when a Tome receives a new key.
 Emitted when a key is deleted from a Tome.
 
 ###destroy( )
-Emitted when a Tome is deleted.
+Emitted when a Tome is deleted. Removes all event listeners.
 
 ###readable( )
 Emitted on every time a Tome or any of it's child Tomes are altered. 

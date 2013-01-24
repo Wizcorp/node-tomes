@@ -319,7 +319,7 @@ exports.testDiffRenameMove = function (test) {
 	delete a.bob.shirt;
 	b.bob.move('shirt', b);
 
-	test.deepEqual(b.__diff__, {from: { shirt: { chain: [ 'bob' ], was: 'pants' } } }, JSON.stringify(b.__diff__));
+	test.deepEqual(b.__diff__, {from: { shirt: { chain: [ 'bob' ], was: 'pants', order: 2 } } }, JSON.stringify(b.__diff__));
 	test.deepEqual(b.bob.__diff__, { }, JSON.stringify(b.bob.__diff__));
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 
@@ -342,14 +342,14 @@ exports.testDiffMoveUpRename = function (test) {
 	delete a.bob.shirt;
 	b.bob.move('shirt', b);
 
-	test.deepEqual(b.__diff__, { from: { shirt: { chain: [ 'bob' ] } } });
+	test.deepEqual(b.__diff__, { from: { shirt: { chain: [ 'bob' ], order: 1 } } });
 	test.deepEqual(b.bob.__diff__, { });
 
 	a.pants = a.shirt;
 	delete a.shirt;
 	b.rename('shirt', 'pants');
 
-	test.deepEqual(b.__diff__, { from: { pants: { chain: [ 'bob' ], was: 'shirt' } } });
+	test.deepEqual(b.__diff__, { from: { pants: { chain: [ 'bob' ], was: 'shirt', order: 1 } } });
 	test.deepEqual(b.bob.__diff__, { });
 
 	var diff = b.read();
@@ -372,18 +372,18 @@ exports.testDiffMoveTwice = function (test) {
 	delete a.bob.shirt;
 	b.bob.move('shirt', b.jim, 'scarf');
 
-	test.deepEqual(b.__diff__, { '_jim': { from: { scarf: { chain: [ 'bob' ], was: 'shirt' } } } });
-	test.deepEqual(b.jim.__diff__, { from: { scarf: { chain: [ 'bob' ], was: 'shirt' } } });
+	test.deepEqual(b.__diff__, { '_jim': { from: { scarf: { chain: [ 'bob' ], was: 'shirt', order: 1 } } } });
+	test.deepEqual(b.jim.__diff__, { from: { scarf: { chain: [ 'bob' ], was: 'shirt', order: 1 } } });
 	test.deepEqual(b.bob.__diff__, { });
 
 	a.paul.shirt = a.jim.scarf;
 	delete a.jim.scarf;
 	b.jim.move('scarf', b.paul, 'shirt');
 
-	test.deepEqual(b.__diff__, { '_paul': { from: { shirt: { chain: [ 'bob' ] } } } });
+	test.deepEqual(b.__diff__, { '_paul': { from: { shirt: { chain: [ 'bob' ], order: 3 } } } });
 	test.deepEqual(b.jim.__diff__, { });
 	test.deepEqual(b.bob.__diff__, { });
-	test.deepEqual(b.paul.__diff__, { from: { shirt: { chain: [ 'bob' ] } } });
+	test.deepEqual(b.paul.__diff__, { from: { shirt: { chain: [ 'bob' ], order: 3 } } });
 
 	var diff = b.read();
 	c.merge(diff);
@@ -405,7 +405,7 @@ exports.testDiffMoveUpDownUp = function (test) {
 	delete a.bob.shirt;
 	b.bob.move('shirt', b);
 
-	test.deepEqual(b.__diff__, { from: { shirt: { chain: [ 'bob' ] } } });
+	test.deepEqual(b.__diff__, { from: { shirt: { chain: [ 'bob' ], order: 1 } } });
 	test.deepEqual(b.bob.__diff__, { });
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 
@@ -421,7 +421,7 @@ exports.testDiffMoveUpDownUp = function (test) {
 	delete a.bob.shirt;
 	b.bob.move('shirt', b);
 
-	test.deepEqual(b.__diff__, { from: { shirt: { chain: [ 'bob' ] } } });
+	test.deepEqual(b.__diff__, { from: { shirt: { chain: [ 'bob' ], order: 5 } } });
 	test.deepEqual(b.bob.__diff__, { });
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 
@@ -444,16 +444,16 @@ exports.testDiffMoveDownUpDown = function (test) {
 	delete a.shirt;
 	b.move('shirt', b.bob, 'pants');
 
-	test.deepEqual(b.__diff__, { '_bob': { from: { pants: { chain: [ ], was: 'shirt'} } } }, JSON.stringify(b.__diff__));
-	test.deepEqual(b.bob.__diff__, { from: { pants: { chain: [ ], was: 'shirt'} } }, JSON.stringify(b.bob.__diff__));
+	test.deepEqual(b.__diff__, { '_bob': { from: { pants: { chain: [ ], was: 'shirt', order: 1} } } }, JSON.stringify(b.__diff__));
+	test.deepEqual(b.bob.__diff__, { from: { pants: { chain: [ ], was: 'shirt', order: 1} } }, JSON.stringify(b.bob.__diff__));
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 
 	a.scarf = a.jim.scarf;
 	delete a.jim.scarf;
 	b.jim.move('scarf', b);
 
-	test.deepEqual(b.__diff__, { '_bob': { from: { pants: { chain: [ ], was: 'shirt'} } }, from: { scarf: { chain: [ 'jim' ] } } }, JSON.stringify(b.__diff__));
-	test.deepEqual(b.bob.__diff__, { from: { pants: { chain: [ ], was: 'shirt'} } }, JSON.stringify(b.bob.__diff__));
+	test.deepEqual(b.__diff__, { '_bob': { from: { pants: { chain: [ ], was: 'shirt', order: 1} } }, from: { scarf: { chain: [ 'jim' ], order: 3 } } }, JSON.stringify(b.__diff__));
+	test.deepEqual(b.bob.__diff__, { from: { pants: { chain: [ ], was: 'shirt', order: 1} } }, JSON.stringify(b.bob.__diff__));
 	test.deepEqual(b.jim.__diff__, { }, JSON.stringify(b.jim.__diff__));
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 
@@ -461,7 +461,7 @@ exports.testDiffMoveDownUpDown = function (test) {
 	delete a.bob.pants;
 	b.bob.move('pants', b);
 
-	test.deepEqual(b.__diff__, { from: { scarf: { chain: [ 'jim' ] } }, rename: { shirt: { to: 'pants' } } }, JSON.stringify(b.__diff__));
+	test.deepEqual(b.__diff__, { from: { scarf: { chain: [ 'jim' ], order: 3 } }, rename: { shirt: { to: 'pants' } } }, JSON.stringify(b.__diff__));
 	test.deepEqual(b.bob.__diff__, { });
 	test.deepEqual(b.jim.__diff__, { }, JSON.stringify(b.jim.__diff__));
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
@@ -501,7 +501,7 @@ exports.testDiffAssignMove = function (test) {
 	b.jim.move('off', b);
 	delete a.jim.off;
 
-	test.deepEqual(b.__diff__, { from: { off: { chain: [ 'jim' ] } }, '_off': { assign: 'hi' } }, JSON.stringify(b.__diff__));
+	test.deepEqual(b.__diff__, { from: { off: { chain: [ 'jim' ], order: 2 } }, '_off': { assign: 'hi' } }, JSON.stringify(b.__diff__));
 	test.deepEqual(b.jim.__diff__, { }, JSON.stringify(b.jim.__diff__));
 	test.deepEqual(b.off.__diff__, { assign: 'hi' });
 
@@ -549,7 +549,7 @@ exports.testDiffMultiMove = function (test) {
 	delete a.d;
 	b.move('d', b.z, 'x');
 
-	test.deepEqual(b.__diff__, { del: ['a', 'b', 'c'], '_z': { from: { x: { chain: [ ], was: 'd', over: true }, w: { chain: [ ], was: 'e' } } } }, JSON.stringify(b.__diff__));
+	test.deepEqual(b.__diff__, { del: ['a', 'b', 'c'], '_z': { from: { x: { chain: [ ], was: 'd', over: true, order: 11 }, w: { chain: [ ], was: 'e', order: 9 } } } }, JSON.stringify(b.__diff__));
 
 	var diff = b.read();
 	c.merge(diff);
@@ -571,15 +571,15 @@ exports.testDiffCombineMove = function (test) {
 	delete a.foo;
 	b.move('foo', b.jim);
 
-	test.deepEqual(b.__diff__, { '_jim': { from: { foo: { chain: [ ] } } } }, JSON.stringify(b.__diff__));
-	test.deepEqual(b.jim.__diff__, { from: { foo: { chain: [ ] } } }, JSON.stringify(b.jim.__diff__));
+	test.deepEqual(b.__diff__, { '_jim': { from: { foo: { chain: [ ], order: 1 } } } }, JSON.stringify(b.__diff__));
+	test.deepEqual(b.jim.__diff__, { from: { foo: { chain: [ ], order: 1 } } }, JSON.stringify(b.jim.__diff__));
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 
 	a.jim.foo = 'why';
 	b.jim.foo.assign('why');
 
-	test.deepEqual(b.__diff__, { '_jim': { '_foo': { assign: 'why' }, from: { foo: { chain: [ ] } } } }, JSON.stringify(b.__diff__));
-	test.deepEqual(b.jim.__diff__, { '_foo': { assign: 'why' }, from: { foo: { chain: [ ] } } }, JSON.stringify(b.jim.__diff__));
+	test.deepEqual(b.__diff__, { '_jim': { '_foo': { assign: 'why' }, from: { foo: { chain: [ ], order: 1 } } } }, JSON.stringify(b.__diff__));
+	test.deepEqual(b.jim.__diff__, { '_foo': { assign: 'why' }, from: { foo: { chain: [ ], order: 1 } } }, JSON.stringify(b.jim.__diff__));
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 
 	a.jim = a.jim.foo;
@@ -618,13 +618,13 @@ exports.testDiffDeletedFrom = function (test) {
 	b.bob.shirts.move('blue', b.sam.shirts);
 
 	test.deepEqual(JSON.stringify(a), JSON.stringify(b));
-	test.deepEqual(b.__diff__, { _sam: { _shirts: { from: { blue: { chain: [ 'bob', 'shirts' ] } } } } }, JSON.stringify(b.__diff__));
+	test.deepEqual(b.__diff__, { _sam: { _shirts: { from: { blue: { chain: [ 'bob', 'shirts' ], order: 1 } } } } }, JSON.stringify(b.__diff__));
 
 	delete a.bob;
 	b.del('bob');
 
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
-	test.deepEqual(b.__diff__, { del: [ 'bob' ], _sam: { _shirts: { from: { blue: { chain: [ 'bob', 'shirts' ] } } } } }, JSON.stringify(b.__diff__));
+	test.deepEqual(b.__diff__, { del: [ 'bob' ], _sam: { _shirts: { from: { blue: { chain: [ 'bob', 'shirts' ], order: 1 } } } } }, JSON.stringify(b.__diff__));
 
 	var diff = b.read();
 	c.merge(diff);
@@ -645,7 +645,7 @@ exports.testDiffMoveRename = function (test) {
 	delete a.bob.pants;
 	b.bob.move('pants', b, 'shirt');
 
-	test.deepEqual(b.__diff__, { from: { shirt: { chain: [ 'bob' ], was: 'pants' } } });
+	test.deepEqual(b.__diff__, { from: { shirt: { chain: [ 'bob' ], was: 'pants', order: 1 } } });
 	test.deepEqual(b.bob.__diff__, { });
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 
@@ -653,7 +653,7 @@ exports.testDiffMoveRename = function (test) {
 	delete a.shirt;
 	b.rename('shirt', 'pants');
 
-	test.deepEqual(b.__diff__, { from: { pants: { chain: [ 'bob' ] } } });
+	test.deepEqual(b.__diff__, { from: { pants: { chain: [ 'bob' ], order: 1 } } });
 	test.deepEqual(b.bob.__diff__, {});
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 
@@ -716,5 +716,37 @@ exports.testDiffMoveReverse = function (test) {
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 3
 	test.deepEqual(b, c); // 4
 	
+	test.done();
+};
+
+exports.testDiffMoveParentMove = function (test) {
+	test.expect(2);
+
+	var a = { b: { c: 1, d: 1 }, e: { f: 1 }, g: { h: 1 } };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	a.e.c = a.b.c;
+	delete a.b.c;
+	b.b.move('c', b.e);
+
+	a.e.b = a.b;
+	delete a.b;
+	b.move('b', b.e);
+
+	a.g.e = a.e;
+	delete a.e;
+	b.move('e', b.g);
+
+	a.d = a.g.e.b.d;
+	delete a.g.e.b.d;
+	b.g.e.b.move('d', b);
+
+	var diff = b.read();
+	c.merge(diff);
+
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c)));
+
 	test.done();
 };
