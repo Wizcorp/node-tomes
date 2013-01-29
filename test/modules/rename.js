@@ -29,11 +29,16 @@ exports.testRename = function (test) {
 exports.testRenameDel = function (test) {
 	test.expect(2);
 
-	var a, b, c, diff;
+	var a, b, c;
 
 	a = { b: { c: 1 }, d: { e: 1} };
 	b = Tome.conjure(a);
 	c = Tome.conjure(a);
+
+	b.on('readable', function () {
+		var diff = b.read();
+		c.merge(diff);
+	});
 
 	a.b.d = a.b.c;
 	delete a.b.c;
@@ -43,11 +48,10 @@ exports.testRenameDel = function (test) {
 	delete a.b.d;
 	b.b.del('d');
 
-	diff = b.read();
-	c.merge(diff);
+
 
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
-	test.deepEqual(b, c);
+	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
 
 	test.done();
 };
