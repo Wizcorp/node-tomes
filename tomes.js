@@ -229,16 +229,14 @@ function diff(tome, op, val, chain, pair) {
 		chain = buildChain(tome);
 	}
 
-	var version = root.__version__;
-	var rootDiff = root.__diff__;
 	var newOp = { chain: chain, op: op, val: val };
 
-	rootDiff.push(newOp);
+	root.__diff__.push(newOp);
 
-	markDirty(tome, version);
+	markDirty(tome, root.__version__);
 
 	if (pair !== undefined) {
-		markDirty(pair, version);
+		markDirty(pair, root.__version__);
 	}
 }
 
@@ -483,6 +481,11 @@ Tome.destroy = function (tome) {
 };
 
 Tome.prototype.isDirty = function () {
+	// When we mark a Tome as dirty, we set dirty to the new version from the
+	// root tome. This way, we can know when the diff for that operation has
+	// been read by comparing the root Tome's version minus the the number of
+	// unread diffs against this tome's version.
+
 	return this.__dirty__ > this.__root__.__version__ - this.__root__.__diff__.length;
 };
 
@@ -496,13 +499,9 @@ Tome.prototype.set = function (key, val) {
 	// an effect on ObjectTomes, otherwise it will do nothing. This mimics
 	// JavaScript's behavior.
 
-	var tDiff;
-
 	if (Tome.typeOf(val) === 'undefined') {
 		if (this instanceof ObjectTome) {
 			this[key] = undefined;
-			tDiff = {};
-			tDiff[key] = val;
 			diff(this, 'del', key);
 		}
 		return undefined;
@@ -527,8 +526,7 @@ Tome.prototype.set = function (key, val) {
 
 		this[key] = Tome.conjure(val, this, key);
 		emitAdd(this, key);
-		tDiff = { key: key, val: val };
-		diff(this, 'set', tDiff);
+		diff(this, 'set', { key: key, val: val });
 
 		// We've already assigned the value to the property so we return this.
 
@@ -543,8 +541,7 @@ Tome.prototype.set = function (key, val) {
 		// conjure a Tome to assign a value to it.
 
 		this[key] = Tome.conjure(val, this, key);
-		tDiff = { key: key, val: val };
-		diff(this, 'set', tDiff);
+		diff(this, 'set', { key: key, val: val });
 
 		// We've already assigned the value to the property so we return this.
 
@@ -740,8 +737,7 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 		diff(this, 'move', moveOp, oldParentChain, newParent);
 	} else {
 		diff(this, 'del', key);
-		var tDiff = { key: newKey, val: newParent[newKey].valueOf() };
-		diff(newParent, 'set', tDiff);
+		diff(newParent, 'set', { key: newKey, val: newParent[newKey].valueOf() });
 	}
 
 	return this;
@@ -873,11 +869,8 @@ Tome.prototype.swap = function (key, target) {
 	if (this.__root__ === newRoot) {
 		diff(this, 'swap', op, oldParentChain, newParent);
 	} else {
-		var tDiff = { key: newKey, val: newParent[newKey].valueOf() };
-		diff(newParent, 'set', tDiff);
-
-		tDiff = { key: key, val: this[key].valueOf() };
-		diff(this, 'set', tDiff);
+		diff(newParent, 'set', { key: newKey, val: newParent[newKey].valueOf() });
+		diff(this, 'set', { key: key, val: this[key].valueOf() });
 	}
 
 	return this;
@@ -897,9 +890,7 @@ Tome.prototype.hide = function (h) {
 	if (h) {
 		diff(this.__parent__, 'del', this.__key__);
 	} else {
-		var tDiff = {};
-		tDiff[this.__key__] = this.valueOf();
-		diff(this.__parent__, 'set', tDiff);
+		diff(this.__parent__, 'set', { key: this.__key__, val: this.valueOf() });
 	}
 };
 
@@ -999,9 +990,7 @@ ArrayTome.prototype.set = function (okey, val) {
 			emitAdd(this, i);
 		}
 
-		var tDiff = {};
-		tDiff[key] = val;
-		diff(this, 'set', tDiff);
+		diff(this, 'set', { key: key, val: val });
 	} else if (this[key] instanceof Tome) {
 		this[key].assign(val);
 	}
@@ -1229,21 +1218,21 @@ ArrayTome.prototype.rename = function () {
 ArrayTome.prototype.sort = function () {
 	this._arr.sort.apply(this._arr, arguments);
 
-	var tDiff = {};
+	var rO = {};
 
 	for (var i = 0, len = this._arr.length; i < len; i += 1) {
 		if (this._arr[i].__key__ !== i) {
 			var oldKey = this._arr[i].__key__;
 			this._arr[i].__key__ = i;
 			this[i] = this._arr[i];
-			tDiff[oldKey] = { to: i };
+			rO[oldKey] = { to: i };
 			emitDel(this, oldKey);
 			emitAdd(this, i);
 		}
 	}
 
-	if (!isEmpty(tDiff)) {
-		diff(this, 'rename', tDiff);
+	if (!isEmpty(rO)) {
+		diff(this, 'rename', rO);
 	}
 
 	return this;

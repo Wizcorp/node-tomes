@@ -749,3 +749,31 @@ exports.testDiffSwapMove = function (test) {
 
 	test.done();
 };
+
+exports.testDiffIsDirty = function (test) {
+	test.expect(3);
+
+	var a = { a: 1, b: 1, c: 1, d: 1, e: 1 };
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	b.b.assign(2);
+	b.b.assign(3);
+	b.b.assign(4);
+
+	a.b = 4;
+
+	var dirtyCount = 0;
+
+	while (b.isDirty()) {
+		dirtyCount += 1;
+		var diff = b.read();
+		c.merge(diff);
+	}
+
+	test.strictEqual(dirtyCount, 3);
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c)));
+
+	test.done();
+};
