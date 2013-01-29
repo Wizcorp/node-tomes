@@ -63,7 +63,9 @@ Returns a boolean indicating whether data is a Tome or not.
  - UndefinedTome
 
 ###Tome.destroy( *tome* )
-Make a tome and all of it's sub-tomes emit destroy.
+Make a tome and all of it's sub-tomes emit destroy. This will not delete anything.
+
+##Methods
 
 ###assign( *data* )
 Assign data to a Tome.
@@ -84,13 +86,13 @@ Rename key to newkey.
 Move key to tome. Optionally call it newkey on that tome.
 
 ###hide( [ *boolean* ] )
-Hides a Tome. The Tome still exists in this tome, but will neither stringify nor show up in any events. Shows up as a delete in the diff.
+Hides a Tome. The Tome still exists in this tome, but will neither stringify nor show up in any events. Shows up as a delete in change operations.
 
 ###read( )
-Get a single diff from a Tome, removing that diff in the process. Returns null if there are no diffs.
+Get a single change operation from a Tome, removing it in the process. Returns null if there are no changes.
 
 ###merge( *diff* )
-Applies a diff to a Tome
+Applies a change operation or an array of change operations to a Tome.
 
 ###isDirty( )
 Returns whether a Tome has been changed, but the change has not been read.
@@ -104,7 +106,7 @@ Emitted when a Tome receives a new key.
 Emitted when a key is deleted from a Tome.
 
 ###destroy( )
-Emitted when a Tome is deleted. Removes all event listeners.
+Emitted when a Tome is deleted. Removes all event listeners for this Tome.
 
 ###readable( )
 Emitted every time a Tome or any of it's child Tomes are altered. 

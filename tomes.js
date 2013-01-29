@@ -50,23 +50,24 @@ function Tome(parent, key) {
 	// always be at least one other type. We call this function in the
 	// constructor of each Tome type.
 
-	// __root__ holds a reference to the Tome at the top of the chain. We need
-	// it to be able to pause event emission and do notification all the way
-	// down the Tome chain when we resume. It exists on all Tomes.
+	// __root__ holds a reference to the Tome at the top of the chain. We use
+	// it to identify where our change operations are being held. It exists on
+	// all Tomes.
 
-	// __diff__ is our indicator that while we were paused this Tome was
-	// was modified and will to emit events when resumed. Diffs are kept up to
-	// date by the diff method and we set this to undefined in the notify
-	// method once the Tome emits all its events. It exists on all Tomes.
+	// __diff__ is our buffer that holds all of the change operations that have
+	// been generated. It only exists on the root Tome.
 
 	// __version__ is a number that increments whenever a Tome or any of its
-	// child Tomes changes. It exists on all Tomes.
+	// child Tomes changes. It only exists on the root Tome.
 
 	// __parent__ holds a reference to the Tome's parent object so we can
 	// signal up the Tome chain. It only exists on Tomes with parents.
 
 	// __key__ is the key that our Tome is referred to by its parent. It only
 	// exists on Tomes with parents.
+
+	// __hidden__ is a boolean indicating whether or not a Tome's value should
+	// be hidden from toJSON and event emission. It exists on all Tomes.
 
 	// If you're using the node.js event emitter, we need to make the _events
 	// non-enumerable. Ideally, node.js would make this the default behavior.
