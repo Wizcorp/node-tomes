@@ -25,18 +25,14 @@ exports.testSwapDiff = function (test) {
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
-	b.on('readable', function () {
-		var diff = b.read();
-		if (diff) {
-			c.merge(diff);
-		}
-	});
-
 	var intermediate = a.b;
 	a.b = a.d;
 	a.d = intermediate;
 
 	b.swap('b', b.d);
+
+	var diff = b.read();
+	c.merge(diff);
 
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	test.strictEqual(JSON.stringify(b), JSON.stringify(c));

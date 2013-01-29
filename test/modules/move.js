@@ -241,285 +241,234 @@ exports.testDiffMoveArrayLarger = function (test) {
 };
 
 exports.testDiffMoveBackAndForth = function (test) {
-	test.expect(5);
+	test.expect(2);
 
 	var a = { a: 1, b: 1, c: 1 };
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
+	b.on('readable', function () {
+		var diff = b.read();
+		c.merge(diff);
+	});
+	
 	a.b = a.a;
 	delete a.a;
 	b.move('a', 'b');
-
-	test.deepEqual(b.__diff__, { rename: { a: { to: 'b', over: true } } }, JSON.stringify(b.__diff__));
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 
 	a.a = a.b;
 	delete a.b;
 	b.move('b', 'a');
 
-	test.deepEqual(b.__diff__, { del: [ 'b' ] }, JSON.stringify(b.__diff__));
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
-
-	var diff = b.read();
-
-	c.merge(diff);
-
-	test.deepEqual(b, c);
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 1
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c))); // 2
 
 	test.done();
 };
 
 exports.testDiffSetMove = function (test) {
-	test.expect(7);
+	test.expect(2);
 
 	var a = { bob: { pants: 'orange' }, scarf: 'green' };
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
+	b.on('readable', function () {
+		var diff = b.read();
+		c.merge(diff);
+	});
+
 	a.bob.shirt = false;
 	b.bob.set('shirt', false);
-
-	test.deepEqual(b.__diff__, { '_bob': { 'set': { shirt: false } } });
-	test.deepEqual(b.bob.__diff__, { set: { shirt: false } });
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 
 	a.pants = a.bob.shirt;
 	delete a.bob.shirt;
 	b.bob.move('shirt', b, 'pants');
 
-	test.deepEqual(b.__diff__, { set: { pants: false } });
-	test.deepEqual(b.bob.__diff__, {});
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
-
-	var diff = b.read();
-	c.merge(diff);
-
-	test.deepEqual(b, c);
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 1
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c))); // 2
 
 	test.done();
 };
 
 exports.testDiffRenameMove = function (test) {
-	test.expect(7);
+	test.expect(2);
 
 	var a = { bob: { pants: 'orange' }, scarf: 'green' };
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
+	b.on('readable', function () {
+		var diff = b.read();
+		c.merge(diff);
+	});
+
 	a.bob.shirt = a.bob.pants;
 	delete a.bob.pants;
 	b.bob.rename('pants', 'shirt');
-
-	test.deepEqual(b.__diff__, { '_bob': { rename: { pants: { to: 'shirt' } } } }, JSON.stringify(b.__diff__));
-	test.deepEqual(b.bob.__diff__, { rename: { pants: { to: 'shirt' } } }, JSON.stringify(b.bob.__diff__));
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 
 	a.shirt = a.bob.shirt;
 	delete a.bob.shirt;
 	b.bob.move('shirt', b);
 
-	test.deepEqual(b.__diff__, {from: { shirt: { chain: [ 'bob' ], was: 'pants', order: 2 } } }, JSON.stringify(b.__diff__));
-	test.deepEqual(b.bob.__diff__, { }, JSON.stringify(b.bob.__diff__));
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
-
-	var diff = b.read();
-	c.merge(diff);
-
-	test.deepEqual(b, c);
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 1
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c))); // 2
 
 	test.done();
 };
 
 exports.testDiffMoveUpRename = function (test) {
-	test.expect(6);
+	test.expect(2);
 
 	var a = { bob: { shirt: 'red' }, jim: { }, paul: { } };
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
+	b.on('readable', function () {
+		var diff = b.read();
+		c.merge(diff);
+	});
+
 	a.shirt = a.bob.shirt;
 	delete a.bob.shirt;
 	b.bob.move('shirt', b);
-
-	test.deepEqual(b.__diff__, { from: { shirt: { chain: [ 'bob' ], order: 1 } } });
-	test.deepEqual(b.bob.__diff__, { });
 
 	a.pants = a.shirt;
 	delete a.shirt;
 	b.rename('shirt', 'pants');
 
-	test.deepEqual(b.__diff__, { from: { pants: { chain: [ 'bob' ], was: 'shirt', order: 1 } } });
-	test.deepEqual(b.bob.__diff__, { });
-
-	var diff = b.read();
-	c.merge(diff);
-
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
-	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 1
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c))); // 2
 
 	test.done();
 };
 
 exports.testDiffMoveTwice = function (test) {
-	test.expect(9);
+	test.expect(2);
 
 	var a = { bob: { shirt: 'red' }, jim: { }, paul: { } };
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
+	b.on('readable', function () {
+		var diff = b.read();
+		c.merge(diff);
+	});
+
 	a.jim.scarf = a.bob.shirt;
 	delete a.bob.shirt;
 	b.bob.move('shirt', b.jim, 'scarf');
-
-	test.deepEqual(b.__diff__, { '_jim': { from: { scarf: { chain: [ 'bob' ], was: 'shirt', order: 1 } } } });
-	test.deepEqual(b.jim.__diff__, { from: { scarf: { chain: [ 'bob' ], was: 'shirt', order: 1 } } });
-	test.deepEqual(b.bob.__diff__, { });
 
 	a.paul.shirt = a.jim.scarf;
 	delete a.jim.scarf;
 	b.jim.move('scarf', b.paul, 'shirt');
 
-	test.deepEqual(b.__diff__, { '_paul': { from: { shirt: { chain: [ 'bob' ], order: 3 } } } });
-	test.deepEqual(b.jim.__diff__, { });
-	test.deepEqual(b.bob.__diff__, { });
-	test.deepEqual(b.paul.__diff__, { from: { shirt: { chain: [ 'bob' ], order: 3 } } });
-
-	var diff = b.read();
-	c.merge(diff);
-
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
-	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 1
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c))); // 2
 
 	test.done();
 };
 
 exports.testDiffMoveUpDownUp = function (test) {
-	test.expect(10);
+	test.expect(2);
 
 	var a = { bob: { shirt: 'blue', pants: 'orange' }, scarf: 'green' };
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
+	b.on('readable', function () {
+		var diff = b.read();
+		c.merge(diff);
+	});
+
 	a.shirt = a.bob.shirt;
 	delete a.bob.shirt;
 	b.bob.move('shirt', b);
-
-	test.deepEqual(b.__diff__, { from: { shirt: { chain: [ 'bob' ], order: 1 } } });
-	test.deepEqual(b.bob.__diff__, { });
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 
 	a.bob.shirt = a.shirt;
 	delete a.shirt;
 	b.move('shirt', b.bob);
 
-	test.deepEqual(b.__diff__, {});
-	test.deepEqual(b.bob.__diff__, {});
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
-
 	a.shirt = a.bob.shirt;
 	delete a.bob.shirt;
 	b.bob.move('shirt', b);
 
-	test.deepEqual(b.__diff__, { from: { shirt: { chain: [ 'bob' ], order: 5 } } });
-	test.deepEqual(b.bob.__diff__, { });
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
-
-	var diff = b.read();
-	c.merge(diff);
-
-	test.deepEqual(b, c);
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 1
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c))); // 2
 
 	test.done();
 };
 
 exports.testDiffMoveDownUpDown = function (test) {
-	test.expect(15);
+	test.expect(2);
 
 	var a = { shirt: 'red', bob: { shorts: 'blue' }, jim: { scarf: 'green' } };
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
+	b.on('readable', function () {
+		var diff = b.read();
+		c.merge(diff);
+	});
+
 	a.bob.pants = a.shirt;
 	delete a.shirt;
 	b.move('shirt', b.bob, 'pants');
-
-	test.deepEqual(b.__diff__, { '_bob': { from: { pants: { chain: [ ], was: 'shirt', order: 1} } } }, JSON.stringify(b.__diff__));
-	test.deepEqual(b.bob.__diff__, { from: { pants: { chain: [ ], was: 'shirt', order: 1} } }, JSON.stringify(b.bob.__diff__));
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 
 	a.scarf = a.jim.scarf;
 	delete a.jim.scarf;
 	b.jim.move('scarf', b);
 
-	test.deepEqual(b.__diff__, { '_bob': { from: { pants: { chain: [ ], was: 'shirt', order: 1} } }, from: { scarf: { chain: [ 'jim' ], order: 3 } } }, JSON.stringify(b.__diff__));
-	test.deepEqual(b.bob.__diff__, { from: { pants: { chain: [ ], was: 'shirt', order: 1} } }, JSON.stringify(b.bob.__diff__));
-	test.deepEqual(b.jim.__diff__, { }, JSON.stringify(b.jim.__diff__));
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
-
 	a.pants = a.bob.pants;
 	delete a.bob.pants;
 	b.bob.move('pants', b);
-
-	test.deepEqual(b.__diff__, { from: { scarf: { chain: [ 'jim' ], order: 3 } }, rename: { shirt: { to: 'pants' } } }, JSON.stringify(b.__diff__));
-	test.deepEqual(b.bob.__diff__, { });
-	test.deepEqual(b.jim.__diff__, { }, JSON.stringify(b.jim.__diff__));
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 
 	a.jim.shirt = a.scarf;
 	delete a.scarf;
 	b.move('scarf', b.jim, 'shirt');
 
-	test.deepEqual(b.__diff__, { rename: { shirt: { to: 'pants' } }, '_jim': { rename: { scarf: { to: 'shirt' } } } });
-	test.deepEqual(b.bob.__diff__, { });
-	test.deepEqual(b.jim.__diff__, { rename: { scarf: { to: 'shirt' } } });
-
-	var diff = b.read();
-	c.merge(diff);
-
-	test.deepEqual(b, c);
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 1
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c))); // 2
 
 	test.done();
 };
 
 exports.testDiffAssignMove = function (test) {
-	test.expect(9);
+	test.expect(2);
 
 	var a = { foo: 'bar', jim: { off: 'on' }, bar: 'baz' };
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
+	b.on('readable', function () {
+		var diff = b.read();
+		c.merge(diff);
+	});
+
 	a.jim.off = 'hi';
 	b.jim.off.assign('hi');
-
-	test.deepEqual(b.__diff__, { '_jim': { '_off': { assign: 'hi' } } });
-	test.deepEqual(b.jim.__diff__, { '_off': { assign: 'hi' } });
-	test.deepEqual(b.jim.off.__diff__, { assign: 'hi' });
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 
 	a.off = a.jim.off;
 	b.jim.move('off', b);
 	delete a.jim.off;
 
-	test.deepEqual(b.__diff__, { from: { off: { chain: [ 'jim' ], order: 2 } }, '_off': { assign: 'hi' } }, JSON.stringify(b.__diff__));
-	test.deepEqual(b.jim.__diff__, { }, JSON.stringify(b.jim.__diff__));
-	test.deepEqual(b.off.__diff__, { assign: 'hi' });
-
-	var diff = b.read();
-	c.merge(diff);
-
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
-	test.strictEqual(JSON.stringify(b), JSON.stringify(c));
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 1
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c))); // 2
 
 	test.done();
 };
 
 exports.testDiffMultiMove = function (test) {
-	test.expect(7);
+	test.expect(6);
 
 	var a = { a: 1, b: 1, c: 1, d: 1, e: 1, f: 1, g: 1, z: { y: 1 } };
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
+
+	b.on('readable', function () {
+		var diff = b.read();
+		c.merge(diff);
+	});
 
 	a.z.x = a.a;
 	delete a.a;
@@ -549,131 +498,106 @@ exports.testDiffMultiMove = function (test) {
 	delete a.d;
 	b.move('d', b.z, 'x');
 
-	test.deepEqual(b.__diff__, { del: ['a', 'b', 'c'], '_z': { from: { x: { chain: [ ], was: 'd', over: true, order: 11 }, w: { chain: [ ], was: 'e', order: 9 } } } }, JSON.stringify(b.__diff__));
-
-	var diff = b.read();
-	c.merge(diff);
-
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
-	test.deepEqual(b, c);
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 1
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c))); // 2
 
 	test.done();
 };
 
 exports.testDiffCombineMove = function (test) {
-	test.expect(12);
+	test.expect(2);
 
 	var a = { foo: 'bar', jim: { off: 'on' }, bar: 'baz' };
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
+	b.on('readable', function () {
+		var diff = b.read();
+		c.merge(diff);
+	});
+
 	a.jim.foo = a.foo;
 	delete a.foo;
 	b.move('foo', b.jim);
 
-	test.deepEqual(b.__diff__, { '_jim': { from: { foo: { chain: [ ], order: 1 } } } }, JSON.stringify(b.__diff__));
-	test.deepEqual(b.jim.__diff__, { from: { foo: { chain: [ ], order: 1 } } }, JSON.stringify(b.jim.__diff__));
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
-
 	a.jim.foo = 'why';
 	b.jim.foo.assign('why');
-
-	test.deepEqual(b.__diff__, { '_jim': { '_foo': { assign: 'why' }, from: { foo: { chain: [ ], order: 1 } } } }, JSON.stringify(b.__diff__));
-	test.deepEqual(b.jim.__diff__, { '_foo': { assign: 'why' }, from: { foo: { chain: [ ], order: 1 } } }, JSON.stringify(b.jim.__diff__));
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 
 	a.jim = a.jim.foo;
 	delete a.jim.foo;
 	b.jim.move('foo', b, 'jim');
 
-	test.deepEqual(b.__diff__, { rename: { foo: { to: 'jim', over: true } }, _jim: { assign: 'why'} }, JSON.stringify(b.__diff__));
-	test.deepEqual(b.jim.__diff__, { assign: 'why' }, JSON.stringify(b.jim.__diff__));
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
-
 	a.foo = a.jim;
 	delete a.jim;
 	b.move('jim', b, 'foo');
 
-	test.deepEqual(b.__diff__, { del: [ 'jim' ], '_foo': { assign: 'why' } }, JSON.stringify(b.__diff__));
-
-	var diff = b.read();
-
-	c.merge(diff);
-
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
-	test.deepEqual(b, c);
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 1
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c))); // 2
 
 	test.done();
 };
 
 exports.testDiffDeletedFrom = function (test) {
-	test.expect(5);
+	test.expect(2);
 
 	var a = { bob: { shirts: { blue: 3 } }, sam: { shirts: { red: 1 } } };
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
+	b.on('readable', function () {
+		var diff = b.read();
+		c.merge(diff);
+	});
+
 	a.sam.shirts.blue = a.bob.shirts.blue;
 	delete a.bob.shirts.blue;
 	b.bob.shirts.move('blue', b.sam.shirts);
 
-	test.deepEqual(JSON.stringify(a), JSON.stringify(b));
-	test.deepEqual(b.__diff__, { _sam: { _shirts: { from: { blue: { chain: [ 'bob', 'shirts' ], order: 1 } } } } }, JSON.stringify(b.__diff__));
-
 	delete a.bob;
 	b.del('bob');
 
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
-	test.deepEqual(b.__diff__, { del: [ 'bob' ], _sam: { _shirts: { from: { blue: { chain: [ 'bob', 'shirts' ], order: 1 } } } } }, JSON.stringify(b.__diff__));
-
-	var diff = b.read();
-	c.merge(diff);
-
-	test.deepEqual(b, c);
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 1
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c))); // 2
 
 	test.done();
 };
 
 exports.testDiffMoveRename = function (test) {
-	test.expect(7);
+	test.expect(2);
 
 	var a = { bob: { pants: 'orange' }, scarf: 'green' };
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
 
+	b.on('readable', function () {
+		var diff = b.read();
+		c.merge(diff);
+	});
+
 	a.shirt = a.bob.pants;
 	delete a.bob.pants;
 	b.bob.move('pants', b, 'shirt');
-
-	test.deepEqual(b.__diff__, { from: { shirt: { chain: [ 'bob' ], was: 'pants', order: 1 } } });
-	test.deepEqual(b.bob.__diff__, { });
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 
 	a.pants = a.shirt;
 	delete a.shirt;
 	b.rename('shirt', 'pants');
 
-	test.deepEqual(b.__diff__, { from: { pants: { chain: [ 'bob' ], order: 1 } } });
-	test.deepEqual(b.bob.__diff__, {});
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
-
-	var diff = b.read();
-	c.merge(diff);
-
-	test.deepEqual(b, c);
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 1
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c))); // 2
 
 	test.done();
 };
 
 exports.testDiffReverseMove = function (test) {
-	test.expect(5);
+	test.expect(2);
 
 	var a = { a: [ 0, 1, 2, 3, 4, 5 ], b: [ 0 ] };
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(b);
 
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2
+		var diff = b.read();
+		c.merge(diff);
 	});
 
 	a.a.reverse();
@@ -683,24 +607,22 @@ exports.testDiffReverseMove = function (test) {
 	delete a.a[5];
 	b.a.move(5, b.b, 1);
 
-	var diff = b.read();
-	c.merge(diff);
-
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 3
-	test.deepEqual(b, c); // 4
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 1
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c))); // 2
 	
 	test.done();
 };
 
 exports.testDiffMoveReverse = function (test) {
-	test.expect(5);
+	test.expect(2);
 
 	var a = { a: [ 0, 1, 2, 3, 4, 5 ], b: [ 0 ] };
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(b);
 
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2
+		var diff = b.read();
+		c.merge(diff);
 	});
 
 	a.b[1] = a.a[5];
@@ -710,11 +632,8 @@ exports.testDiffMoveReverse = function (test) {
 	a.a.reverse();
 	b.a.reverse();
 
-	var diff = b.read();
-	c.merge(diff);
-
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 3
-	test.deepEqual(b, c); // 4
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b))); // 1
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c))); // 2
 	
 	test.done();
 };
@@ -725,6 +644,11 @@ exports.testDiffMoveParentMove = function (test) {
 	var a = { b: { c: 1, d: 1 }, e: { f: 1 }, g: { h: 1 } };
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
+
+	b.on('readable', function () {
+		var diff = b.read();
+		c.merge(diff);
+	});
 
 	a.e.c = a.b.c;
 	delete a.b.c;
@@ -742,8 +666,33 @@ exports.testDiffMoveParentMove = function (test) {
 	delete a.g.e.b.d;
 	b.g.e.b.move('d', b);
 
-	var diff = b.read();
-	c.merge(diff);
+	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
+	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c)));
+
+	test.done();
+};
+
+exports.testDiffRenameShift = function (test) {
+	test.expect(2);
+
+	var a = [ 0, 1, 2, 3];
+	var b = Tome.conjure(a);
+	var c = Tome.conjure(a);
+
+	b.on('readable', function () {
+		var diff = b.read();
+		c.merge(diff);
+	});
+
+	a[4] = a[0];
+	delete a[0];
+	b.rename(0, 4);
+
+	a.shift();
+	b.shift();
+
+	a.shift();
+	b.shift();
 
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c)));
