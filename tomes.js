@@ -50,23 +50,24 @@ function Tome(parent, key) {
 	// always be at least one other type. We call this function in the
 	// constructor of each Tome type.
 
-	// __root__ holds a reference to the Tome at the top of the chain. We need
-	// it to be able to pause event emission and do notification all the way
-	// down the Tome chain when we resume. It exists on all Tomes.
+	// __root__ holds a reference to the Tome at the top of the chain. We use
+	// it to identify where our change operations are being held. It exists on
+	// all Tomes.
 
-	// __diff__ is our indicator that while we were paused this Tome was
-	// was modified and will to emit events when resumed. Diffs are kept up to
-	// date by the diff method and we set this to undefined in the notify
-	// method once the Tome emits all its events. It exists on all Tomes.
+	// __diff__ is our buffer that holds all of the change operations that have
+	// been generated. It only exists on the root Tome.
 
 	// __version__ is a number that increments whenever a Tome or any of its
-	// child Tomes changes. It exists on all Tomes.
+	// child Tomes changes. It only exists on the root Tome.
 
 	// __parent__ holds a reference to the Tome's parent object so we can
 	// signal up the Tome chain. It only exists on Tomes with parents.
 
 	// __key__ is the key that our Tome is referred to by its parent. It only
 	// exists on Tomes with parents.
+
+	// __hidden__ is a boolean indicating whether or not a Tome's value should
+	// be hidden from toJSON and event emission. It exists on all Tomes.
 
 	// If you're using the node.js event emitter, we need to make the _events
 	// non-enumerable. Ideally, node.js would make this the default behavior.
@@ -133,14 +134,6 @@ function destroy(tome) {
 	emitDestroy(tome);
 
 	tome.removeAllListeners();
-}
-
-function isEmpty(o) {
-	for (var k in o) {
-		k = k;
-		return false;
-	}
-	return true;
 }
 
 function reset(tome) {
@@ -229,7 +222,10 @@ function diff(tome, op, val, chain, pair) {
 		chain = buildChain(tome);
 	}
 
-	var newOp = { chain: chain, op: op, val: val };
+	var newOp = { chain: chain, op: op };
+	if (val !== undefined) {
+		newOp.val = val;
+	}
 
 	root.__diff__.push(newOp);
 
@@ -674,7 +670,7 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 
 	if (newParent === this) {
 		var rO = {};
-		rO[key] = { to: onewKey };
+		rO[key] = onewKey;
 		return this.rename(rO);
 	}
 
@@ -688,22 +684,38 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 		return this;
 	}
 
+	// Make a copy of the chains before we move them. For use in the diff.
+
 	var newParentChain = buildChain(newParent);
 	var oldParentChain = buildChain(this);
 
-	var newParentType = newParent.typeOf();
+	// convert (if not already the case) the newParent to an ObjectTome if:
+	// - the key is not numeric, or:
+	// - the key is numeric, but the parent is not an ArrayTome
 
-	if (onewKey.toString() === newKey.toString() && newParentType === 'array') {
-		var a = 9; // this is to stop lint from complaining, could be refactored.
-		a = 8;
-	} else if (onewKey.toString() !== newKey.toString()) {
+	// if the newKey that you're adding to newParent is numeric, allow it only
+	// if newParent is an ArrayTome, else (if needed) convert newParent into an
+	// ObjectTome.
+
+	var newParentType = newParent.typeOf();
+	var keyIsNumeric = (onewKey.toString() === newKey.toString());
+
+	if (!keyIsNumeric || (keyIsNumeric && newParentType !== 'array')) {
+		// use the string version of the newKey
+
 		newKey = onewKey;
+
+		// ensure newParent is an ObjectTome
+
 		if (newParentType !== 'object') {
 			newParent.emit('typeChange', newParentType, 'object');
+
 			reset(newParent);
 			newParent.__proto__ = ObjectTome.prototype;
 		}
 	}
+
+	// add newKey to newParent
 
 	if (newParent instanceof ArrayTome) {
 		var arr = newParent._arr;
@@ -711,6 +723,9 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 
 		arr[newKey] = this[key];
 		newParent[newKey] = arr[newKey];
+
+		// If the newKey is longer than the length of the array, fill to that
+		// point.
 
 		if (newKey >= len) {
 			for (var i = len; i < newKey - 1; i += 1) {
@@ -723,16 +738,25 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 		newParent[newKey] = this[key];
 	}
 
+	// remove key from oldParent.
+
 	if (this instanceof ArrayTome) {
+
+		// if oldParent is a tome, create an undefinedTome in it's place.
+
 		this._arr[key] = Tome.conjure(undefined, this, key);
 		this[key] = this._arr[key];
 	} else {
 		delete this[key];
 	}
 
+	// fix up newKey to reflect it's new location.
+
 	newParent[newKey].__parent__ = newParent;
 	newParent[newKey].__key__ = newKey;
 	newParent[newKey].__root__ = newParent.__root__;
+
+	// now emit the addition and deletion of the keys.
 
 	emitDel(this, key);
 	emitAdd(newParent, newKey);
@@ -785,6 +809,7 @@ Tome.prototype.merge = function (diff) {
 	for (var i = 0, len = diffs.length; i < len; i += 1) {
 		var currentDiff = diffs[i];
 		var tome = resolveChain(this, currentDiff.chain);
+
 		var newParent;
 		var opVal = currentDiff.val;
 		switch (currentDiff.op) {
@@ -826,6 +851,8 @@ Tome.prototype.merge = function (diff) {
 		case 'unshift':
 			tome.unshift.apply(tome, opVal);
 			break;
+		default:
+			throw new Error('Tome.merge - Unsupported operation: ' + currentDiff.op);
 		}
 	}
 };
@@ -929,13 +956,13 @@ ArrayTome.isArrayTome = function (o) {
 
 ArrayTome.prototype.valueOf = function () {
 	if (!this.__hidden__) {
-		return this._arr ? this._arr : [];
+		return this._arr || [];
 	}
 };
 
 ArrayTome.prototype.toJSON = function () {
 	if (!this.__hidden__) {
-		return this._arr ? this._arr : [];
+		return this._arr || [];
 	}
 };
 
@@ -1047,7 +1074,7 @@ ArrayTome.prototype.shift = function () {
 		this.length = this._arr.length;
 		destroy(o);
 		emitDel(this, key);
-		diff(this, 'shift', 1);
+		diff(this, 'shift');
 	}
 
 	return out ? out.valueOf() : out;
@@ -1071,7 +1098,7 @@ ArrayTome.prototype.pop = function () {
 		}
 
 		emitDel(this, len);
-		diff(this, 'pop', 1);
+		diff(this, 'pop');
 	}
 
 	return out ? out.valueOf() : out;
@@ -1103,7 +1130,7 @@ ArrayTome.prototype.reverse = function () {
 		this._arr[i].__key__ = i;
 	}
 
-	diff(this, 'reverse', 1);
+	diff(this, 'reverse');
 
 	return this;
 };
@@ -1175,7 +1202,7 @@ ArrayTome.prototype.rename = function () {
 	case 'string':
 	case 'number':
 		rO = {};
-		rO[arguments[0]] = { to: arguments[1] };
+		rO[arguments[0]] = arguments[1];
 		break;
 	default:
 		throw new TypeError('ArrayTome.rename - invalid arguments.');
@@ -1186,7 +1213,7 @@ ArrayTome.prototype.rename = function () {
 	var temporary = {};
 
 	for (oldKey in rO) {
-		newKey = rO[oldKey].to;
+		newKey = rO[oldKey];
 		if (!this.hasOwnProperty(oldKey)) {
 			throw new ReferenceError('ObjectTome.rename - Key is not defined: ' + oldKey);
 		}
@@ -1228,6 +1255,7 @@ ArrayTome.prototype.rename = function () {
 ArrayTome.prototype.sort = function () {
 	this._arr.sort.apply(this._arr, arguments);
 
+	var hasChanges = false;
 	var rO = {};
 
 	for (var i = 0, len = this._arr.length; i < len; i += 1) {
@@ -1235,13 +1263,14 @@ ArrayTome.prototype.sort = function () {
 			var oldKey = this._arr[i].__key__;
 			this._arr[i].__key__ = i;
 			this[i] = this._arr[i];
-			rO[oldKey] = { to: i };
+			rO[oldKey] = i;
 			emitDel(this, oldKey);
 			emitAdd(this, i);
+			hasChanges = true;
 		}
 	}
 
-	if (!isEmpty(rO)) {
+	if (hasChanges) {
 		diff(this, 'rename', rO);
 	}
 
@@ -1572,7 +1601,7 @@ ObjectTome.prototype.rename = function () {
 		break;
 	case 'string':
 		rO = {};
-		rO[arguments[0]] = { to: arguments[1] };
+		rO[arguments[0]] = arguments[1];
 		break;
 	default:
 		throw new TypeError('ObjectTome.rename - Invalid arguments');
@@ -1582,7 +1611,7 @@ ObjectTome.prototype.rename = function () {
 	var temporary = {};
 
 	for (var oldKey in rO) {
-		var newKey = rO[oldKey].to;
+		var newKey = rO[oldKey];
 
 		if (!this.hasOwnProperty(oldKey)) {
 			throw new ReferenceError('ObjectTome.rename - Key is not defined: ' + oldKey);
