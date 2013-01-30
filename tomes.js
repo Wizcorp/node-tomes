@@ -513,7 +513,7 @@ Tome.prototype.set = function (key, val) {
 		// own set method which falls through to this one if the key is not a
 		// number.
 
-		this.emit('typeChange', tomeType, 'object');
+		this.__root__.emit('typeChange', this, tomeType, 'object');
 
 		reset(this);
 		this.__proto__ = ObjectTome.prototype;
@@ -609,6 +609,8 @@ Tome.prototype.assign = function (val) {
 		}
 	}
 
+	this.__root__.emit('typeChange', this, pType, vType);
+
 	// If we're dealing with an array or object we need to reset the Tome.
 
 	if (vType === 'array' || vType === 'object' || pType === 'array' || pType === 'object') {
@@ -616,8 +618,6 @@ Tome.prototype.assign = function (val) {
 	}
 
 	// Now we need to apply a new Tome type based on the value type.
-
-	this.emit('typeChange', pType, vType);
 
 	this.__proto__ = vClass.prototype;
 	vInit(this, val ? val.valueOf() : val);
@@ -708,7 +708,7 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 		// ensure newParent is an ObjectTome
 
 		if (newParentType !== 'object') {
-			newParent.emit('typeChange', newParentType, 'object');
+			newParent.__root__.emit('typeChange', newParent, newParentType, 'object');
 
 			reset(newParent);
 			newParent.__proto__ = ObjectTome.prototype;
