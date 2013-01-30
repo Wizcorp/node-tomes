@@ -1526,7 +1526,7 @@ NumberTome.prototype.inc = function (val) {
 		val = 1;
 	}
 
-	if (typeof val !== 'number' || isNaN(val) || !isFinite(val)) {
+	if (typeof val !== 'number' || !isFinite(val)) {
 		throw new TypeError('You can only increment by a finite number');
 	}
 
