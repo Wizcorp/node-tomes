@@ -172,7 +172,7 @@ function reset(tome) {
 	}
 }
 
-function resolveChain(tome, chain) {
+Tome.resolveChain = function (tome, chain) {
 	var len = chain.length;
 	var target = tome.__root__;
 
@@ -185,9 +185,9 @@ function resolveChain(tome, chain) {
 	}
 
 	return target;
-}
+};
 
-function buildChain(tome) {
+Tome.buildChain = function (tome) {
 	var chain = [];
 
 	while (tome.hasOwnProperty('__key__')) {
@@ -196,9 +196,9 @@ function buildChain(tome) {
 	}
 
 	return chain.reverse();
-}
+};
 
-function markDirty(tome, dirtyAt) {
+function markDirty(tome, dirtyAt, sourceTome) {
 	if (tome.__dirty__ === dirtyAt) {
 		return;
 	}
@@ -206,11 +206,11 @@ function markDirty(tome, dirtyAt) {
 	tome.__dirty__ = dirtyAt;
 
 	if (!tome.__hidden__) {
-		tome.emit('readable', dirtyAt);
+		tome.emit('readable', dirtyAt, sourceTome);
 	}
 	
 	if (tome.hasOwnProperty('__parent__')) {
-		markDirty(tome.__parent__, dirtyAt);
+		markDirty(tome.__parent__, dirtyAt, sourceTome);
 	}
 }
 
@@ -219,7 +219,7 @@ function diff(tome, op, val, chain, pair) {
 	tome.__root__.__version__ = tome.__root__.__version__ + 1;
 
 	if (chain === undefined) {
-		chain = buildChain(tome);
+		chain = Tome.buildChain(tome);
 	}
 
 	var newOp = { chain: chain, op: op };
@@ -229,10 +229,10 @@ function diff(tome, op, val, chain, pair) {
 
 	root.__diff__.push(newOp);
 
-	markDirty(tome, root.__version__);
+	markDirty(tome, root.__version__, tome);
 
 	if (pair !== undefined) {
-		markDirty(pair, root.__version__);
+		markDirty(pair, root.__version__, pair);
 	}
 }
 
@@ -686,8 +686,8 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 
 	// Make a copy of the chains before we move them. For use in the diff.
 
-	var newParentChain = buildChain(newParent);
-	var oldParentChain = buildChain(this);
+	var newParentChain = Tome.buildChain(newParent);
+	var oldParentChain = Tome.buildChain(this);
 
 	// convert (if not already the case) the newParent to an ObjectTome if:
 	// - the key is not numeric, or:
@@ -808,7 +808,7 @@ Tome.prototype.merge = function (diff) {
 
 	for (var i = 0, len = diffs.length; i < len; i += 1) {
 		var currentDiff = diffs[i];
-		var tome = resolveChain(this, currentDiff.chain);
+		var tome = Tome.resolveChain(this, currentDiff.chain);
 
 		var newParent;
 		var opVal = currentDiff.val;
@@ -820,7 +820,7 @@ Tome.prototype.merge = function (diff) {
 			tome.del(opVal);
 			break;
 		case 'move':
-			newParent = resolveChain(this, opVal.newParent);
+			newParent = Tome.resolveChain(this, opVal.newParent);
 			tome.move(opVal.key, newParent, opVal.newKey);
 			break;
 		case 'pop':
@@ -845,7 +845,7 @@ Tome.prototype.merge = function (diff) {
 			tome.splice.apply(tome, opVal);
 			break;
 		case 'swap':
-			newParent = resolveChain(this, opVal.newParent);
+			newParent = Tome.resolveChain(this, opVal.newParent);
 			tome.swap(opVal.key, newParent[opVal.newKey]);
 			break;
 		case 'unshift':
@@ -877,8 +877,8 @@ Tome.prototype.swap = function (key, target) {
 	var newParent = target.__parent__;
 	var newRoot = target.__root__;
 
-	var oldParentChain = buildChain(this);
-	var newParentChain = buildChain(newParent);
+	var oldParentChain = Tome.buildChain(this);
+	var newParentChain = Tome.buildChain(newParent);
 
 	var op = { key: key, newParent: newParentChain, newKey: newKey };
 
