@@ -198,7 +198,7 @@ Tome.buildChain = function (tome) {
 	return chain.reverse();
 };
 
-function markDirty(tome, dirtyAt) {
+function markDirty(tome, dirtyAt, sourceTome) {
 	if (tome.__dirty__ === dirtyAt) {
 		return;
 	}
@@ -206,11 +206,11 @@ function markDirty(tome, dirtyAt) {
 	tome.__dirty__ = dirtyAt;
 
 	if (!tome.__hidden__) {
-		tome.emit('readable', dirtyAt);
+		tome.emit('readable', dirtyAt, sourceTome);
 	}
 	
 	if (tome.hasOwnProperty('__parent__')) {
-		markDirty(tome.__parent__, dirtyAt);
+		markDirty(tome.__parent__, dirtyAt, sourceTome);
 	}
 }
 
@@ -229,10 +229,10 @@ function diff(tome, op, val, chain, pair) {
 
 	root.__diff__.push(newOp);
 
-	markDirty(tome, root.__version__);
+	markDirty(tome, root.__version__, tome);
 
 	if (pair !== undefined) {
-		markDirty(pair, root.__version__);
+		markDirty(pair, root.__version__, pair);
 	}
 }
 
