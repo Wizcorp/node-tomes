@@ -110,3 +110,6 @@ Emitted when a Tome is deleted. Removes all event listeners for this Tome.
 
 ###readable( )
 Emitted every time a Tome or any of it's child Tomes are altered. 
+
+###typeChange( *oldType*, *newType* )
+Emitted when a Tome changes type.

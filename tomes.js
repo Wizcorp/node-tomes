@@ -495,20 +495,25 @@ Tome.prototype.set = function (key, val) {
 	// an effect on ObjectTomes, otherwise it will do nothing. This mimics
 	// JavaScript's behavior.
 
-	if (Tome.typeOf(val) === 'undefined') {
-		if (this instanceof ObjectTome) {
+	var tomeType = this.typeOf();
+	var valType = Tome.typeOf(val);
+
+	if (valType === 'undefined') {
+		if (tomeType === 'object') {
 			this[key] = undefined;
 			diff(this, 'del', key);
 		}
 		return undefined;
 	}
 
-	if (!(this instanceof ObjectTome)) {
+	if (tomeType !== 'object') {
 
 		// Only ObjectTomes can have properties, therefore we reset the Tome to
 		// the Tome type and then turn it into an ObjectTome. ArrayTome has its
 		// own set method which falls through to this one if the key is not a
 		// number.
+
+		this.emit('typeChange', tomeType, 'object');
 
 		reset(this);
 		this.__proto__ = ObjectTome.prototype;
@@ -612,6 +617,8 @@ Tome.prototype.assign = function (val) {
 
 	// Now we need to apply a new Tome type based on the value type.
 
+	this.emit('typeChange', pType, vType);
+
 	this.__proto__ = vClass.prototype;
 	vInit(this, val ? val.valueOf() : val);
 
@@ -690,17 +697,19 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 	// if newParent is an ArrayTome, else (if needed) convert newParent into an
 	// ObjectTome.
 
+	var newParentType = newParent.typeOf();
 	var keyIsNumeric = (onewKey.toString() === newKey.toString());
-	var parentIsArray = (newParent instanceof ArrayTome);
 
-	if (!keyIsNumeric || (keyIsNumeric && !parentIsArray)) {
+	if (!keyIsNumeric || (keyIsNumeric && newParentType !== 'array')) {
 		// use the string version of the newKey
 
 		newKey = onewKey;
 
 		// ensure newParent is an ObjectTome
 
-		if (!(newParent instanceof ObjectTome)) {
+		if (newParentType !== 'object') {
+			newParent.emit('typeChange', newParentType, 'object');
+
 			reset(newParent);
 			newParent.__proto__ = ObjectTome.prototype;
 		}
@@ -1517,8 +1526,8 @@ NumberTome.prototype.inc = function (val) {
 		val = 1;
 	}
 
-	if (typeof val !== 'number') {
-		throw new TypeError('You can only increment by a number');
+	if (typeof val !== 'number' || isNaN(val) || !isFinite(val)) {
+		throw new TypeError('You can only increment by a finite number');
 	}
 
 	if (val === 0) {
