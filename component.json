@@ -8,5 +8,6 @@
   "development": {},
   "scripts": [
     "tomes.js"
-  ]
+  ],
+  "main": "tomes.js"
 }
