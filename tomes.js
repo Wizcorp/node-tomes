@@ -19,8 +19,13 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+var EventEmitter;
 
-var EventEmitter = typeof require === 'function' ? require('events').EventEmitter : EventEmitter;
+try {
+	EventEmitter = typeof require === 'function' ? require('emitter') : EventEmitter;
+} catch (e) {
+	EventEmitter = typeof require === 'function' ? require('events').EventEmitter : EventEmitter;
+}
 
 function inherits(Child, Parent) {
 	Child.prototype = Object.create(Parent.prototype, {
