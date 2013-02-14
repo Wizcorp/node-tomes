@@ -81,7 +81,8 @@ function Tome(parent, key) {
 		__dirty__: { writable: true, value: 1 },
 		__hidden__: { writable: true, value: false },
 		__root__: { writable: true, value: parent instanceof Tome ? parent.__root__ : this },
-		_events: { configurable: true, writable: true }
+		_events: { configurable: true, writable: true },
+		_callbacks: { configurable: true, writable: true }
 	};
 
 	if (parent instanceof Tome) {
