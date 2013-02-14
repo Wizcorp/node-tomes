@@ -1,0 +1,12 @@
+{
+  "name": "tomes",
+  "repo": "bjornstar/tomes",
+  "description": "Evented Storage Agnostic Data API",
+  "version": "0.0.10",
+  "keywords": [ "data", "events" ],
+  "dependencies": {},
+  "development": {},
+  "scripts": [
+    "tomes.js"
+  ]
+}
