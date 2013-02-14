@@ -5,7 +5,7 @@
   "version": "0.0.10",
   "keywords": [ "data", "events" ],
   "dependencies": {
-    "component/emitter": *
+    "component/emitter": "*"
   },
   "development": {},
   "scripts": [
