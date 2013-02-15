@@ -491,6 +491,10 @@ Tome.prototype.isDirty = function () {
 	return this.__dirty__ > this.__root__.__version__ - this.__root__.__diff__.length;
 };
 
+Tome.prototype.getVersion = function () {
+	return this.__root__.__version__;
+};
+
 Tome.prototype.set = function (key, val) {
 
 	// We use this to set a property on a Tome to the specified value. This can
