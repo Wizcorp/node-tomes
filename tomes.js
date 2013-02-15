@@ -1237,11 +1237,11 @@ ArrayTome.prototype.rename = function () {
 
 		delete this._arr[oldKey];
 		emitDel(this, oldKey);
-		emitAdd(this, newKey);
 	}
 
 	for (var k in temporary) {
 		this._arr[k] = temporary[k];
+		emitAdd(this, newKey);
 	}
 
 	this.length = this._arr.length;
