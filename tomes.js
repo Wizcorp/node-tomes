@@ -1636,11 +1636,11 @@ ObjectTome.prototype.rename = function () {
 
 		delete this[oldKey];
 		emitDel(this, oldKey);
-		emitAdd(this, newKey);
 	}
 
 	for (key in temporary) {
 		this[key] = temporary[key];
+		emitAdd(this, key);
 	}
 
 	diff(this, 'rename', rO);
