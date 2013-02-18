@@ -499,6 +499,10 @@ Tome.prototype.getKey = function () {
 	return this.__key__;
 };
 
+Tome.prototype.getParent = function () {
+	return this.__parent__;
+};
+
 Tome.prototype.set = function (key, val) {
 
 	// We use this to set a property on a Tome to the specified value. This can
