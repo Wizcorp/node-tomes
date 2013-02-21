@@ -19,8 +19,13 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+var EventEmitter;
 
-var EventEmitter = typeof require === 'function' ? require('events').EventEmitter : EventEmitter;
+try {
+	EventEmitter = typeof require === 'function' ? require('emitter') : EventEmitter;
+} catch (e) {
+	EventEmitter = typeof require === 'function' ? require('events').EventEmitter : EventEmitter;
+}
 
 function inherits(Child, Parent) {
 	Child.prototype = Object.create(Parent.prototype, {
@@ -76,7 +81,8 @@ function Tome(parent, key) {
 		__dirty__: { writable: true, value: 1 },
 		__hidden__: { writable: true, value: false },
 		__root__: { writable: true, value: parent instanceof Tome ? parent.__root__ : this },
-		_events: { configurable: true, writable: true }
+		_events: { configurable: true, writable: true },
+		_callbacks: { configurable: true, writable: true }
 	};
 
 	if (parent instanceof Tome) {
@@ -483,6 +489,18 @@ Tome.prototype.isDirty = function () {
 	// unread diffs against this tome's version.
 
 	return this.__dirty__ > this.__root__.__version__ - this.__root__.__diff__.length;
+};
+
+Tome.prototype.getVersion = function () {
+	return this.__root__.__version__;
+};
+
+Tome.prototype.getKey = function () {
+	return this.__key__;
+};
+
+Tome.prototype.getParent = function () {
+	return this.__parent__;
 };
 
 Tome.prototype.set = function (key, val) {
@@ -1057,23 +1075,30 @@ ArrayTome.prototype.del = function (key) {
 };
 
 ArrayTome.prototype.shift = function () {
+	var oldLen = this._arr.length;
+
 	var out = this._arr.shift();
-	var key = 0;
-	var o = this[key];
+	var len = this._arr.length;
 
-	if (o instanceof Tome) {
-		delete this[key];
+	if (oldLen > len) {
+		this.length = len;
 
-		for (var i = 0, len = this._arr.length; i < len; i += 1) {
+		var o = this[0];
+
+		delete this[0];
+
+		for (var i = 0; i < len; i += 1) {
 			this[i] = this._arr[i];
 			this._arr[i].__key__ = i;
 		}
 
 		delete this[len];
 
-		this.length = this._arr.length;
-		destroy(o);
-		emitDel(this, key);
+		if (o instanceof Tome) {
+			destroy(o);
+		}
+
+		emitDel(this, 0);
 		diff(this, 'shift');
 	}
 
@@ -1223,11 +1248,11 @@ ArrayTome.prototype.rename = function () {
 
 		delete this._arr[oldKey];
 		emitDel(this, oldKey);
-		emitAdd(this, newKey);
 	}
 
 	for (var k in temporary) {
 		this._arr[k] = temporary[k];
+		emitAdd(this, newKey);
 	}
 
 	this.length = this._arr.length;
@@ -1622,11 +1647,11 @@ ObjectTome.prototype.rename = function () {
 
 		delete this[oldKey];
 		emitDel(this, oldKey);
-		emitAdd(this, newKey);
 	}
 
 	for (key in temporary) {
 		this[key] = temporary[key];
+		emitAdd(this, key);
 	}
 
 	diff(this, 'rename', rO);
