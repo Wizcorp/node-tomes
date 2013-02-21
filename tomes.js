@@ -1075,23 +1075,30 @@ ArrayTome.prototype.del = function (key) {
 };
 
 ArrayTome.prototype.shift = function () {
+	var oldLen = this._arr.length;
+
 	var out = this._arr.shift();
-	var key = 0;
-	var o = this[key];
+	var len = this._arr.length;
 
-	if (o instanceof Tome) {
-		delete this[key];
+	if (oldLen > len) {
+		this.length = len;
 
-		for (var i = 0, len = this._arr.length; i < len; i += 1) {
+		var o = this[0];
+
+		delete this[0];
+
+		for (var i = 0; i < len; i += 1) {
 			this[i] = this._arr[i];
 			this._arr[i].__key__ = i;
 		}
 
 		delete this[len];
 
-		this.length = this._arr.length;
-		destroy(o);
-		emitDel(this, key);
+		if (o instanceof Tome) {
+			destroy(o);
+		}
+
+		emitDel(this, 0);
 		diff(this, 'shift');
 	}
 
