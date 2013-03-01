@@ -318,35 +318,38 @@ exports.testArrayPop = function (test) {
 	});
 
 	// 1
-	test.strictEqual(a.pop().f, b.pop().f.valueOf(), 'expected {f:1}');
+	test.equal(a.pop().f, b.pop().f.valueOf(), 'expected {f:1}');
 	// 4
-	test.strictEqual(a.length, b.length);
+	test.equal(a.length, b.length);
 	// 5
-	test.strictEqual(a.pop(), b.pop(), 'expected undefined');
+	var c = a.pop();
+	var d = b.pop();
+	console.log(JSON.stringify(c), JSON.stringify(d));
+	test.equal(c, d);
 	// 8
-	test.strictEqual(a.length, b.length);
+	test.equal(a.length, b.length);
 	// 9
-	test.strictEqual(a.pop(), b.pop(), 'expected null');
+	test.equal(a.pop(), b.pop());
 	// 12
-	test.strictEqual(a.pop().f, b.pop().f, 'expected {f:undefined}');
+	test.equal(a.pop().f, b.pop().f, 'expected {f:undefined}');
 	// 15
-	test.strictEqual(a.pop().f, b.pop().f.valueOf(), 'expected {f:null}');
+	test.equal(a.pop().f, b.pop().f.valueOf(), 'expected {f:null}');
 	// 18
-	test.strictEqual(a.length, b.length);
+	test.equal(a.length, b.length);
 	// 19
-	test.strictEqual(a.pop(), b.pop(), 'expected 4');
+	test.equal(a.pop(), b.pop(), 'expected 4');
 	// 22
-	test.strictEqual(a.pop(), b.pop(), 'expected asdf');
+	test.equal(a.pop(), b.pop(), 'expected asdf');
 	// 25
-	test.strictEqual(a.pop(), b.pop(), 'expected true');
+	test.equal(a.pop(), b.pop(), 'expected true');
 	// 28
-	test.strictEqual(a.pop(), b.pop(), 'expected undefined');
+	test.equal(a.pop(), b.pop(), 'expected undefined');
 	// 29
-	test.strictEqual(a.pop(), b.pop(), 'expected undefined');
+	test.equal(a.pop(), b.pop(), 'expected undefined');
 	// 30
-	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+	test.equal(JSON.stringify(a), JSON.stringify(b));
 	// 31
-	test.strictEqual(a.length, b.length);
+	test.equal(a.length, b.length);
 	
 	test.done();
 };

@@ -19,8 +19,13 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+var EventEmitter;
 
-var EventEmitter = typeof require === 'function' ? require('events').EventEmitter : EventEmitter;
+try {
+	EventEmitter = typeof require === 'function' ? require('emitter') : EventEmitter;
+} catch (e) {
+	EventEmitter = typeof require === 'function' ? require('events').EventEmitter : EventEmitter;
+}
 
 function inherits(Child, Parent) {
 	Child.prototype = Object.create(Parent.prototype, {
@@ -76,7 +81,8 @@ function Tome(parent, key) {
 		__dirty__: { writable: true, value: 1 },
 		__hidden__: { writable: true, value: false },
 		__root__: { writable: true, value: parent instanceof Tome ? parent.__root__ : this },
-		_events: { configurable: true, writable: true }
+		_events: { configurable: true, writable: true },
+		_callbacks: { configurable: true, writable: true }
 	};
 
 	if (parent instanceof Tome) {
@@ -172,7 +178,7 @@ function reset(tome) {
 	}
 }
 
-function resolveChain(tome, chain) {
+Tome.resolveChain = function (tome, chain) {
 	var len = chain.length;
 	var target = tome.__root__;
 
@@ -185,9 +191,9 @@ function resolveChain(tome, chain) {
 	}
 
 	return target;
-}
+};
 
-function buildChain(tome) {
+Tome.buildChain = function (tome) {
 	var chain = [];
 
 	while (tome.hasOwnProperty('__key__')) {
@@ -196,9 +202,9 @@ function buildChain(tome) {
 	}
 
 	return chain.reverse();
-}
+};
 
-function markDirty(tome, dirtyAt) {
+function markDirty(tome, dirtyAt, sourceTome) {
 	if (tome.__dirty__ === dirtyAt) {
 		return;
 	}
@@ -206,11 +212,11 @@ function markDirty(tome, dirtyAt) {
 	tome.__dirty__ = dirtyAt;
 
 	if (!tome.__hidden__) {
-		tome.emit('readable', dirtyAt);
+		tome.emit('readable', dirtyAt, sourceTome);
 	}
 	
 	if (tome.hasOwnProperty('__parent__')) {
-		markDirty(tome.__parent__, dirtyAt);
+		markDirty(tome.__parent__, dirtyAt, sourceTome);
 	}
 }
 
@@ -219,7 +225,7 @@ function diff(tome, op, val, chain, pair) {
 	tome.__root__.__version__ = tome.__root__.__version__ + 1;
 
 	if (chain === undefined) {
-		chain = buildChain(tome);
+		chain = Tome.buildChain(tome);
 	}
 
 	var newOp = { chain: chain, op: op };
@@ -229,10 +235,10 @@ function diff(tome, op, val, chain, pair) {
 
 	root.__diff__.push(newOp);
 
-	markDirty(tome, root.__version__);
+	markDirty(tome, root.__version__, tome);
 
 	if (pair !== undefined) {
-		markDirty(pair, root.__version__);
+		markDirty(pair, root.__version__, pair);
 	}
 }
 
@@ -485,6 +491,18 @@ Tome.prototype.isDirty = function () {
 	return this.__dirty__ > this.__root__.__version__ - this.__root__.__diff__.length;
 };
 
+Tome.prototype.getVersion = function () {
+	return this.__root__.__version__;
+};
+
+Tome.prototype.getKey = function () {
+	return this.__key__;
+};
+
+Tome.prototype.getParent = function () {
+	return this.__parent__;
+};
+
 Tome.prototype.set = function (key, val) {
 
 	// We use this to set a property on a Tome to the specified value. This can
@@ -686,8 +704,8 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 
 	// Make a copy of the chains before we move them. For use in the diff.
 
-	var newParentChain = buildChain(newParent);
-	var oldParentChain = buildChain(this);
+	var newParentChain = Tome.buildChain(newParent);
+	var oldParentChain = Tome.buildChain(this);
 
 	// convert (if not already the case) the newParent to an ObjectTome if:
 	// - the key is not numeric, or:
@@ -808,7 +826,7 @@ Tome.prototype.merge = function (diff) {
 
 	for (var i = 0, len = diffs.length; i < len; i += 1) {
 		var currentDiff = diffs[i];
-		var tome = resolveChain(this, currentDiff.chain);
+		var tome = Tome.resolveChain(this, currentDiff.chain);
 
 		var newParent;
 		var opVal = currentDiff.val;
@@ -820,7 +838,7 @@ Tome.prototype.merge = function (diff) {
 			tome.del(opVal);
 			break;
 		case 'move':
-			newParent = resolveChain(this, opVal.newParent);
+			newParent = Tome.resolveChain(this, opVal.newParent);
 			tome.move(opVal.key, newParent, opVal.newKey);
 			break;
 		case 'pop':
@@ -845,7 +863,7 @@ Tome.prototype.merge = function (diff) {
 			tome.splice.apply(tome, opVal);
 			break;
 		case 'swap':
-			newParent = resolveChain(this, opVal.newParent);
+			newParent = Tome.resolveChain(this, opVal.newParent);
 			tome.swap(opVal.key, newParent[opVal.newKey]);
 			break;
 		case 'unshift':
@@ -877,8 +895,8 @@ Tome.prototype.swap = function (key, target) {
 	var newParent = target.__parent__;
 	var newRoot = target.__root__;
 
-	var oldParentChain = buildChain(this);
-	var newParentChain = buildChain(newParent);
+	var oldParentChain = Tome.buildChain(this);
+	var newParentChain = Tome.buildChain(newParent);
 
 	var op = { key: key, newParent: newParentChain, newKey: newKey };
 
@@ -1057,23 +1075,30 @@ ArrayTome.prototype.del = function (key) {
 };
 
 ArrayTome.prototype.shift = function () {
+	var oldLen = this._arr.length;
+
 	var out = this._arr.shift();
-	var key = 0;
-	var o = this[key];
+	var len = this._arr.length;
 
-	if (o instanceof Tome) {
-		delete this[key];
+	if (oldLen > len) {
+		this.length = len;
 
-		for (var i = 0, len = this._arr.length; i < len; i += 1) {
+		var o = this[0];
+
+		delete this[0];
+
+		for (var i = 0; i < len; i += 1) {
 			this[i] = this._arr[i];
 			this._arr[i].__key__ = i;
 		}
 
 		delete this[len];
 
-		this.length = this._arr.length;
-		destroy(o);
-		emitDel(this, key);
+		if (o instanceof Tome) {
+			destroy(o);
+		}
+
+		emitDel(this, 0);
 		diff(this, 'shift');
 	}
 
@@ -1223,11 +1248,11 @@ ArrayTome.prototype.rename = function () {
 
 		delete this._arr[oldKey];
 		emitDel(this, oldKey);
-		emitAdd(this, newKey);
 	}
 
 	for (var k in temporary) {
 		this._arr[k] = temporary[k];
+		emitAdd(this, newKey);
 	}
 
 	this.length = this._arr.length;
@@ -1622,11 +1647,11 @@ ObjectTome.prototype.rename = function () {
 
 		delete this[oldKey];
 		emitDel(this, oldKey);
-		emitAdd(this, newKey);
 	}
 
 	for (key in temporary) {
 		this[key] = temporary[key];
+		emitAdd(this, key);
 	}
 
 	diff(this, 'rename', rO);

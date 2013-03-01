@@ -108,8 +108,8 @@ Emitted when a key is deleted from a Tome.
 ###destroy( )
 Emitted when a Tome is deleted. Removes all event listeners for this Tome.
 
-###readable( )
-Emitted every time a Tome or any of it's child Tomes are altered. 
+###readable( *version*, *tome* )
+Emitted every time a Tome or any of it's child Tomes are altered. Version is an identifier for the change operation. Tome is the tome that had the change that triggered the readable event.
 
 ###typeChange( *tome*, *oldType*, *newType* )
 Emitted by the root tome when a Tome changes type.
