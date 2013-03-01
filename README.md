@@ -94,6 +94,15 @@ Get a single change operation from a Tome, removing it in the process. Returns n
 ###merge( *diff* )
 Applies a change operation or an array of change operations to a Tome.
 
+###getKey( )
+Returns a Tome's key.
+
+###getParent( )
+Returns a Tome's parent Tome.
+
+###getVersion( )
+Returns a Tome's version.
+
 ###isDirty( )
 Returns whether a Tome has been changed, but the change has not been read.
 
