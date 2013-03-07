@@ -103,6 +103,9 @@ Returns a Tome's parent Tome.
 ###getVersion( )
 Returns a Tome's version.
 
+###is( *val* )
+Returns a boolean value indicating whether or not the Tome is observably indistinguishable from val ([ref](http://wiki.ecmascript.org/doku.php?id=harmony:egal)). 
+
 ###isDirty( )
 Returns whether a Tome has been changed, but the change has not been read.
 

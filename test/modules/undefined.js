@@ -192,3 +192,19 @@ exports.testUndefinedArrayRepeatAssign = function (test) {
 
 	test.done();
 };
+
+exports.testUndefinedIs = function (test) {
+	test.expect(2);
+
+	var a = [undefined];
+	var b = Tome.conjure(a);
+
+	test.ok(b[0].is(a[0]));
+
+	a[0] = false;
+
+	test.ok(!b[0].is(a[0]));
+
+	test.done();
+};
+

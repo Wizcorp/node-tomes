@@ -184,3 +184,29 @@ exports.testStringAppend = function (test) {
 
 	test.done();
 };
+
+exports.testStringIs = function (test) {
+	test.expect(4);
+
+	var a = 'asdf';
+	var b = Tome.conjure(a);
+
+	test.ok(b.is(a));
+
+	a = '0';
+	b.assign(a);
+
+	test.ok(b.is(a));
+
+	a = '2.57523049';
+	b.assign(a);
+
+	test.ok(b.is(a));
+
+	a = 'a9';
+	b.assign('42');
+
+	test.ok(!b.is(a));
+
+	test.done();
+};
