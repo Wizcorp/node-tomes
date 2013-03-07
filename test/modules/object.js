@@ -292,3 +292,15 @@ exports.testObjectAssignValues = function (test) {
 
 	test.done();
 };
+
+exports.testObjectIs = function (test) {
+	test.expect(2);
+
+	var a = { foo: 'bar' };
+	var b = Tome.conjure(a);
+
+	test.ok(!b.is(a));
+	test.ok(b.is(b));
+
+	test.done();
+};

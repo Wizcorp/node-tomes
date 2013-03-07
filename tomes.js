@@ -482,6 +482,27 @@ Tome.destroy = function (tome) {
 	destroy(tome);
 };
 
+Tome.prototype.is = function (val) {
+	if (!arguments.length) {
+		return !!this.valueOf();
+	}
+
+	var x = this.valueOf();
+	var y = val instanceof Tome ? val.valueOf() : val;
+
+	if (x === y) {
+		// 0 === -0, but they are not identical
+		return x !== 0 || 1 / x === 1 / y;
+	}
+
+	// NaN !== NaN, but they are identical.
+	// NaNs are the only non-reflexive value, i.e., if x !== x,
+	// then x is a NaN.
+	// isNaN is broken: it converts its argument to number, so
+	// isNaN("foo") => true
+	return x !== x && y !== y;
+};
+
 Tome.prototype.isDirty = function () {
 	// When we mark a Tome as dirty, we set dirty to the new version from the
 	// root tome. This way, we can know when the diff for that operation has

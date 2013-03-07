@@ -1048,3 +1048,18 @@ exports.testArrayReverse = function (test) {
 
 	test.done();
 };
+
+exports.testArrayIs = function (test) {
+	test.expect(2);
+
+	var a = [ 0, null, undefined, 'five' ];
+	var b = Tome.conjure(a);
+
+	test.ok(!b.is(a));
+
+	a = [ 'no', 0 ];
+
+	test.ok(!b.is(a));
+
+	test.done();
+};
