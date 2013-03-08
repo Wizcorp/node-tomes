@@ -214,3 +214,17 @@ exports.testNullArrayRepeatAssign = function (test) {
 
 	test.done();
 };
+
+exports.testNullIs = function (test) {
+	test.expect(2);
+
+	var a = null;
+	var b = Tome.conjure(a);
+
+	test.ok(b.is(a));
+
+	a = undefined;
+	test.ok(!b.is(a));
+
+	test.done();
+};

@@ -226,3 +226,34 @@ exports.testNumberIncChain = function (test) {
 
 	test.done();
 };
+
+exports.testNumberIs = function (test) {
+	test.expect(5);
+
+	var a = 1;
+	var b = Tome.conjure(a);
+
+	test.ok(b.is(a));
+
+	a = 0;
+	b.assign(a);
+
+	test.ok(b.is(a));
+
+	a = 2.57523049;
+	b.assign(a);
+
+	test.ok(b.is(a));
+
+	a = 9;
+	b.assign(42);
+
+	test.ok(!b.is(a));
+
+	a = NaN;
+	b.assign(a);
+
+	test.ok(b.is(a));
+
+	test.done();
+};
