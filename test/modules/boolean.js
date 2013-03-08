@@ -190,3 +190,31 @@ exports.testBooleanAndOr = function (test) {
 
 	test.done();
 };
+
+exports.testBooleanIs = function (test) {
+	test.expect(5);
+
+	var a = true;
+	var b = Tome.conjure(a);
+
+	test.ok(b.is(a));
+
+	a = false;
+	b.assign(a);
+
+	test.ok(b.is(a));
+
+	a = true;
+
+	test.ok(!b.is(a));
+
+	b.assign(true);
+
+	test.ok(b.is());
+
+	b.assign(false);
+
+	test.ok(!b.is());
+
+	test.done();
+};
