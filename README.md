@@ -121,7 +121,7 @@ Emitted when a key is deleted from a Tome.
 Emitted when a Tome is deleted. Removes all event listeners for this Tome.
 
 ###readable( *was* )
-Emitted every time a Tome or any of it's child Tomes are altered. If the Tome was a primitive (ie. string, number, or boolean) the previous value will be emitted as well, but only if it did not change types.
+Emitted every time a Tome or any of its child Tomes are altered. If the Tome was a primitive (ie. string, number, or boolean) the previous value will be emitted as well, but only if it did not change types.
 
 ###typeChange( *tome*, *oldType*, *newType* )
 Emitted by the root tome when a Tome changes type.
