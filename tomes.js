@@ -204,7 +204,7 @@ Tome.buildChain = function (tome) {
 	return chain.reverse();
 };
 
-function markDirty(tome, dirtyAt, sourceTome) {
+function markDirty(tome, dirtyAt, was) {
 	if (tome.__dirty__ === dirtyAt) {
 		return;
 	}
@@ -212,19 +212,19 @@ function markDirty(tome, dirtyAt, sourceTome) {
 	tome.__dirty__ = dirtyAt;
 
 	if (!tome.__hidden__) {
-		tome.emit('readable', dirtyAt, sourceTome);
+		tome.emit('readable', was);
 	}
 	
 	if (tome.hasOwnProperty('__parent__')) {
-		markDirty(tome.__parent__, dirtyAt, sourceTome);
+		markDirty(tome.__parent__, dirtyAt);
 	}
 }
 
-function diff(tome, op, val, chain, pair) {
+function diff(tome, op, val, chain, pair, was) {
 	var root = tome.__root__;
-	tome.__root__.__version__ = tome.__root__.__version__ + 1;
+	tome.__root__.__version__ += 1;
 
-	if (chain === undefined) {
+	if (!chain) {
 		chain = Tome.buildChain(tome);
 	}
 
@@ -235,9 +235,9 @@ function diff(tome, op, val, chain, pair) {
 
 	root.__diff__.push(newOp);
 
-	markDirty(tome, root.__version__, tome);
+	markDirty(tome, root.__version__, was);
 
-	if (pair !== undefined) {
+	if (pair) {
 		markDirty(pair, root.__version__, pair);
 	}
 }
@@ -634,8 +634,10 @@ Tome.prototype.assign = function (val) {
 				return this;
 			}
 
+			var oldVal = this._val;
 			this._val = val.valueOf();
-			diff(this, 'assign', val.valueOf());
+
+			diff(this, 'assign', val.valueOf(), null, null, oldVal);
 			return this;
 		}
 

@@ -103,8 +103,8 @@ Returns a Tome's parent Tome.
 ###getVersion( )
 Returns a Tome's version.
 
-###is( *val* )
-Returns a boolean value indicating whether or not the Tome is observably indistinguishable from val ([ref](http://wiki.ecmascript.org/doku.php?id=harmony:egal)). 
+###is( *value* )
+Returns a boolean value indicating whether or not the Tome is observably indistinguishable from value ([ref](http://wiki.ecmascript.org/doku.php?id=harmony:egal)). If no value is given, returns whether or not the Tome's value is truthy.
 
 ###isDirty( )
 Returns whether a Tome has been changed, but the change has not been read.
@@ -120,8 +120,8 @@ Emitted when a key is deleted from a Tome.
 ###destroy( )
 Emitted when a Tome is deleted. Removes all event listeners for this Tome.
 
-###readable( *version*, *tome* )
-Emitted every time a Tome or any of it's child Tomes are altered. Version is an identifier for the change operation. Tome is the tome that had the change that triggered the readable event.
+###readable( *was* )
+Emitted every time a Tome or any of it's child Tomes are altered. If the Tome was a primitive (ie. string, number, or boolean) the previous value will be emitted as well, but only if it did not change types.
 
 ###typeChange( *tome*, *oldType*, *newType* )
 Emitted by the root tome when a Tome changes type.

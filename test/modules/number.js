@@ -257,3 +257,25 @@ exports.testNumberIs = function (test) {
 
 	test.done();
 };
+
+exports.testNumberWas = function (test) {
+	test.expect(4);
+
+	var a = 0;
+	var b = Tome.conjure(a);
+
+	b.on('readable', function (was) {
+		test.strictEqual(was, a);
+	});
+
+	b.assign(7);
+	a = 7;
+
+	test.ok(b.is(a));
+
+	b.assign(-1);
+
+	test.ok(!b.is(a));
+
+	test.done();
+};
