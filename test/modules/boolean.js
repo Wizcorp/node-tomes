@@ -218,3 +218,23 @@ exports.testBooleanIs = function (test) {
 
 	test.done();
 };
+
+exports.testBooleanWas = function (test) {
+	test.expect(3);
+
+	var a = true;
+	var b = Tome.conjure(a);
+
+	b.on('readable', function (was) {
+		test.strictEqual(was, a);
+	});
+
+	b.assign(false);
+	a = false;
+
+	test.ok(b.is(a));
+
+	b.assign(true);
+
+	test.done();
+};

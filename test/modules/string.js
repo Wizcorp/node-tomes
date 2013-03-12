@@ -210,3 +210,23 @@ exports.testStringIs = function (test) {
 
 	test.done();
 };
+
+exports.testStringWas = function (test) {
+	test.expect(3);
+
+	var a = 'banana';
+	var b = Tome.conjure(a);
+
+	b.on('readable', function (was) {
+		test.strictEqual(was, a);
+	});
+
+	b.assign('apple');
+	a = 'apple';
+
+	test.ok(b.is(a));
+
+	b.assign('orange');
+
+	test.done();
+};
