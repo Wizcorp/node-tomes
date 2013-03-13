@@ -1078,3 +1078,22 @@ exports.testArrayWas = function (test) {
 
 	test.done();
 };
+
+exports.testSplice = function (test) {
+	test.expect(2);
+
+	var a = [ 0, 1, 2, 3, 4, 5 ];
+	var b = Tome.conjure(a);
+
+	a.splice(1, 2);
+	b.splice(1, 2);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	a.splice(-2, 0, 4);
+	b.splice(-2, 0, 4);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	test.done();
+};
