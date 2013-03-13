@@ -1063,3 +1063,18 @@ exports.testArrayIs = function (test) {
 
 	test.done();
 };
+
+exports.testArrayWas = function (test) {
+	test.expect(1);
+
+	var a = [ 0, 1, 2, 3, 4, 5 ];
+	var b = Tome.conjure(a);
+
+	b[0].on('readable', function (was) {
+		test.strictEqual(was, a[0]);
+	});
+
+	b[0].inc(5);
+
+	test.done();
+};
