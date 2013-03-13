@@ -1582,8 +1582,9 @@ NumberTome.prototype.inc = function (val) {
 		return this._val;
 	}
 
-	this._val = this._val + val;
-	diff(this, 'assign', this._val);
+	var was = this._val;
+	this._val += val;
+	diff(this, 'assign', this._val, null, null, was);
 
 	return this;
 };
