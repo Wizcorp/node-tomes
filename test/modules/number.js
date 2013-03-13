@@ -279,3 +279,18 @@ exports.testNumberWas = function (test) {
 
 	test.done();
 };
+
+exports.testNumberWasInc = function (test) {
+	test.expect(1);
+
+	var a = -999;
+	var b = Tome.conjure(a);
+
+	b.on('readable', function (was) {
+		test.strictEqual(was, a);
+	});
+
+	b.inc(999);
+
+	test.done();
+};
