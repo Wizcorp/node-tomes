@@ -53,6 +53,9 @@ Returns data's type as a string. Tomes only has types that exist in JSON which a
 ###Tome.isTome( *data* )
 Returns a boolean indicating whether data is a Tome or not.
 
+###Tome.unTome( *tome* )
+Returns a regular JavaScript version of your Tome.
+
 ##TomeTypes
  - ArrayTome
  - BooleanTome
