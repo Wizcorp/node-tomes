@@ -204,6 +204,42 @@ Tome.buildChain = function (tome) {
 	return chain.reverse();
 };
 
+Tome.unTome = function (tome) {
+	var out, keys;
+
+	var tomeType = Tome.typeOf(tome);
+
+	switch (tomeType) {
+	case 'object':
+		out = {};
+		keys = Object.keys(tome);
+		break;
+	case 'array':
+		out = new Array(tome.length);
+		keys = Object.keys(tome);
+		break;
+	case 'undefined':
+		out = undefined;
+		break;
+	case 'null':
+		out = null;
+		break;
+	default:
+		out = tome.valueOf();
+		break;
+	}
+
+	if (!keys) {
+		return out;
+	}
+
+	for (var i = 0; i < keys.length; i += 1) {
+		var key = keys[i];
+		out[key] = Tome.unTome(tome[key]);
+	}
+	return out;
+};
+
 function markDirty(tome, dirtyAt, was) {
 	if (tome.__dirty__ === dirtyAt) {
 		return;
