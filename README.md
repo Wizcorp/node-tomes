@@ -1,9 +1,11 @@
 [![Build Status](https://travis-ci.org/Wizcorp/node-tomes.png)](https://travis-ci.org/Wizcorp/node-tomes)
 
 Tomes
-=========
+=====
 
 *Evented Storage Agnostic Data API*
+
+![Tomes Logo](https://raw.github.com/bjornstar/tomes/master/logo/tomes-logo-small.png)
 
 Problem: You've got data and you want to do something whenever it changes.
 
