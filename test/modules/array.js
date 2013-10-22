@@ -1097,3 +1097,19 @@ exports.testSplice = function (test) {
 
 	test.done();
 };
+
+exports.testSpliceKeys = function (test) {
+	test.expect(5);
+
+	var a = [ 0, 1, 2, 3, 4, 5 ];
+	var b = Tome.conjure(a);
+
+	a.splice(0, 1);
+	b.splice(0, 1);
+	
+	for (var i = 0; i < b.length; i += 1) {
+		test.strictEqual(i, b[i].getKey());
+	}
+
+	test.done();
+};
