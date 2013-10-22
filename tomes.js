@@ -1259,6 +1259,7 @@ ArrayTome.prototype.splice = function (spliceIndex, toRemove) {
 
 	for (i = 0, len = this._arr.length; i < len; i += 1) {
 		this[i] = this._arr[i];
+		this[i].__key__ = i;
 	}
 
 	if (out.length > toAdd.length) {
