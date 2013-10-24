@@ -185,7 +185,7 @@ Tome.resolveChain = function (tome, chain) {
 	for (var i = 0; i < len; i += 1) {
 		var link = chain[i];
 		if (!target.hasOwnProperty(link)) {
-			throw new ReferenceError('resolveChain - Error resolving chain.' + chain);
+			throw new ReferenceError('resolveChain - Error resolving chain: ' + chain);
 		}
 		target = target[link];
 	}
