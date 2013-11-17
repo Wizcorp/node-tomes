@@ -1,4 +1,4 @@
-var Tome = require('../../tomes').Tome;
+var Tome = require('../..').Tome;
 
 exports.testMove = function (test) {
 	test.expect(1);

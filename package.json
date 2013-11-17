@@ -1,7 +1,7 @@
 {
     "name": "tomes",
     "description": "Evented Storage Agnostic Data API",
-    "version": "0.0.16",
+    "version": "0.0.17",
     "author": "Wizcorp, Inc. <info@wizcorp.jp>",
     "maintainers": [
         { "name": "Bjorn Stromberg", "email": "bstromberg@wizcorp.jp" }
@@ -9,10 +9,11 @@
     "scripts": {
         "test": "node test"
     },
-    "main": "tomes.js",
+    "main": "index.js",
     "devDependencies": {
         "nodeunit": "*",
-        "rumplestiltskin": "*"
+        "rumplestiltskin": "*",
+        "jshint": "*"
     },
     "license": {
         "type": "MIT",

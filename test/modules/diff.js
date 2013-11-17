@@ -1,4 +1,4 @@
-var Tome = require('../../tomes').Tome;
+var Tome = require('../..').Tome;
 
 exports.testDiffSimpleString = function (test) {
 	test.expect(2);
