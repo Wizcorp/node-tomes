@@ -28,7 +28,7 @@ try {
 }
 
 if (!EventEmitter) {
-	return console.warn('Could not find EventEmitter, Tomes cannot start.');
+	throw new Error('Could not find EventEmitter, Tomes cannot start.');
 }
 
 function inherits(Child, Parent) {
