@@ -95,7 +95,7 @@ Move key to tome. Optionally call it newkey on that tome.
 Hides a Tome. The Tome still exists in this tome, but will neither stringify nor show up in any events. Shows up as a delete in change operations.
 
 ###read( )
-Get a single change operation from the root Tome, removing it in the process. Returns undefined if there are no changes.
+Get a single change operation from the root Tome, removing it in the process. Returns null if there are no changes.
 
 ###readAll( )
 Get all change operations from the Tome

@@ -885,7 +885,11 @@ Tome.prototype.read = function () {
 	// Diffs are automatically buffered by default. They are stored on the root Tome and are
 	// cleared as they are read.
 
-	return this.__root__.__diff__.shift();
+	var out = this.__root__.__diff__.shift();
+
+	// We return null to match streams behavior.
+
+	return out || null;
 };
 
 Tome.prototype.merge = function (diff) {
