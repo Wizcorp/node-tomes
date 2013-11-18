@@ -385,7 +385,9 @@ function primitiveInit(tome, val) {
 		Object.defineProperty(tome, '_val', { configurable: true, writable: true });
 	}
 
-	// Some browsers have a hard time with valueOf.
+	// Some browsers have a hard time with valueOf. We ran into an issue on IOS
+	// 6 where val.valueOf was throwing a TypeError even though we know for
+	// sure it has a valueOf method. Esoteric browser issues are not fun.
 
 	tome._val = val.constructor.prototype.valueOf.call(val);
 }
