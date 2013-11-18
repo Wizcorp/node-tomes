@@ -382,10 +382,12 @@ function objectInit(tome, val) {
 
 function primitiveInit(tome, val) {
 	if (!tome.hasOwnProperty('_val')) {
-		Object.defineProperty(tome, '_val', { configurable: true, writable: true, value: val.valueOf() });
-	} else {
-		tome._val = val.valueOf();
+		Object.defineProperty(tome, '_val', { configurable: true, writable: true });
 	}
+
+	// Some browsers have a hard time with valueOf.
+
+	tome._val = val.constructor.prototype.valueOf.call(val);
 }
 
 var initMap = {
@@ -469,12 +471,9 @@ Tome.isTome = function (o) {
 		return false;
 	}
 
-	// It's only a tome if the constructor has the word Tome in it.
-	if (typeof o.constructor === 'function' && o.constructor.name.indexOf('Tome') !== -1) {
-		return true;
-	}
-
-	return false;
+	// It's only a tome if the prototype's prototype's constructor is called 'Tome'
+	
+	return o.__proto__ && o.__proto__.__proto__ && o.__proto__.__proto__.constructor && o.__proto__.__proto__.constructor.name === 'Tome';
 };
 
 Tome.typeOf = function (v) {
@@ -504,7 +503,7 @@ Tome.conjure = function (val, parent, key) {
 	// It will return a new Tome of the appropriate type for our value with Tome
 	// inherited. This is also how we pass parent into our Tome so we can signal
 	// a parent that its child has been modified.
-	
+
 	if (Tome.isTome(val) && val.__hidden__) {
 		return;
 	}
@@ -523,6 +522,7 @@ Tome.conjure = function (val, parent, key) {
 
 	var newTome = new ClassRef(parent, key);
 	vInit(newTome, val);
+
 	return newTome;
 };
 
