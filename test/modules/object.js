@@ -1,4 +1,4 @@
-var tomes = require('../../tomes');
+var tomes = require('../..');
 
 var Tome = tomes.Tome,
 	ArrayTome = tomes.ArrayTome,
