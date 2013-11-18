@@ -22,9 +22,13 @@
 var EventEmitter;
 
 try {
-	EventEmitter = typeof require === 'function' ? require('emitter') : EventEmitter;
+	EventEmitter = require('emitter');
 } catch (e) {
-	EventEmitter = typeof require === 'function' ? require('events').EventEmitter : EventEmitter;
+	EventEmitter = require('events').EventEmitter;
+}
+
+if (!EventEmitter) {
+	return console.warn('Could not find EventEmitter, Tomes cannot start.');
 }
 
 function inherits(Child, Parent) {
@@ -77,15 +81,17 @@ function Tome(parent, key) {
 	// If you're using the node.js event emitter, we need to make the _events
 	// non-enumerable. Ideally, node.js would make this the default behavior.
 
+	var hasParentTome = Tome.isTome(parent);
+
 	var properties = {
 		__dirty__: { writable: true, value: 1 },
 		__hidden__: { writable: true, value: false },
-		__root__: { writable: true, value: parent instanceof Tome ? parent.__root__ : this },
+		__root__: { writable: true, value: hasParentTome ? parent.__root__ : this },
 		_events: { configurable: true, writable: true },
 		_callbacks: { configurable: true, writable: true }
 	};
 
-	if (parent instanceof Tome) {
+	if (hasParentTome) {
 		properties.__parent__ = { writable: true, value: parent };
 		properties.__key__ = { writable: true, value: key };
 	} else {
@@ -132,7 +138,7 @@ function destroy(tome) {
 	var keys = Object.keys(tome);
 	for (var i = 0, len = keys.length; i < len; i += 1) {
 		var k = keys[i];
-		if (tome[k] instanceof Tome) {
+		if (Tome.isTome(tome[k])) {
 			destroy(tome[k]);
 		}
 	}
@@ -164,7 +170,7 @@ function reset(tome) {
 		key = keys[i];
 		var o = tome[key];
 		delete tome[key];
-		if (o instanceof Tome) {
+		if (Tome.isTome(o)) {
 			destroy(o);
 		}
 	}
@@ -376,10 +382,14 @@ function objectInit(tome, val) {
 
 function primitiveInit(tome, val) {
 	if (!tome.hasOwnProperty('_val')) {
-		Object.defineProperty(tome, '_val', { configurable: true, writable: true, value: val.valueOf() });
-	} else {
-		tome._val = val.valueOf();
+		Object.defineProperty(tome, '_val', { configurable: true, writable: true });
 	}
+
+	// Some browsers have a hard time with valueOf. We ran into an issue on IOS
+	// 6 where val.valueOf was throwing a TypeError even though we know for
+	// sure it has a valueOf method. Esoteric browser issues are not fun.
+
+	tome._val = val.constructor.prototype.valueOf.call(val);
 }
 
 var initMap = {
@@ -458,7 +468,14 @@ inherits(Tome, EventEmitter);
 exports.Tome = Tome;
 
 Tome.isTome = function (o) {
-	return o instanceof Tome;
+	// If it's literally undefined or null, it's not a Tome.
+	if (o === undefined || o === null) {
+		return false;
+	}
+
+	// It's only a tome if the prototype's prototype's constructor is called 'Tome'
+	
+	return o.__proto__ && o.__proto__.__proto__ && o.__proto__.__proto__.constructor && o.__proto__.__proto__.constructor.name === 'Tome';
 };
 
 Tome.typeOf = function (v) {
@@ -475,7 +492,7 @@ Tome.typeOf = function (v) {
 		return 'null';
 	}
 
-	if (v instanceof Tome) {
+	if (Tome.isTome(v)) {
 		return v.typeOf();
 	}
 
@@ -488,8 +505,8 @@ Tome.conjure = function (val, parent, key) {
 	// It will return a new Tome of the appropriate type for our value with Tome
 	// inherited. This is also how we pass parent into our Tome so we can signal
 	// a parent that its child has been modified.
-	
-	if (val instanceof Tome && val.__hidden__) {
+
+	if (Tome.isTome(val) && val.__hidden__) {
 		return;
 	}
 
@@ -507,11 +524,12 @@ Tome.conjure = function (val, parent, key) {
 
 	var newTome = new ClassRef(parent, key);
 	vInit(newTome, val);
+
 	return newTome;
 };
 
 Tome.destroy = function (tome) {
-	if (!(tome instanceof Tome)) {
+	if (!Tome.isTome(tome)) {
 		throw new TypeError('Tome.destroy - You can only destroy Tomes.');
 	}
 
@@ -524,7 +542,7 @@ Tome.prototype.is = function (val) {
 	}
 
 	var x = this.valueOf();
-	var y = val instanceof Tome ? val.valueOf() : val;
+	var y = Tome.isTome(val) ? val.valueOf() : val;
 
 	if (x === y) {
 		// 0 === -0, but they are not identical
@@ -624,7 +642,7 @@ Tome.prototype.set = function (key, val) {
 		return this;
 	}
 
-	if (!(p instanceof Tome)) {
+	if (!Tome.isTome(p)) {
 
 		// If this key is not a Tome, complain loudly.
 
@@ -717,7 +735,7 @@ Tome.prototype.del = function (key) {
 		throw new ReferenceError('Tome.del - Key is not defined: ' + key);
 	}
 
-	if (!(this[key] instanceof Tome)) {
+	if (!Tome.isTome(this[key])) {
 		throw new TypeError('Tome.del - Key is not a Tome: ' + key);
 	}
 
@@ -738,9 +756,9 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 		throw new ReferenceError('Tome.move - Key is not defined: ' + key);
 	}
 
-	if (onewKey !== undefined && !(newParent instanceof Tome)) {
+	if (onewKey !== undefined && !Tome.isTome(newParent)) {
 		throw new TypeError('Tome.move - new parent must be a Tome');
-	} else if (onewKey === undefined && !(newParent instanceof Tome)) {
+	} else if (onewKey === undefined && !Tome.isTome(newParent)) {
 		onewKey = newParent;
 		newParent = this;
 	}
@@ -756,8 +774,9 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 	}
 
 	var newKey = parseInt(onewKey, 10);
+	var newParentType = newParent.typeOf();
 
-	if (newKey < 0 && newParent instanceof ArrayTome) {
+	if (newKey < 0 && newParentType === 'array') {
 		return this;
 	}
 
@@ -774,7 +793,6 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 	// if newParent is an ArrayTome, else (if needed) convert newParent into an
 	// ObjectTome.
 
-	var newParentType = newParent.typeOf();
 	var keyIsNumeric = (onewKey.toString() === newKey.toString());
 
 	if (!keyIsNumeric || (keyIsNumeric && newParentType !== 'array')) {
@@ -794,7 +812,7 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 
 	// add newKey to newParent
 
-	if (newParent instanceof ArrayTome) {
+	if (newParentType === 'array') {
 		var arr = newParent._arr;
 		var len = arr.length;
 
@@ -817,7 +835,7 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 
 	// remove key from oldParent.
 
-	if (this instanceof ArrayTome) {
+	if (this.typeOf() === 'array') {
 
 		// if oldParent is a tome, create an undefinedTome in it's place.
 
@@ -854,18 +872,24 @@ Tome.prototype.move = function (key, newParent, onewKey) {
 	return this;
 };
 
+Tome.prototype.readAll = function () {
+	// Sometimes you want to just get all the diffs at once instead of
+	// incrementally, readAll does just that.
+	var out = this.__root__.__diff__;
+	this.__root__.__diff__ = [];
+
+	return out;
+};
+
 Tome.prototype.read = function () {
-	// Diffs are automatically buffered by default. When read is called on a
-	// Tome we consider the diff to be consumed and walk down the chain to
-	// remove all buffered diffs. We also need to walk up the chain to remove
-	// the consumed diffs from the parents who may still have other diffs that
-	// have not been consumed yet.
+	// Diffs are automatically buffered by default. They are stored on the root Tome and are
+	// cleared as they are read.
 
-	if (!this.__root__.__diff__.length) {
-		return null;
-	}
+	var out = this.__root__.__diff__.shift();
 
-	return this.__root__.__diff__.shift();
+	// We return null to match streams behavior.
+
+	return out || null;
 };
 
 Tome.prototype.merge = function (diff) {
@@ -877,11 +901,7 @@ Tome.prototype.merge = function (diff) {
 		throw new Error('Tome.merge - Cannot merge to hidden Tomes.');
 	}
 
-	var diffs = diff;
-
-	if (Tome.typeOf(diff) !== 'array') {
-		diffs = [ diff ];
-	}
+	var diffs = Tome.typeOf(diff) === 'array' ? diff : [ diff ];
 
 	for (var i = 0, len = diffs.length; i < len; i += 1) {
 		var currentDiff = diffs[i];
@@ -935,14 +955,11 @@ Tome.prototype.merge = function (diff) {
 };
 
 Tome.prototype.swap = function (key, target) {
-	if (key instanceof Tome) {
-		target = key;
-		key = this.__key__.toString();
-	} else if (!this.hasOwnProperty(key)) {
+	if (!this.hasOwnProperty(key)) {
 		throw new ReferenceError('Tome.swap - Key is not defined: ' + key);
 	}
 
-	if (!(target instanceof Tome)) {
+	if (!Tome.isTome(target)) {
 		throw new TypeError('Tome.swap - Target must be a Tome');
 	}
 
@@ -972,11 +989,11 @@ Tome.prototype.swap = function (key, target) {
 	this[key] = target;
 	newParent[newKey] = intermediate;
 
-	if (this instanceof ArrayTome) {
+	if (this.typeOf() === 'array') {
 		this._arr[key] = this[key];
 	}
 
-	if (newParent instanceof ArrayTome) {
+	if (newParent.typeOf() === 'array') {
 		newParent._arr[newKey] = newParent[newKey];
 	}
 
@@ -1028,7 +1045,7 @@ inherits(ArrayTome, Tome);
 exports.ArrayTome = ArrayTome;
 
 ArrayTome.isArrayTome = function (o) {
-	return o instanceof ArrayTome;
+	return Tome.isTome(o) && Tome.typeOf(o) === 'array';
 };
 
 ArrayTome.prototype.valueOf = function () {
@@ -1105,7 +1122,7 @@ ArrayTome.prototype.set = function (okey, val) {
 		}
 
 		diff(this, 'set', { key: key, val: val });
-	} else if (this[key] instanceof Tome) {
+	} else if (Tome.isTome(this[key])) {
 		this[key].assign(val);
 	}
 	return this;
@@ -1116,7 +1133,7 @@ ArrayTome.prototype.del = function (key) {
 		throw new ReferenceError('ArrayTome.del - Key is not defined: ' + key);
 	}
 
-	if (!(this[key] instanceof Tome)) {
+	if (!Tome.isTome(this[key])) {
 		throw new TypeError('ArrayTome.del - Key is not a Tome: ' + key);
 	}
 
@@ -1153,7 +1170,7 @@ ArrayTome.prototype.shift = function () {
 
 		delete this[len];
 
-		if (o instanceof Tome) {
+		if (Tome.isTome(o)) {
 			destroy(o);
 		}
 
@@ -1177,7 +1194,7 @@ ArrayTome.prototype.pop = function () {
 
 		delete this[len];
 
-		if (o instanceof Tome) {
+		if (Tome.isTome(o)) {
 			destroy(o);
 		}
 
@@ -1243,7 +1260,7 @@ ArrayTome.prototype.splice = function (spliceIndex, toRemove) {
 		var o = this[key];
 		delete this[key];
 		this.length = this._arr.length;
-		if (o instanceof Tome) {
+		if (Tome.isTome(o)) {
 			destroy(o);
 		}
 		emitDel(this, key);
@@ -1473,7 +1490,7 @@ ArrayTome.prototype.concat = function () {
 	for (i = 0; i < arglen; i += 1) {
 		var newVal = arguments[i];
 		var newValType = Tome.typeOf(newVal);
-		if (newVal instanceof Tome) {
+		if (Tome.isTome(newVal)) {
 			if (newValType === 'array') {
 				for (j = 0, ken = newVal.length; j < ken; j += 1) {
 					out._arr.push(newVal[j]);
@@ -1522,7 +1539,7 @@ inherits(BooleanTome, Tome);
 exports.BooleanTome = BooleanTome;
 
 BooleanTome.isBooleanTome = function (o) {
-	return o instanceof BooleanTome;
+	return Tome.isTome(o) && Tome.typeOf(o) === 'boolean';
 };
 
 BooleanTome.prototype.toString = function () {
@@ -1562,7 +1579,7 @@ exports.NullTome = NullTome;
 inherits(NullTome, Tome);
 
 NullTome.isNullTome = function (o) {
-	return o instanceof NullTome;
+	return Tome.isTome(o) && Tome.typeOf(o) === 'null';
 };
 
 NullTome.prototype.valueOf = function () {
@@ -1603,7 +1620,7 @@ exports.NumberTome = NumberTome;
 inherits(NumberTome, Tome);
 
 NumberTome.isNumberTome = function (o) {
-	return o instanceof NumberTome;
+	return Tome.isTome(o) && Tome.typeOf(o) === 'number';
 };
 
 NumberTome.prototype.inc = function (val) {
@@ -1665,7 +1682,7 @@ inherits(ObjectTome, Tome);
 exports.ObjectTome = ObjectTome;
 
 ObjectTome.isObjectTome = function (o) {
-	return o instanceof ObjectTome;
+	return Tome.isTome(o) && Tome.typeOf(o) === 'object';
 };
 
 ObjectTome.prototype.typeOf = function () {
@@ -1752,7 +1769,7 @@ exports.StringTome = StringTome;
 inherits(StringTome, Tome);
 
 StringTome.isStringTome = function (o) {
-	return o instanceof StringTome;
+	return Tome.isTome(o) && Tome.typeOf(o) === 'string';
 };
 
 StringTome.prototype.toString = function () {
@@ -1792,7 +1809,7 @@ exports.UndefinedTome = UndefinedTome;
 inherits(UndefinedTome, Tome);
 
 UndefinedTome.isUndefinedTome = function (o) {
-	return o instanceof UndefinedTome;
+	return Tome.isTome(o) && Tome.typeOf(o) === 'undefined';
 };
 
 UndefinedTome.prototype.valueOf = function () {

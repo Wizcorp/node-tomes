@@ -1,6 +1,4 @@
-var tomes = require('../../tomes');
-
-var Tome = tomes.Tome;
+var Tome = require('../..').Tome;
 
 exports.testSwap = function (test) {
 	test.expect(1);
@@ -83,6 +81,27 @@ exports.testSwapChangeTomes = function (test) {
 
 	test.strictEqual(c[0].__root__, c);
 	test.strictEqual(d[4].__root__, d);
+
+	test.done();
+};
+
+exports.testBadSwap = function (test) {
+	test.expect(2);
+
+	var a = { b: { c: 1 }, d: { e: 1} };
+	var b = Tome.conjure(a);
+
+	try {
+		b.swap(b.b, b.d);
+	} catch (e) {
+		test.ok(e instanceof ReferenceError);
+	}
+
+	try {
+		b.swap('b', 'd');
+	} catch (e) {
+		test.ok(e instanceof TypeError);
+	}
 
 	test.done();
 };

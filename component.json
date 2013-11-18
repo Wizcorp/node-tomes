@@ -1,15 +1,14 @@
 {
   "name": "tomes",
-  "repo": "bjornstar/tomes",
+  "repo": "Wizcorp/node-tomes",
   "description": "Evented Storage Agnostic Data API",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "keywords": [ "data", "events" ],
   "dependencies": {
     "component/emitter": "*"
   },
-  "development": {},
   "scripts": [
-    "tomes.js"
+    "index.js"
   ],
-  "main": "tomes.js"
+  "main": "index.js"
 }

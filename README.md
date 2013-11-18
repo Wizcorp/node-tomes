@@ -42,14 +42,15 @@ Tomes API
 ###Tome.conjure( *data* )
 Returns a new Tome containing your data.
 
-###Tome.typeOf( data )
-Returns data's type as a string. Tomes only has types that exist in JSON which are:
+###Tome.typeOf( *data* )
+Returns data's type as a string. Tomes has types that exist in JSON which are:
  - array
  - boolean
  - null
  - number
  - object
  - string
+As well as:
  - undefined
 
 ###Tome.isTome( *data* )
@@ -94,7 +95,10 @@ Move key to tome. Optionally call it newkey on that tome.
 Hides a Tome. The Tome still exists in this tome, but will neither stringify nor show up in any events. Shows up as a delete in change operations.
 
 ###read( )
-Get a single change operation from a Tome, removing it in the process. Returns null if there are no changes.
+Get a single change operation from the root Tome, removing it in the process. Returns null if there are no changes.
+
+###readAll( )
+Get all change operations from the Tome
 
 ###merge( *diff* )
 Applies a change operation or an array of change operations to a Tome.

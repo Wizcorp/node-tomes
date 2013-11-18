@@ -1,7 +1,6 @@
 'use strict';
 
-
-var Tome = require('../../tomes').Tome;
+var Tome = require('../..').Tome;
 
 exports.testRename = function (test) {
 	test.expect(2);
