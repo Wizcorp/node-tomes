@@ -1407,8 +1407,10 @@ ArrayTome.prototype.unshift = function () {
 	return this._arr.length;
 };
 
-ArrayTome.prototype.indexOf = function (searchElement) {
+ArrayTome.prototype.indexOf = function (s) {
 	// straight from MDN, Tomes have to do valueOf instead of ===
+	var searchElement = s ? s.valueOf() : s;
+
 	var t = this._arr;
 	var len = t.length;
 
@@ -1442,8 +1444,10 @@ ArrayTome.prototype.indexOf = function (searchElement) {
 	return -1;
 };
 
-ArrayTome.prototype.lastIndexOf = function (searchElement) {
+ArrayTome.prototype.lastIndexOf = function (s) {
 	// straight from MDN, Tomes have to do valueOf instead of ===
+	var searchElement = s ? s.valueOf() : s;
+
 	var t = this._arr;
 	var len = t.length;
 	

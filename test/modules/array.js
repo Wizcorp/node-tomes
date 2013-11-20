@@ -560,6 +560,44 @@ exports.testArrayIndexOf = function (test) {
 	test.done();
 };
 
+exports.testArrayIndexOfTome = function (test) {
+	var a = [ '24df74c9-dc07-431e-8eec-cb575bf062e6', 'asdf', null, undefined, 17, '*', false, 0, true, 9, true, false, null, undefined, 'asdf', 17 ];
+	var b = Tome.conjure(a);
+
+	test.expect(a.length * 2);
+
+	var i;
+
+	for (i = 0; i < a.length; i += 1) {
+		test.strictEqual(a.indexOf(b[i].valueOf()), b.indexOf(b[i]));
+	}
+
+	for (i = 0; i < a.length; i += 1) {
+		test.strictEqual(a.indexOf(a[i]), b.indexOf(a[i]));
+	}
+
+	test.done();
+};
+
+exports.testArrayIndexOfTome = function (test) {
+	var a = [ '24df74c9-dc07-431e-8eec-cb575bf062e6', 'asdf', null, undefined, 17, '*', false, 0, true, 9, true, false, null, undefined, 'asdf', 17 ];
+	var b = Tome.conjure(a);
+
+	test.expect(a.length * 2);
+
+	var i;
+
+	for (i = 0; i < a.length; i += 1) {
+		test.strictEqual(a.lastIndexOf(b[i].valueOf()), b.lastIndexOf(b[i]));
+	}
+
+	for (i = 0; i < a.length; i += 1) {
+		test.strictEqual(a.lastIndexOf(a[i]), b.lastIndexOf(a[i]));
+	}
+
+	test.done();
+};
+
 exports.testArrayLastIndexOf = function (test) {
 	test.expect(7);
 
