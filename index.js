@@ -954,22 +954,56 @@ Tome.prototype.merge = function (diff) {
 	}
 };
 
-Tome.prototype.swap = function (key, target) {
-	if (!this.hasOwnProperty(key)) {
-		throw new ReferenceError('Tome.swap - Key is not defined: ' + key);
+Tome.prototype.swap = function (arg1, arg2) {
+	var arg2IsKey=false;
+	var key;
+	var key2;
+	var target;
+
+	if (!this.hasOwnProperty(arg1)) {
+		key = this.getElementKey(arg1);
+		if (!key) {
+			throw new ReferenceError('Tome.swap - First argument must be a key or a value');
+		}
+	} else {
+		key = arg1;
 	}
 
-	if (!Tome.isTome(target)) {
-		throw new TypeError('Tome.swap - Target must be a Tome');
+	if (!Tome.isTome(arg2)) {
+		key2 = arg2;
+		if (!this.hasOwnProperty(key2)) {
+			key2 = this.getElementKey(arg2);
+			if (!key2) {
+				throw new ReferenceError('Tome.swap - Second argument must be a Tome or a key or a value');
+			} else {
+				arg2IsKey=true;
+			}
+		} else {
+			arg2IsKey=true;
+		}
+	} else {
+		if (!arg2.hasOwnProperty('__parent__')) {
+			throw new ReferenceError('Tome.swap - Cannot swap to a root Tome');
+		}
 	}
 
-	if (!target.hasOwnProperty('__parent__')) {
-		throw new ReferenceError('Tome.swap - Cannot swap to a root Tome');
-	}
+	var newKey;
+	var newParent;
+	var newRoot;
 
-	var newKey = target.__key__;
-	var newParent = target.__parent__;
-	var newRoot = target.__root__;
+	if (arg2IsKey) {
+		target = this[key2];
+
+		newKey = this[key2].__key__;
+		newParent = this[key2].__parent__;
+		newRoot = this[key2].__root__;
+	} else {
+		target = arg2;
+
+		newKey = target.__key__;
+		newParent = target.__parent__;
+		newRoot = target.__root__;
+	}
 
 	var oldParentChain = Tome.buildChain(this);
 	var newParentChain = Tome.buildChain(newParent);
@@ -982,9 +1016,17 @@ Tome.prototype.swap = function (key, target) {
 
 	var intermediate = this[key];
 
-	target.__parent__ = this;
-	target.__key__ = key;
-	target.__root__ = this.__root__;
+	if (arg2IsKey) {
+		this[key2].__parent__ = this;
+		this[key2].__key__ = key;
+		this[key2].__root__ = this.__root__;
+
+		this[key] = this[key2];
+	} else {
+		target.__parent__ = this;
+		target.__key__ = key;
+		target.__root__ = this.__root__;
+	}
 
 	this[key] = target;
 	newParent[newKey] = intermediate;
@@ -1005,6 +1047,15 @@ Tome.prototype.swap = function (key, target) {
 	}
 
 	return this;
+};
+
+Tome.prototype.getElementKey = function (element) {
+	for (key in this) {
+	    if(this[key] == element){
+	      return key;
+	    }
+	}
+	return null;
 };
 
 Tome.prototype.hide = function (h) {
