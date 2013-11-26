@@ -85,23 +85,183 @@ exports.testSwapChangeTomes = function (test) {
 	test.done();
 };
 
+exports.testSwapArrayKeyKey = function (test) {
+	test.expect(1);
+
+	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg','cheese' ];
+	var b = Tome.conjure(a);
+
+	var intermediate = a[0];
+	a[0] = a[1];
+	a[1] = intermediate;
+
+	b.swap(0, 1);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	test.done();
+};
+
+exports.testSwapArrayValueValue = function (test) {
+	test.expect(1);
+
+	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg','cheese' ];
+	var b = Tome.conjure(a);
+
+	var intermediate = a[0];
+	a[0] = a[1];
+	a[1] = intermediate;
+
+	b.swap('bread', 'bacon');
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	test.done();
+};
+
+exports.testSwapArrayKeyValue = function (test) {
+	test.expect(1);
+
+	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg','cheese' ];
+	var b = Tome.conjure(a);
+
+	var intermediate = a[0];
+	a[0] = a[1];
+	a[1] = intermediate;
+
+	b.swap(0, 'bacon');
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	test.done();
+};
+
+exports.testSwapArrayValueKey = function (test) {
+	test.expect(1);
+
+	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg','cheese' ];
+	var b = Tome.conjure(a);
+
+	var intermediate = a[0];
+	a[0] = a[1];
+	a[1] = intermediate;
+
+	b.swap('bread', 1);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	test.done();
+};
+
+exports.testSwapObjectKeyKey = function (test) {
+	test.expect(1);
+
+	var a = { a: 'bread', b: 'bacon', c: 'lettuce', d: 'tomato', e: 'egg', f: 'cheese' };
+	var b = Tome.conjure(a);
+
+	var intermediate = a.b;
+	a.b = a.d;
+	a.d = intermediate;
+
+	b.swap('b', 'd');
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	test.done();
+};
+
+exports.testSwapObjectValueValue = function (test) {
+	test.expect(1);
+
+	var a = { a: 'bread', b: 'bacon', c: 'lettuce', d: 'tomato', e: 'egg', f: 'cheese' };
+	var b = Tome.conjure(a);
+
+	var intermediate = a.b;
+	a.b = a.d;
+	a.d = intermediate;
+
+	b.swap('bacon', 'tomato');
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	test.done();
+};
+
+exports.testSwapObjectKeyValue = function (test) {
+	test.expect(1);
+
+	var a = { a: 'bread', b: 'bacon', c: 'lettuce', d: 'tomato', e: 'egg', f: 'cheese' };
+	var b = Tome.conjure(a);
+
+	var intermediate = a.b;
+	a.b = a.d;
+	a.d = intermediate;
+
+	b.swap('b', 'tomato');
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	test.done();
+};
+
+exports.testSwapObjectValueKey = function (test) {
+	test.expect(1);
+
+	var a = { a: 'bread', b: 'bacon', c: 'lettuce', d: 'tomato', e: 'egg', f: 'cheese' };
+	var b = Tome.conjure(a);
+
+	var intermediate = a.b;
+	a.b = a.d;
+	a.d = intermediate;
+
+	b.swap('bacon', 'd');
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	test.done();
+};
+
+exports.testSwapObjectValueValue = function (test) {
+	test.expect(1);
+
+	var a = { a: 'bread', b: 'bacon', c: 'lettuce', d: 'tomato', e: 'egg', f: 'cheese' };
+	var b = Tome.conjure(a);
+
+	var intermediate = a.b;
+	a.b = a.d;
+	a.d = intermediate;
+
+	b.swap('bacon', 'tomato');
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	test.done();
+};
+
 exports.testBadSwap = function (test) {
 	test.expect(2);
 
 	var a = { b: { c: 1 }, d: { e: 1} };
 	var b = Tome.conjure(a);
 
-	try {
-		b.swap(b.b, b.d);
-	} catch (e) {
-		test.ok(e instanceof ReferenceError);
-	}
+	var intermediate = a.b;
+	a.b = a.d;
+	a.d = intermediate;
 
-	try {
-		b.swap('b', 'd');
-	} catch (e) {
-		test.ok(e instanceof TypeError);
-	}
+	b.swap(b.b, b.d);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	var x = { b: { c: 1 }, d: { e: 1} };
+	var y = Tome.conjure(x);
+
+	var intermediate2 = x.b;
+	x.b = x.d;
+	x.d = intermediate2;
+
+	y.swap('b', 'd');
+
+	test.strictEqual(JSON.stringify(x), JSON.stringify(y));
 
 	test.done();
 };
