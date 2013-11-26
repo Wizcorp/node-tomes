@@ -238,8 +238,8 @@ exports.testSwapObjectValueValue = function (test) {
 	test.done();
 };
 
-exports.testBadSwap = function (test) {
-	test.expect(2);
+exports.testReferenceSwap = function (test) {
+	test.expect(1);
 
 	var a = { b: { c: 1 }, d: { e: 1} };
 	var b = Tome.conjure(a);
@@ -251,17 +251,6 @@ exports.testBadSwap = function (test) {
 	b.swap(b.b, b.d);
 
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
-
-	var x = { b: { c: 1 }, d: { e: 1} };
-	var y = Tome.conjure(x);
-
-	var intermediate2 = x.b;
-	x.b = x.d;
-	x.d = intermediate2;
-
-	y.swap('b', 'd');
-
-	test.strictEqual(JSON.stringify(x), JSON.stringify(y));
 
 	test.done();
 };
