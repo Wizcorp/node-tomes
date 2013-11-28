@@ -955,107 +955,96 @@ Tome.prototype.merge = function (diff) {
 };
 
 Tome.prototype.swap = function (arg1, arg2) {
-	var arg2IsKey=false;
-	var key;
-	var key2;
-	var target;
+        var arg2IsKey=false;
+        var key;
+        var key2;
+        var target;
 
-	if (!this.hasOwnProperty(arg1)) {
-		key = this.getElementKey(arg1);
-		if (!key) {
-			throw new ReferenceError('Tome.swap - First argument must be a key or a value');
-		}
-	} else {
-		key = arg1;
-	}
-
-	if (!Tome.isTome(arg2)) {
-		key2 = arg2;
-		if (!this.hasOwnProperty(key2)) {
-			key2 = this.getElementKey(arg2);
-			if (!key2) {
-				throw new ReferenceError('Tome.swap - Second argument must be a Tome or a key or a value');
-			} else {
-				arg2IsKey=true;
-			}
-		} else {
-			arg2IsKey=true;
-		}
-	} else {
-		if (!arg2.hasOwnProperty('__parent__')) {
+        if (!this.hasOwnProperty(arg1)) {
+                if (!Tome.isTome(arg1)) {
+                        throw new TypeError('Tome.swap - First argument must be a key or a Tome');
+                } else if (!arg1.hasOwnProperty('__parent__')) {
 			throw new ReferenceError('Tome.swap - Cannot swap to a root Tome');
+		} else {
+			key = arg1.__key__;
 		}
-	}
+        } else {
+                key = arg1;
+        }
 
-	var newKey;
-	var newParent;
-	var newRoot;
+        if (!Tome.isTome(arg2)) {
+                key2 = arg2;
+                if (!this.hasOwnProperty(key2)) {
+                        throw new TypeError('Tome.swap - Second argument must be a Tome or a key');
+                } else {
+                        arg2IsKey=true;
+                }
+        } else {
+                if (!arg2.hasOwnProperty('__parent__')) {
+                        throw new ReferenceError('Tome.swap - Cannot swap to a root Tome');
+                }
+        }
 
-	if (arg2IsKey) {
-		target = this[key2];
+        var newKey;
+        var newParent;
+        var newRoot;
 
-		newKey = this[key2].__key__;
-		newParent = this[key2].__parent__;
-		newRoot = this[key2].__root__;
-	} else {
-		target = arg2;
+        if (arg2IsKey) {
+                target = this[key2];
 
-		newKey = target.__key__;
-		newParent = target.__parent__;
-		newRoot = target.__root__;
-	}
+                newKey = this[key2].__key__;
+                newParent = this[key2].__parent__;
+                newRoot = this[key2].__root__;
+        } else {
+                target = arg2;
 
-	var oldParentChain = Tome.buildChain(this);
-	var newParentChain = Tome.buildChain(newParent);
+                newKey = target.__key__;
+                newParent = target.__parent__;
+                newRoot = target.__root__;
+        }
 
-	var op = { key: key, newParent: newParentChain, newKey: newKey };
+        var oldParentChain = Tome.buildChain(this);
+        var newParentChain = Tome.buildChain(newParent);
 
-	this[key].__key__ = newKey;
-	this[key].__parent__ = newParent;
-	this[key].__root__ = newRoot;
+        var op = { key: key, newParent: newParentChain, newKey: newKey };
 
-	var intermediate = this[key];
+        this[key].__key__ = newKey;
+        this[key].__parent__ = newParent;
+        this[key].__root__ = newRoot;
 
-	if (arg2IsKey) {
-		this[key2].__parent__ = this;
-		this[key2].__key__ = key;
-		this[key2].__root__ = this.__root__;
+        var intermediate = this[key];
 
-		this[key] = this[key2];
-	} else {
-		target.__parent__ = this;
-		target.__key__ = key;
-		target.__root__ = this.__root__;
-	}
+        if (arg2IsKey) {
+                this[key2].__parent__ = this;
+                this[key2].__key__ = key;
+                this[key2].__root__ = this.__root__;
 
-	this[key] = target;
-	newParent[newKey] = intermediate;
+                this[key] = this[key2];
+        } else {
+                target.__parent__ = this;
+                target.__key__ = key;
+                target.__root__ = this.__root__;
+        }
 
-	if (this.typeOf() === 'array') {
-		this._arr[key] = this[key];
-	}
+        this[key] = target;
+        newParent[newKey] = intermediate;
 
-	if (newParent.typeOf() === 'array') {
-		newParent._arr[newKey] = newParent[newKey];
-	}
+        if (this.typeOf() === 'array') {
+                this._arr[key] = this[key];
+        }
 
-	if (this.__root__ === newRoot) {
-		diff(this, 'swap', op, oldParentChain, newParent);
-	} else {
-		diff(newParent, 'set', { key: newKey, val: newParent[newKey].valueOf() });
-		diff(this, 'set', { key: key, val: this[key].valueOf() });
-	}
+        if (newParent.typeOf() === 'array') {
+                newParent._arr[newKey] = newParent[newKey];
+        }
 
-	return this;
-};
+        if (this.__root__ === newRoot) {
+                diff(this, 'swap', op, oldParentChain, newParent);
+        } else {
+                diff(newParent, 'set', { key: newKey, val: newParent[newKey].valueOf() });
+                diff(this, 'set', { key: key, val: this[key].valueOf() });
+        }
 
-Tome.prototype.getElementKey = function (element) {
-	for (key in this) {
-	    if(this[key] == element){
-	      return key;
-	    }
-	}
-	return null;
+        return this;
 };
 
 Tome.prototype.hide = function (h) {
