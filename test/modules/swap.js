@@ -114,14 +114,13 @@ exports.testSwapArrayValueValue = function (test) {
                 test.ok(e instanceof TypeError);
         }
 
-
 	test.done();
 };
 
 exports.testSwapArrayTometome = function (test) {
 	test.expect(1);
 
-	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg','cheese' ];
+	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg', 'cheese' ];
 	var b = Tome.conjure(a);
 
 	var intermediate = a[0];
@@ -138,7 +137,7 @@ exports.testSwapArrayTometome = function (test) {
 exports.testSwapArrayKeyValue = function (test) {
 	test.expect(1);
 
-	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg','cheese' ];
+	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg', 'cheese' ];
 	var b = Tome.conjure(a);
 
 	try {
@@ -153,7 +152,7 @@ exports.testSwapArrayKeyValue = function (test) {
 exports.testSwapArrayKeyTome = function (test) {
 	test.expect(1);
 
-	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg','cheese' ];
+	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg', 'cheese' ];
 	var b = Tome.conjure(a);
 
 	var intermediate = a[0];
@@ -170,7 +169,7 @@ exports.testSwapArrayKeyTome = function (test) {
 exports.testSwapArrayValueKey = function (test) {
 	test.expect(1);
 
-	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg','cheese' ];
+	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg', 'cheese' ];
 	var b = Tome.conjure(a);
 
 	try {
@@ -185,7 +184,7 @@ exports.testSwapArrayValueKey = function (test) {
 exports.testSwapArrayTomeKey = function (test) {
 	test.expect(1);
 
-	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg','cheese' ];
+	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg', 'cheese' ];
 	var b = Tome.conjure(a);
 
 	var intermediate = a[0];
@@ -310,6 +309,24 @@ exports.testSwapObjectTomeKey = function (test) {
 	b.swap(b.b, 'd');
 
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	test.done();
+};
+
+exports.testSwapRoot = function (test) {
+	test.expect(1);
+
+	var a = { a: 'bread', b: 'bacon', c: 'lettuce' };
+	var b = Tome.conjure(a);
+
+	var c = { d: 'tomato', e: 'egg', f: 'cheese' };
+	var d = Tome.conjure(c);
+
+	try {
+                b.swap(b.a, d);
+        } catch (e) {
+                test.ok(e instanceof ReferenceError);
+        }
 
 	test.done();
 };
