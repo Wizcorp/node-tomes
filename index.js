@@ -954,57 +954,89 @@ Tome.prototype.merge = function (diff) {
 	}
 };
 
-Tome.prototype.swap = function (key, target) {
-	if (!this.hasOwnProperty(key)) {
-		throw new ReferenceError('Tome.swap - Key is not defined: ' + key);
+Tome.prototype.swap = function (arg1, arg2) {
+	var arg1IsKey = false;
+	var arg1IsTome = false;
+	var obj1;
+        var key1;
+
+	if (this.hasOwnProperty(arg1)) {
+		arg1IsKey = true;
+		key1 = arg1;
+		obj1 = this;
 	}
-
-	if (!Tome.isTome(target)) {
-		throw new TypeError('Tome.swap - Target must be a Tome');
+	if (!arg1IsKey && Tome.isTome(arg1)) {
+		arg1IsTome = true;
+		obj1 = arg1.getParent();
+		key1 = arg1.__key__;
 	}
-
-	if (!target.hasOwnProperty('__parent__')) {
-		throw new ReferenceError('Tome.swap - Cannot swap to a root Tome');
+	if (!arg1IsKey && !arg1IsTome) {
+		throw new TypeError('Tome.swap - First argument must be a key or a Tome');
 	}
+	if (arg1IsTome && !arg1.hasOwnProperty('__parent__')) {
+                throw new ReferenceError('Tome.swap - Cannot swap to a root Tome');
+        }
 
-	var newKey = target.__key__;
-	var newParent = target.__parent__;
-	var newRoot = target.__root__;
+        var arg2IsKey = false;
+	var arg2IsTome = false;
+        var obj2;
+        var key2;
 
-	var oldParentChain = Tome.buildChain(this);
-	var newParentChain = Tome.buildChain(newParent);
-
-	var op = { key: key, newParent: newParentChain, newKey: newKey };
-
-	this[key].__key__ = newKey;
-	this[key].__parent__ = newParent;
-	this[key].__root__ = newRoot;
-
-	var intermediate = this[key];
-
-	target.__parent__ = this;
-	target.__key__ = key;
-	target.__root__ = this.__root__;
-
-	this[key] = target;
-	newParent[newKey] = intermediate;
-
-	if (this.typeOf() === 'array') {
-		this._arr[key] = this[key];
+	if (this.hasOwnProperty(arg2)) {
+		arg2IsKey = true;
+		key2 = arg2;
+		obj2 = this;
 	}
-
-	if (newParent.typeOf() === 'array') {
-		newParent._arr[newKey] = newParent[newKey];
+	if (!arg2IsKey && Tome.isTome(arg2)) {
+		arg2IsTome = true;
+		obj2 = arg2.getParent();
+		key2 = arg2.__key__;
 	}
-
-	if (this.__root__ === newRoot) {
-		diff(this, 'swap', op, oldParentChain, newParent);
-	} else {
-		diff(newParent, 'set', { key: newKey, val: newParent[newKey].valueOf() });
-		diff(this, 'set', { key: key, val: this[key].valueOf() });
+	if (!arg2IsKey && !arg2IsTome) {
+		throw new TypeError('Tome.swap - Second argument must be a key or a Tome');
 	}
+	if (arg2IsTome && !arg2.hasOwnProperty('__parent__')) {
+                throw new ReferenceError('Tome.swap - Cannot swap to a root Tome');
+        }
 
-	return this;
+        var newKey = obj2[key2].__key__;
+        var newParent = obj2[key2].__parent__;
+        var newRoot = obj2[key2].__root__;
+
+        var oldParentChain = Tome.buildChain(obj1);
+        var newParentChain = Tome.buildChain(newParent);
+
+        var op = { key: key1, newParent: newParentChain, newKey: newKey };
+
+        obj1[key1].__key__ = newKey;
+        obj1[key1].__parent__ = newParent;
+        obj1[key1].__root__ = newRoot;
+
+        var intermediate = obj1[key1];
+
+        obj2[key2].__parent__ = obj1;
+        obj2[key2].__key__ = key1;
+        obj2[key2].__root__ = obj1.__root__;
+
+        obj1[key1] = obj2[key2];
+        newParent[newKey] = intermediate;
+
+        if (obj1.typeOf() === 'array') {
+                obj1._arr[key1] = obj1[key1];
+        }
+
+        if (newParent.typeOf() === 'array') {
+                newParent._arr[newKey] = newParent[newKey];
+        }
+
+        if (obj1.__root__ === newRoot) {
+                diff(obj1, 'swap', op, oldParentChain, newParent);
+        } else {
+                diff(newParent, 'set', { key: newKey, val: newParent[newKey].valueOf() });
+                diff(obj1, 'set', { key: key1, val: obj1[key1].valueOf() });
+        }
+
+        return this;
 };
 
 Tome.prototype.hide = function (h) {
