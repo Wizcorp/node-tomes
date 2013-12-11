@@ -106,6 +106,47 @@ exports.testSwapArrayValueValue = function (test) {
 	test.expect(1);
 
 	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg','cheese' ];
+<<<<<<< HEAD
+	var b = Tome.conjure(a);
+
+	try {
+		b.swap('bread', 'bacon');
+	} catch (e) {
+		test.ok(e instanceof TypeError);
+	}
+
+	test.done();
+};
+
+exports.testSwapArrayTometome = function (test) {
+	test.expect(1);
+
+	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg', 'cheese' ];
+	var b = Tome.conjure(a);
+
+	var intermediate = a[0];
+	a[0] = a[1];
+	a[1] = intermediate;
+
+	b.swap(b[0], b[1]);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	test.done();
+};
+
+exports.testSwapArrayKeyValue = function (test) {
+	test.expect(1);
+
+	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg', 'cheese' ];
+	var b = Tome.conjure(a);
+
+	try {
+		b.swap(0, 'bacon');
+	} catch (e) {
+		test.ok(e instanceof TypeError);
+	}
+=======
 	var b = Tome.conjure(a);
 
 	try {
@@ -145,6 +186,7 @@ exports.testSwapArrayKeyValue = function (test) {
         } catch (e) {
                 test.ok(e instanceof TypeError);
         }
+>>>>>>> 77091e4f20007b7ef4228cd7025159b3cb0f2a92
 
 	test.done();
 };
@@ -171,12 +213,13 @@ exports.testSwapArrayValueKey = function (test) {
 
 	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg', 'cheese' ];
 	var b = Tome.conjure(a);
+<<<<<<< HEAD
 
 	try {
-                b.swap('bread', 1);
-        } catch (e) {
-                test.ok(e instanceof TypeError);
-        }
+		b.swap('bread', 1);
+	} catch (e) {
+		test.ok(e instanceof TypeError);
+	}
 
 	test.done();
 };
@@ -215,6 +258,98 @@ exports.testSwapObjectKeyKey = function (test) {
 	test.done();
 };
 
+exports.testSwapObjectValueValue = function (test) {
+	test.expect(1);
+
+	var a = { a: 'bread', b: 'bacon', c: 'lettuce', d: 'tomato', e: 'egg', f: 'cheese' };
+	var b = Tome.conjure(a);
+
+	try {
+		b.swap('bread', 'bacon');
+	} catch (e) {
+		test.ok(e instanceof TypeError);
+	}
+=======
+>>>>>>> 77091e4f20007b7ef4228cd7025159b3cb0f2a92
+
+	test.done();
+};
+
+exports.testSwapObjectTomeTome = function (test) {
+	test.expect(1);
+
+	var a = { a: 'bread', b: 'bacon', c: 'lettuce', d: 'tomato', e: 'egg', f: 'cheese' };
+	var b = Tome.conjure(a);
+
+	var intermediate = a.b;
+	a.b = a.d;
+	a.d = intermediate;
+
+	b.swap(b.b, b.d);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	test.done();
+};
+
+exports.testSwapObjectKeyValue = function (test) {
+	test.expect(1);
+
+	var a = { a: 'bread', b: 'bacon', c: 'lettuce', d: 'tomato', e: 'egg', f: 'cheese' };
+	var b = Tome.conjure(a);
+
+	try {
+<<<<<<< HEAD
+		b.swap('a', 'bacon');
+	} catch (e) {
+		test.ok(e instanceof TypeError);
+	}
+=======
+                b.swap('bread', 1);
+        } catch (e) {
+                test.ok(e instanceof TypeError);
+        }
+
+	test.done();
+};
+
+exports.testSwapArrayTomeKey = function (test) {
+	test.expect(1);
+
+	var a = [ 'bread', 'bacon', 'lettuce', 'tomato', 'egg', 'cheese' ];
+	var b = Tome.conjure(a);
+
+	var intermediate = a[0];
+	a[0] = a[1];
+	a[1] = intermediate;
+
+	b.swap(b[0], 1);
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+
+	test.done();
+};
+
+exports.testSwapObjectKeyKey = function (test) {
+	test.expect(1);
+
+	var a = { a: 'bread', b: 'bacon', c: 'lettuce', d: 'tomato', e: 'egg', f: 'cheese' };
+	var b = Tome.conjure(a);
+
+	var intermediate = a.b;
+	a.b = a.d;
+	a.d = intermediate;
+
+	b.swap('b', 'd');
+
+	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
+>>>>>>> 77091e4f20007b7ef4228cd7025159b3cb0f2a92
+
+	test.done();
+};
+
+<<<<<<< HEAD
+=======
 exports.testSwapObjectValueValue = function (test) {
 	test.expect(1);
 
@@ -262,6 +397,7 @@ exports.testSwapObjectKeyValue = function (test) {
 	test.done();
 };
 
+>>>>>>> 77091e4f20007b7ef4228cd7025159b3cb0f2a92
 exports.testSwapObjectKeyTome = function (test) {
 	test.expect(1);
 
@@ -279,8 +415,11 @@ exports.testSwapObjectKeyTome = function (test) {
 	test.done();
 };
 
+<<<<<<< HEAD
+=======
 
 
+>>>>>>> 77091e4f20007b7ef4228cd7025159b3cb0f2a92
 exports.testSwapObjectValueKey = function (test) {
 	test.expect(1);
 
@@ -288,10 +427,17 @@ exports.testSwapObjectValueKey = function (test) {
 	var b = Tome.conjure(a);
 
 	try {
+<<<<<<< HEAD
+		b.swap('bread', 'b');
+	} catch (e) {
+		test.ok(e instanceof TypeError);
+	}
+=======
                 b.swap('bread', 'b');
         } catch (e) {
                 test.ok(e instanceof TypeError);
         }
+>>>>>>> 77091e4f20007b7ef4228cd7025159b3cb0f2a92
 
 	test.done();
 };
@@ -323,10 +469,17 @@ exports.testSwapRoot = function (test) {
 	var d = Tome.conjure(c);
 
 	try {
+<<<<<<< HEAD
+		b.swap(b.a, d);
+	} catch (e) {
+		test.ok(e instanceof ReferenceError);
+	}
+=======
                 b.swap(b.a, d);
         } catch (e) {
                 test.ok(e instanceof ReferenceError);
         }
+>>>>>>> 77091e4f20007b7ef4228cd7025159b3cb0f2a92
 
 	test.done();
 };
