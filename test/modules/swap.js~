@@ -109,10 +109,10 @@ exports.testSwapArrayValueValue = function (test) {
 	var b = Tome.conjure(a);
 
 	try {
-		b.swap('bread', 'bacon');
-	} catch (e) {
-		test.ok(e instanceof TypeError);
-	}
+                b.swap('bread', 'bacon');
+        } catch (e) {
+                test.ok(e instanceof TypeError);
+        }
 
 	test.done();
 };
@@ -141,10 +141,10 @@ exports.testSwapArrayKeyValue = function (test) {
 	var b = Tome.conjure(a);
 
 	try {
-		b.swap(0, 'bacon');
-	} catch (e) {
-		test.ok(e instanceof TypeError);
-	}
+                b.swap(0, 'bacon');
+        } catch (e) {
+                test.ok(e instanceof TypeError);
+        }
 
 	test.done();
 };
@@ -173,10 +173,10 @@ exports.testSwapArrayValueKey = function (test) {
 	var b = Tome.conjure(a);
 
 	try {
-		b.swap('bread', 1);
-	} catch (e) {
-		test.ok(e instanceof TypeError);
-	}
+                b.swap('bread', 1);
+        } catch (e) {
+                test.ok(e instanceof TypeError);
+        }
 
 	test.done();
 };
@@ -222,10 +222,10 @@ exports.testSwapObjectValueValue = function (test) {
 	var b = Tome.conjure(a);
 
 	try {
-		b.swap('bread', 'bacon');
-	} catch (e) {
-		test.ok(e instanceof TypeError);
-	}
+                b.swap('bread', 'bacon');
+        } catch (e) {
+                test.ok(e instanceof TypeError);
+        }
 
 	test.done();
 };
@@ -254,10 +254,10 @@ exports.testSwapObjectKeyValue = function (test) {
 	var b = Tome.conjure(a);
 
 	try {
-		b.swap('a', 'bacon');
-	} catch (e) {
-		test.ok(e instanceof TypeError);
-	}
+                b.swap('a', 'bacon');
+        } catch (e) {
+                test.ok(e instanceof TypeError);
+        }
 
 	test.done();
 };
@@ -279,6 +279,8 @@ exports.testSwapObjectKeyTome = function (test) {
 	test.done();
 };
 
+
+
 exports.testSwapObjectValueKey = function (test) {
 	test.expect(1);
 
@@ -286,10 +288,10 @@ exports.testSwapObjectValueKey = function (test) {
 	var b = Tome.conjure(a);
 
 	try {
-		b.swap('bread', 'b');
-	} catch (e) {
-		test.ok(e instanceof TypeError);
-	}
+                b.swap('bread', 'b');
+        } catch (e) {
+                test.ok(e instanceof TypeError);
+        }
 
 	test.done();
 };
@@ -321,10 +323,10 @@ exports.testSwapRoot = function (test) {
 	var d = Tome.conjure(c);
 
 	try {
-		b.swap(b.a, d);
-	} catch (e) {
-		test.ok(e instanceof ReferenceError);
-	}
+                b.swap(b.a, d);
+        } catch (e) {
+                test.ok(e instanceof ReferenceError);
+        }
 
 	test.done();
 };
