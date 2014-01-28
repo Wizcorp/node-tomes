@@ -1151,3 +1151,34 @@ exports.testSpliceKeys = function (test) {
 
 	test.done();
 };
+
+exports.testCircularEntries = function (test) {
+	test.expect(4);
+
+	function CircularReference() {
+		this.references = [ this ];
+	}
+
+	var circRefs = new CircularReference();
+
+	test.throws(function () {
+		var b = Tome.conjure(circRefs);
+	}, TypeError);
+
+	test.throws(function () {
+		var b = Tome.conjure([ circRefs ]);
+	}, TypeError);
+
+	var a = [ null, null, null, null ];
+	var b = Tome.conjure(a);
+
+	test.throws(function () {
+		b.assign(circRefs);
+	}, TypeError);
+
+	test.throws(function () {
+		b[0].assign(circRefs);
+	}, TypeError);
+
+	test.done();
+}

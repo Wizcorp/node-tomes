@@ -59,10 +59,35 @@ exports.unTomeArray = function (test) {
 exports.unTomeComplex = function (test) {
 	test.expect(1);
 
-	var a = { a: { b: true, c: undefined, d: null, e: [ 0, 1, 'hi', 'cat' ], f: { g: false } } };
+	var a = { a: { b: true, c: undefined, d: null, e: [ 0, 1, 'hi', 'cat' ], f: { g: false } }, h: undefined, i: 1, j: false };
 	var b = Tome.conjure(a);
 
 	test.strictEqual(trueName(a), trueName(Tome.unTome(b)));
+
+	test.done();
+};
+
+exports.unTomeRepeated = function (test) {
+	test.expect(1);
+	var a = [ undefined, undefined, undefined, undefined ];
+	test.doesNotThrow(function () {
+		var b = Tome.unTome(a);
+	});
+	test.done();
+}
+
+exports.unTomeCircularReference = function (test) {
+	test.expect(1);
+
+	function CircularReference() {
+		this.circularReference = this;
+	}
+
+	var circRefs = new CircularReference();
+
+	test.throws(function () {
+		var b = Tome.unTome(circRefs);
+	}, TypeError, 'expected a TypeError');
 
 	test.done();
 };

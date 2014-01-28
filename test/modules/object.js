@@ -304,3 +304,34 @@ exports.testObjectIs = function (test) {
 
 	test.done();
 };
+
+exports.testCircularReferences = function (test) {
+	test.expect(4);
+
+	function CircularReferences() {
+		this.circularReference = this;
+	}
+
+	var circRefs = new CircularReferences();
+
+	test.throws(function () {
+		var b = Tome.conjure(circRefs);
+	}, TypeError, 'expected a TypeError');
+
+	test.throws(function () {
+		var b = Tome.conjure({ a: circRefs });
+	}, TypeError, 'expected a TypeError');
+
+	var a = { b: 1 };
+	var b = Tome.conjure(a);
+
+	test.throws(function () {
+		b.assign(circRefs);
+	}, TypeError, 'expected a TypeError');
+
+	test.throws(function () {
+		b.b.assign(circRefs);
+	}, TypeError, 'expected a TypeError');
+
+	test.done();
+};

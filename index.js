@@ -210,40 +210,56 @@ Tome.buildChain = function (tome) {
 	return chain.reverse();
 };
 
-Tome.unTome = function (tome) {
-	var out, keys;
+Tome.unTome = function (o) {
+	var seen = [ o ];
 
-	var tomeType = Tome.typeOf(tome);
+	function unTome(tome) {
+		var out, keys;
 
-	switch (tomeType) {
-	case 'object':
-		out = {};
-		keys = Object.keys(tome);
-		break;
-	case 'array':
-		out = new Array(tome.length);
-		keys = Object.keys(tome);
-		break;
-	case 'undefined':
-		out = undefined;
-		break;
-	case 'null':
-		out = null;
-		break;
-	default:
-		out = tome.valueOf();
-		break;
-	}
+		var tomeType = Tome.typeOf(tome);
 
-	if (!keys) {
+		switch (tomeType) {
+		case 'object':
+			out = {};
+			keys = Object.keys(tome);
+			break;
+		case 'array':
+			out = new Array(tome.length);
+			keys = Object.keys(tome);
+			break;
+		case 'undefined':
+			out = undefined;
+			break;
+		case 'null':
+			out = null;
+			break;
+		default:
+			out = tome.valueOf();
+			break;
+		}
+
+		if (!keys) {
+			return out;
+		}
+
+		for (var i = 0; i < keys.length; i += 1) {
+			var key = keys[i];
+
+			if (Tome.typeOf(tome[key]) === 'object' || Tome.typeOf(tome[key]) === 'array') {
+				if (seen.indexOf(tome[key]) !== -1) {
+					throw new TypeError('Converting circular structure to Tome');
+				}
+
+				seen.push(tome[key]);
+			}
+
+			out[key] = unTome(tome[key]);
+		}
+
 		return out;
 	}
 
-	for (var i = 0; i < keys.length; i += 1) {
-		var key = keys[i];
-		out[key] = Tome.unTome(tome[key]);
-	}
-	return out;
+	return unTome(o);
 };
 
 function markDirty(tome, dirtyAt, was) {
@@ -284,7 +300,7 @@ function diff(tome, op, val, chain, pair, was) {
 	}
 }
 
-function arrayInit(tome, val) {
+function arrayInit(tome, val, seen) {
 
 	// An ArrayTome has two non-enumerable properties:
 	//  -   _arr: Holds the actual array that we reference.
@@ -319,7 +335,19 @@ function arrayInit(tome, val) {
 	// a property for that element.
 
 	for (var i = 0; i < len; i += 1) {
-		tome._arr[i] = Tome.conjure(val[i], tome, i);
+		if (Tome.typeOf(val[i]) === 'object' || Tome.typeOf(val[i]) === 'array') {
+			if (!seen) {
+				seen = [];
+			}
+
+			if (seen.indexOf(val[i]) !== -1) {
+				throw new TypeError('Converting circular structure to Tome');
+			}
+
+			seen.push(val[i]);
+		}
+
+		tome._arr[i] = conjure(val[i], tome, i, seen);
 		
 		// We use hasOwnProperty here because arrays instantiated with new
 		// have elements, but no keys ie. new Array(1) is different from
@@ -344,8 +372,7 @@ function arrayInit(tome, val) {
 function emptyInit() {
 }
 
-function objectInit(tome, val) {
-
+function objectInit(tome, val, seen) {
 	// An ObjectTome is a Tome that holds other Tomes. It has no
 	// non-enumerable properties. Every property of an ObjectTome is an
 	// instance of another Tome.
@@ -358,14 +385,39 @@ function objectInit(tome, val) {
 	// leave that property out. This is different behavior from arrays
 	// which will stringify undefined elements to null.
 
-	var added = Object.keys(val);
-	var len = added.length;
-	var k;
+	var keys = Object.keys(val);
+	var len = keys.length;
+	var key;
 
 	for (var i = 0; i < len; i += 1) {
-		k = added[i];
-		var kv = val[k];
-		tome[k] = kv === undefined ? undefined : Tome.conjure(kv, tome, k);
+		key = keys[i];
+
+		var kv = val[key];
+
+		// Here we are detecting circular references, they can only exist
+		// within objects & arrays so we check that first.
+
+		var kvType = Tome.typeOf(kv);
+		if (kvType === 'object' || kvType === 'array') {
+			// there are multiple entry points to objectInit, primarily through
+			// Tome.conjure, but also inside of assign. If we come in via
+			// assign, seen will be empty so we can initialize it here since 
+			// this is the starting point for any objects that get conjured
+			// that way.
+
+			if (!seen) {
+				seen = [];
+			}
+
+			if (seen.indexOf(kv) !== -1) {
+				throw new TypeError('Converting circular structure to Tome');
+			}
+
+			seen.push(kv);
+		}
+
+
+		tome[key] = kv === undefined ? undefined : conjure(kv, tome, key, seen);
 	}
 
 	// Just like with arrays, we only want to emit add after we are done
@@ -375,8 +427,8 @@ function objectInit(tome, val) {
 	// undefined keys.
 
 	for (i = 0; i < len; i += 1) {
-		k = added[i];
-		emitAdd(tome, k);
+		key = keys[i];
+		emitAdd(tome, key);
 	}
 }
 
@@ -499,8 +551,7 @@ Tome.typeOf = function (v) {
 	return typeof v;
 };
 
-Tome.conjure = function (val, parent, key) {
-
+function conjure(val, parent, key, seen) {
 	// We instantiate a new Tome object by using the Tome.conjure method.
 	// It will return a new Tome of the appropriate type for our value with Tome
 	// inherited. This is also how we pass parent into our Tome so we can signal
@@ -523,9 +574,16 @@ Tome.conjure = function (val, parent, key) {
 	}
 
 	var newTome = new ClassRef(parent, key);
-	vInit(newTome, val);
+	vInit(newTome, val, seen);
 
 	return newTome;
+}
+
+
+Tome.conjure = function (val, parent, key) {
+	var seen = [ val ];
+
+	return conjure(val, parent, key, seen);
 };
 
 Tome.destroy = function (tome) {
