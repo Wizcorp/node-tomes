@@ -294,3 +294,14 @@ exports.testNumberWasInc = function (test) {
 
 	test.done();
 };
+
+exports.toLocaleString = function (test) {
+	test.expect(1);
+
+	var a = 1234567.8901;
+	var b = Tome.conjure(a);
+
+	test.strictEqual(a.toLocaleString(), b.toLocaleString());
+
+	test.done();
+};

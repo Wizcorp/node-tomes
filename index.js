@@ -272,7 +272,7 @@ function markDirty(tome, dirtyAt, was) {
 	if (!tome.__hidden__) {
 		tome.emit('readable', was);
 	}
-	
+
 	if (tome.hasOwnProperty('__parent__')) {
 		markDirty(tome.__parent__, dirtyAt);
 	}
@@ -348,7 +348,7 @@ function arrayInit(tome, val, seen) {
 		}
 
 		tome._arr[i] = conjure(val[i], tome, i, seen);
-		
+
 		// We use hasOwnProperty here because arrays instantiated with new
 		// have elements, but no keys ie. new Array(1) is different from
 		// [undefined].
@@ -364,7 +364,7 @@ function arrayInit(tome, val, seen) {
 		// Otherwise, we would have unassigned values in the array.
 		// Additionally, we always emit the value from _arr since the key may
 		// not exist.
-	
+
 		emitAdd(tome, i);
 	}
 }
@@ -401,7 +401,7 @@ function objectInit(tome, val, seen) {
 		if (kvType === 'object' || kvType === 'array') {
 			// there are multiple entry points to objectInit, primarily through
 			// Tome.conjure, but also inside of assign. If we come in via
-			// assign, seen will be empty so we can initialize it here since 
+			// assign, seen will be empty so we can initialize it here since
 			// this is the starting point for any objects that get conjured
 			// that way.
 
@@ -526,7 +526,7 @@ Tome.isTome = function (o) {
 	}
 
 	// It's only a tome if the prototype's prototype's constructor is called 'Tome'
-	
+
 	return o.__proto__ && o.__proto__.__proto__ && o.__proto__.__proto__.constructor && o.__proto__.__proto__.constructor.name === 'Tome';
 };
 
@@ -716,6 +716,8 @@ Tome.prototype.set = function (key, val) {
 };
 
 Tome.prototype.assign = function (val) {
+
+	val = Tome.unTome(val);
 
 	// First we need to get the type of the value and the type of the Tome to
 	// ensure we match the Tome type to the value type.
@@ -1244,10 +1246,10 @@ ArrayTome.prototype.pop = function () {
 
 	var out = this._arr.pop();
 	var len = this._arr.length;
-	
+
 	if (oldlen > len) {
 		this.length = len;
-		
+
 		var o = this[len];
 
 		delete this[len];
@@ -1441,9 +1443,9 @@ ArrayTome.prototype.unshift = function () {
 	var arglen = arguments.length;
 	if (arglen) {
 		var args, i, len;
-		
+
 		args = new Array(arglen);
-		
+
 		for (i = arglen - 1; i >= 0; i -= 1) {
 			this._arr.unshift(Tome.conjure(arguments[i], this, i));
 			args[i] = arguments[i];
@@ -1477,7 +1479,7 @@ ArrayTome.prototype.indexOf = function (s) {
 	}
 
 	var n = 0;
-	
+
 	if (arguments.length > 1) {
 		n = Number(arguments[1]);
 		if (n !== n) { // shortcut for verifying if it's NaN
@@ -1486,19 +1488,19 @@ ArrayTome.prototype.indexOf = function (s) {
 			n = (n > 0 || -1) * Math.floor(Math.abs(n));
 		}
 	}
-	
+
 	if (n >= len) {
 		return -1;
 	}
-	
+
 	var k = n >= 0 ? n : Math.max(len - Math.abs(n), 0);
-	
+
 	for (; k < len; k += 1) {
 		if (k in t && t[k].valueOf() === searchElement) {
 			return k;
 		}
 	}
-	
+
 	return -1;
 };
 
@@ -1508,13 +1510,13 @@ ArrayTome.prototype.lastIndexOf = function (s) {
 
 	var t = this._arr;
 	var len = t.length;
-	
+
 	if (len === 0) {
 		return -1;
 	}
 
 	var n = len;
-	
+
 	if (arguments.length > 1) {
 		n = Number(arguments[1]);
 		if (n !== n) { // shortcut for verifying if it's NaN
@@ -1523,15 +1525,15 @@ ArrayTome.prototype.lastIndexOf = function (s) {
 			n = (n > 0 || -1) * Math.floor(Math.abs(n));
 		}
 	}
-	
+
 	var k = n >= 0 ? Math.min(n, len - 1) : len - Math.abs(n);
-	
+
 	for (; k >= 0; k -= 1) {
 		if (k in t && t[k].valueOf() === searchElement) {
 			return k;
 		}
 	}
-	
+
 	return -1;
 };
 
@@ -1724,6 +1726,14 @@ NumberTome.prototype.toJSON = function () {
 		return this._val;
 	}
 };
+
+NumberTome.prototype.toLocaleString = function () {
+	// Browsers don't seem to call valueOf before executing toLocaleString so
+	// we do it for them.
+
+	return this._val.toLocaleString();
+};
+
 
 //   ______   __                                      __
 //  /      \ |  \                                    |  \
