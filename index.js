@@ -530,8 +530,14 @@ Tome.isTome = function (o) {
 		return true;
 	}
 
+	var proto;
 	// Getting the prototype's prototype's of the object
-	var proto = Object.getPrototypeOf(Object.getPrototypeOf(o));
+	// Recent browsers use the folowing method instead of the getter `__proto__`
+	if (Object.hasOwnProperty('getPrototypeOf')) {
+		proto = Object.getPrototypeOf(Object.getPrototypeOf(o));
+	} else {
+		proto = o.__proto__ && o.__proto__.__proto__;
+	}
 	if (!proto || !proto.constructor) {
 		return false;
 	}
