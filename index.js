@@ -521,14 +521,32 @@ exports.Tome = Tome;
 
 Tome.isTome = function (o) {
 	// If it's literally undefined or null, it's not a Tome.
-	if (o === undefined || o === null) {
+	if (o === undefined || o === null || typeof o !== 'object') {
 		return false;
 	}
 
-	// It's only a tome if the prototype's prototype's constructor is called 'Tome'
+	// If it's inherit from the local Tome then it's obviously a Tome
+	if (o instanceof Tome) {
+		return true;
+	}
 
-	return o.__proto__ && o.__proto__.__proto__ && o.__proto__.__proto__.constructor && o.__proto__.__proto__.constructor.name === 'Tome';
+	var proto;
+	// Getting the prototype's prototype's of the object
+	// Recent browsers use the folowing method instead of the getter `__proto__`
+	if (Object.hasOwnProperty('getPrototypeOf')) {
+		proto = Object.getPrototypeOf(Object.getPrototypeOf(o));
+	} else {
+		proto = o.__proto__ && o.__proto__.__proto__;
+	}
+	if (!proto || !proto.constructor) {
+		return false;
+	}
+
+	// It's only a tome if the constructor is called 'Tome'
+	var name = proto.constructor.name || proto.constructor.toString().match(/function (\w*)/)[1];
+	return name === 'Tome';
 };
+
 
 Tome.typeOf = function (v) {
 
