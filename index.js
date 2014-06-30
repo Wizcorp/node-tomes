@@ -1085,6 +1085,30 @@ Tome.prototype.swap = function (key, target) {
 	return this;
 };
 
+// Sync last diff between two tomes
+Tome.prototype.sync = function (target) {
+    var diff = this.read();
+    if (diff) {
+        target.merge(diff);
+    }
+    target.read(); // clear the diffs from the merge
+};
+
+// Sync all diffs between two tomes
+Tome.prototype.syncAll = function (target) {
+    var diffs = this.readAll();
+    if(diffs.length < 1)
+        return;
+
+    for (var i = 0; i < diffs.length; i++) {
+        var diff = diffs[i];
+        if (diff) {
+            target.merge(diff);
+        }
+        target.read();
+    }
+};
+
 Tome.prototype.hide = function (h) {
 	if (h === undefined) {
 		h = true;
