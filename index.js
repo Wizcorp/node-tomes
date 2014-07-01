@@ -1100,10 +1100,12 @@ Tome.prototype.syncAll = function (target) {
     if (diffs.length < 1)
         return;
 
-    if (diffs) {
-        target.merge(diffs);
+    var targets = Tome.typeOf(target) === 'array' ? target : [ target ];
+
+    for (var i = 0, len = targets.length; i < len; i++) {
+        targets[i].merge(diffs);
+        targets[i].readAll();
     }
-    target.readAll();
 };
 
 Tome.prototype.hide = function (h) {
