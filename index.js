@@ -1097,16 +1097,13 @@ Tome.prototype.sync = function (target) {
 // Sync all diffs between two tomes
 Tome.prototype.syncAll = function (target) {
     var diffs = this.readAll();
-    if(diffs.length < 1)
+    if (diffs.length < 1)
         return;
 
-    for (var i = 0; i < diffs.length; i++) {
-        var diff = diffs[i];
-        if (diff) {
-            target.merge(diff);
-        }
-        target.read();
+    if (diffs) {
+        target.merge(diffs);
     }
+    target.readAll();
 };
 
 Tome.prototype.hide = function (h) {
