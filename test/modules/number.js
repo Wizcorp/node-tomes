@@ -173,7 +173,7 @@ exports.testNumberDelete = function (test) {
 };
 
 exports.testNumberInc = function (test) {
-	test.expect(2);
+	test.expect(3);
 
 	var a = 44;
 	var b = Tome.conjure(a);
@@ -187,6 +187,10 @@ exports.testNumberInc = function (test) {
 
 	a = a - 10;
 	b.inc(-10);
+
+	var c = Tome.conjure(15);
+	a = a + 15;
+	b.inc(c);
 
 	test.done();
 };
