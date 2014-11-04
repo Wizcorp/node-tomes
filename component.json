@@ -2,13 +2,12 @@
   "name": "tomes",
   "repo": "Wizcorp/node-tomes",
   "description": "Evented Storage Agnostic Data API",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "keywords": [ "data", "events" ],
   "dependencies": {
     "component/emitter": "*"
   },
   "scripts": [
     "index.js"
-  ],
-  "main": "index.js"
+  ]
 }

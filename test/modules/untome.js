@@ -74,7 +74,7 @@ exports.unTomeRepeated = function (test) {
 		var b = Tome.unTome(a);
 	});
 	test.done();
-}
+};
 
 exports.unTomeCircularReference = function (test) {
 	test.expect(1);

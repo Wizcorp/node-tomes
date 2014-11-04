@@ -1,5 +1,3 @@
-'use strict';
-
 var Tome = require('../..').Tome;
 
 exports.testRename = function (test) {
@@ -46,8 +44,6 @@ exports.testRenameDel = function (test) {
 
 	delete a.b.d;
 	b.b.del('d');
-
-
 
 	test.strictEqual(JSON.stringify(a), JSON.stringify(b));
 	test.strictEqual(JSON.stringify(b), JSON.stringify(c));

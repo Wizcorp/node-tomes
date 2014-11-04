@@ -173,13 +173,13 @@ exports.testNumberDelete = function (test) {
 };
 
 exports.testNumberInc = function (test) {
-	test.expect(2);
+	test.expect(3);
 
 	var a = 44;
 	var b = Tome.conjure(a);
 
 	b.on('readable', function () {
-		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2
+		test.strictEqual(JSON.stringify(a), JSON.stringify(b)); // 1, 2, 3
 	});
 
 	a = a + 1;
@@ -187,6 +187,10 @@ exports.testNumberInc = function (test) {
 
 	a = a - 10;
 	b.inc(-10);
+
+	var c = Tome.conjure(-7.453);
+	a = a + c;
+	b.inc(c);
 
 	test.done();
 };
