@@ -1,5 +1,11 @@
 #Tomes Release Notes
 
+##0.1.0
+ * Removed the hide method, it was useless and only increased code complexity.
+ * Added nodei.co badge.
+ * Added node v0.11 back to travis, maybe it will work now.
+ * unset executable bit from files.
+
 ##0.0.22
  * inc now takes NumberTomes
  * Added this `HISTORY.md` file
