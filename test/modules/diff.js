@@ -6,12 +6,12 @@ exports.testDiffSimpleString = function (test) {
 	var a = 'asdf';
 	var b = Tome.conjure(a);
 	var c = Tome.conjure(a);
-	
+
 	b.on('readable', function () {
 		var diff = b.read();
 		c.merge(diff);
 	});
-	
+
 	a = 'fdsa';
 	b.assign('fdsa');
 
@@ -323,30 +323,6 @@ exports.testDiffSplice = function (test) {
 	test.done();
 };
 
-exports.testDiffHide = function (test) {
-	test.expect(2);
-
-	var a = [ { foo: 0, bar: 1 } ];
-	var b = Tome.conjure(a);
-	var c = Tome.conjure(a);
-
-	b.on('readable', function () {
-		var diff = b.read();
-		c.merge(diff);
-	});
-
-	delete a[0].foo;
-	a[0].bar += 1;
-
-	b[0].foo.inc().inc().inc().inc().set('hi', 0).hide();
-	b[0].bar.inc();
-
-	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
-	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c)));
-
-	test.done();
-};
-
 exports.testDiffRenameCombine = function (test) {
 	test.expect(2);
 
@@ -642,7 +618,7 @@ exports.testDiffReverse = function (test) {
 
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c)));
-	
+
 	test.done();
 };
 
@@ -684,13 +660,13 @@ exports.testDiffAssignReverse = function (test) {
 
 	a[0] = 10;
 	b[0].assign(10);
-	
+
 	a.reverse();
 	b.reverse();
 
 	test.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)));
 	test.deepEqual(JSON.parse(JSON.stringify(b)), JSON.parse(JSON.stringify(c)));
-	
+
 	test.done();
 };
 

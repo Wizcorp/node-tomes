@@ -75,9 +75,6 @@ function Tome(parent, key) {
 	// __key__ is the key that our Tome is referred to by its parent. It only
 	// exists on Tomes with parents.
 
-	// __hidden__ is a boolean indicating whether or not a Tome's value should
-	// be hidden from toJSON and event emission. It exists on all Tomes.
-
 	// If you're using the node.js event emitter, we need to make the _events
 	// non-enumerable. Ideally, node.js would make this the default behavior.
 
@@ -85,7 +82,6 @@ function Tome(parent, key) {
 
 	var properties = {
 		__dirty__: { writable: true, value: 1 },
-		__hidden__: { writable: true, value: false },
 		__root__: { writable: true, value: hasParentTome ? parent.__root__ : this },
 		_events: { configurable: true, writable: true },
 		_callbacks: { configurable: true, writable: true }
@@ -103,34 +99,18 @@ function Tome(parent, key) {
 }
 
 function emitAdd(tome, key) {
-	if (tome.__hidden__) {
-		return;
-	}
-
 	tome.emit('add', key);
 }
 
 function emitDel(tome, key) {
-	if (tome.__hidden__) {
-		return;
-	}
-
 	tome.emit('del', key);
 }
 
 function emitDestroy(tome) {
-	if (tome.__hidden__) {
-		return;
-	}
-
 	tome.emit('destroy');
 }
 
 function destroy(tome) {
-	if (tome.__hidden__) {
-		return;
-	}
-
 	// When a Tome is deleted we emit a destroy event on it and all of its child
 	// Tomes since they will no longer exist. We go down the Tome chain first and
 	// then emit our way up.
@@ -269,9 +249,7 @@ function markDirty(tome, dirtyAt, was) {
 
 	tome.__dirty__ = dirtyAt;
 
-	if (!tome.__hidden__) {
-		tome.emit('readable', was);
-	}
+	tome.emit('readable', was);
 
 	if (tome.hasOwnProperty('__parent__')) {
 		markDirty(tome.__parent__, dirtyAt);
@@ -574,10 +552,6 @@ function conjure(val, parent, key, seen) {
 	// It will return a new Tome of the appropriate type for our value with Tome
 	// inherited. This is also how we pass parent into our Tome so we can signal
 	// a parent that its child has been modified.
-
-	if (Tome.isTome(val) && val.__hidden__) {
-		return;
-	}
 
 	var vType = Tome.typeOf(val);
 	var ClassRef = tomeMap[vType];
@@ -975,10 +949,6 @@ Tome.prototype.merge = function (diff) {
 	// merge is used to apply diffs to our Tomes. Typically the diff would be a
 	// parsed JSON string or come directly from another Tome.
 
-	if (this.__hidden__) {
-		throw new Error('Tome.merge - Cannot merge to hidden Tomes.');
-	}
-
 	var diffs = Tome.typeOf(diff) === 'array' ? diff : [ diff ];
 
 	for (var i = 0, len = diffs.length; i < len; i += 1) {
@@ -1085,24 +1055,6 @@ Tome.prototype.swap = function (key, target) {
 	return this;
 };
 
-Tome.prototype.hide = function (h) {
-	if (h === undefined) {
-		h = true;
-	}
-
-	if (this.__hidden__ === h) {
-		return;
-	}
-
-	this.__hidden__ = h;
-
-	if (h) {
-		diff(this.__parent__, 'del', this.__key__);
-	} else {
-		diff(this.__parent__, 'set', { key: this.__key__, val: this.valueOf() });
-	}
-};
-
 
 //   ______
 //  /      \
@@ -1127,15 +1079,11 @@ ArrayTome.isArrayTome = function (o) {
 };
 
 ArrayTome.prototype.valueOf = function () {
-	if (!this.__hidden__) {
-		return this._arr || [];
-	}
+	return this._arr || [];
 };
 
 ArrayTome.prototype.toJSON = function () {
-	if (!this.__hidden__) {
-		return this._arr || [];
-	}
+	return this._arr || [];
 };
 
 ArrayTome.prototype.typeOf = function () {
@@ -1633,15 +1581,11 @@ BooleanTome.prototype.typeOf = function () {
 };
 
 BooleanTome.prototype.valueOf = function () {
-	if (!this.__hidden__) {
-		return this._val;
-	}
+	return this._val;
 };
 
 BooleanTome.prototype.toJSON = function () {
-	if (!this.__hidden__) {
-		return this._val;
-	}
+	return this._val;
 };
 
 
@@ -1665,15 +1609,11 @@ NullTome.isNullTome = function (o) {
 };
 
 NullTome.prototype.valueOf = function () {
-	if (!this.__hidden__) {
-		return null;
-	}
+	return null;
 };
 
 NullTome.prototype.toJSON = function () {
-	if (!this.__hidden__) {
-		return null;
-	}
+	return null;
 };
 
 NullTome.prototype.typeOf = function () {
@@ -1736,15 +1676,11 @@ NumberTome.prototype.typeOf = function () {
 };
 
 NumberTome.prototype.valueOf = function () {
-	if (!this.__hidden__) {
-		return this._val;
-	}
+	return this._val;
 };
 
 NumberTome.prototype.toJSON = function () {
-	if (!this.__hidden__) {
-		return this._val;
-	}
+	return this._val;
 };
 
 NumberTome.prototype.toLocaleString = function () {
@@ -1829,18 +1765,6 @@ ObjectTome.prototype.rename = function () {
 	return this;
 };
 
-ObjectTome.prototype.valueOf = function () {
-	if (!this.__hidden__) {
-		return this;
-	}
-};
-
-ObjectTome.prototype.toJSON = function () {
-	if (!this.__hidden__) {
-		return this;
-	}
-};
-
 
 //   ______     __                __
 //  /      \   |  \              |  \
@@ -1873,15 +1797,11 @@ StringTome.prototype.typeOf = function () {
 };
 
 StringTome.prototype.valueOf = function () {
-	if (!this.__hidden__) {
-		return this._val;
-	}
+	return this._val;
 };
 
 StringTome.prototype.toJSON = function () {
-	if (!this.__hidden__) {
-		return this._val;
-	}
+	return this._val;
 };
 
 
@@ -1919,9 +1839,7 @@ UndefinedTome.prototype.toJSON = function () {
 	// the behavior of JavaScript. That is the sole reason for UndefinedTome's
 	// existence.
 
-	if (!this.__hidden__) {
-		return null;
-	}
+	return null;
 };
 
 var classMap = {

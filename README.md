@@ -1,3 +1,5 @@
+[![NPM](https://nodei.co/npm/tomes.png?downloads=true)](https://nodei.co/npm/tomes/)
+
 [![Build Status](https://travis-ci.org/Wizcorp/node-tomes.png)](https://travis-ci.org/Wizcorp/node-tomes)
 
 Tomes
@@ -90,9 +92,6 @@ Rename key to newkey.
 
 ###move( *key*, *tome*, [ *newkey* ] )
 Move key to tome. Optionally call it newkey on that tome.
-
-###hide( [ *boolean* ] )
-Hides a Tome. The Tome still exists in this tome, but will neither stringify nor show up in any events. Shows up as a delete in change operations.
 
 ###read( )
 Get a single change operation from the root Tome, removing it in the process. Returns null if there are no changes.
