@@ -315,11 +315,11 @@ exports.testCircularReferences = function (test) {
 	var circRefs = new CircularReferences();
 
 	test.throws(function () {
-		var b = Tome.conjure(circRefs);
+		Tome.conjure(circRefs);
 	}, TypeError, 'expected a TypeError');
 
 	test.throws(function () {
-		var b = Tome.conjure({ a: circRefs });
+		Tome.conjure({ a: circRefs });
 	}, TypeError, 'expected a TypeError');
 
 	var a = { b: 1 };

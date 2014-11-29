@@ -1162,11 +1162,11 @@ exports.testCircularEntries = function (test) {
 	var circRefs = new CircularReference();
 
 	test.throws(function () {
-		var b = Tome.conjure(circRefs);
+		Tome.conjure(circRefs);
 	}, TypeError);
 
 	test.throws(function () {
-		var b = Tome.conjure([ circRefs ]);
+		Tome.conjure([ circRefs ]);
 	}, TypeError);
 
 	var a = [ null, null, null, null ];

@@ -325,6 +325,7 @@ function arrayInit(tome, val, seen) {
 			seen.push(val[i]);
 		}
 
+		/* global conjure */
 		tome._arr[i] = conjure(val[i], tome, i, seen);
 
 		// We use hasOwnProperty here because arrays instantiated with new
@@ -394,7 +395,7 @@ function objectInit(tome, val, seen) {
 			seen.push(kv);
 		}
 
-
+		/* global conjure */
 		tome[key] = kv === undefined ? undefined : conjure(kv, tome, key, seen);
 	}
 
