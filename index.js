@@ -1055,6 +1055,42 @@ Tome.prototype.swap = function (key, target) {
 	return this;
 };
 
+function sync(target, diff, all) {
+	var targets = target instanceof Array ? target : [ target ];
+	for (var i = 0; i < targets.length; i++) {
+		if (!Tome.isTome(targets[i])) {
+			throw new TypeError('Tome.sync - Target must be a Tome');
+		}
+		if (diff) {
+			targets[i].merge(diff);
+			if (all) {
+				targets[i].readAll();
+			} else {
+				targets[i].read();
+			}
+		}
+	}
+}
+
+Tome.prototype.sync = function (target, all, callback) {
+	if (typeof all === 'function') {
+		callback = all;
+		all = false;
+	}
+	var diff = all ? this.readAll() : this.read();
+	sync(target, diff, all);
+	if (typeof callback === 'function') {
+		callback(diff);
+	}
+	return this;
+};
+
+Tome.prototype.syncTo = function (target, callback) {
+	this.on('readable', function () {
+		this.sync(target, callback);
+	});
+	return this;
+};
 
 //   ______
 //  /      \
