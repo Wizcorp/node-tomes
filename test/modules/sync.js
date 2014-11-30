@@ -15,7 +15,7 @@ exports.testSync = function (test) {
 	sourceTome.sync(targetTome);
 
 	test.strictEqual(targetTome[1].y.valueOf(), 2); // 1
-	test.ok(targetTome.length == 2); // 2
+	test.ok(targetTome.length === 2); // 2
 
 	sourceTome.sync(targetTome, function(diff) {
 		test.strictEqual(diff.val[0].z, 3);

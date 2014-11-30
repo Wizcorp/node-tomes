@@ -1057,7 +1057,7 @@ Tome.prototype.swap = function (key, target) {
 
 function sync(target, diff, all) {
 	var targets = target instanceof Array ? target : [ target ];
-	for (var i = 0; i < targets.length; i++) {
+	for (var i = 0; i < targets.length; i += 1) {
 		if (!Tome.isTome(targets[i])) {
 			throw new TypeError('Tome.sync - Target must be a Tome');
 		}
