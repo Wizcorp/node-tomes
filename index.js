@@ -1056,18 +1056,19 @@ Tome.prototype.swap = function (key, target) {
 };
 
 function sync(target, diff, all) {
-	if (diff) {
-		var targets = target instanceof Array ? target : [ target ];
-		for (var i = 0; i < targets.length; i += 1) {
-			if (!Tome.isTome(targets[i])) {
-				throw new TypeError('Tome.sync - Target must be a Tome');
-			}
-			targets[i].merge(diff);
-			if (all) {
-				targets[i].readAll();
-			} else {
-				targets[i].read();
-			}
+	if (typeof target === 'undefined' || target === null) {
+		return;
+	}
+	var targets = target instanceof Array ? target : [ target ];
+	for (var i = 0; i < targets.length; i += 1) {
+		if (!Tome.isTome(targets[i])) {
+			throw new TypeError('Tome.sync - Target must be a Tome');
+		}
+		targets[i].merge(diff);
+		if (all) {
+			targets[i].readAll();
+		} else {
+			targets[i].read();
 		}
 	}
 }
