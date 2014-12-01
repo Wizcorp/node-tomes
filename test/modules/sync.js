@@ -120,6 +120,8 @@ exports.testSyncMulti = function (test) {
 };
 
 exports.testSyncNumber = function (test) {
+	test.expect(2);
+
 	var a = 42;
 	var b = 24;
 
@@ -138,6 +140,8 @@ exports.testSyncNumber = function (test) {
 };
 
 exports.testSyncString = function (test) {
+	test.expect(2);
+
 	var a = "test string a";
 	var b = "test string b";
 
@@ -157,6 +161,8 @@ exports.testSyncString = function (test) {
 };
 
 exports.testSyncBoolean = function (test) {
+	test.expect(2);
+
 	var a = true;
 	var b = false;
 
@@ -170,6 +176,33 @@ exports.testSyncBoolean = function (test) {
 	test.strictEqual(targetTome.valueOf(), b);
 
 	test.strictEqual(JSON.stringify(sourceTome), JSON.stringify(targetTome));
+
+	test.done();
+};
+
+exports.testChainSync = function (test) {
+	test.expect(3);
+
+	var a = [{ x: 1 }];
+	var b = [{ x: 1 }];
+	var c = [{ x: 1 }];
+	var d = [{ x: 1 }];
+
+	var aTome = Tome.conjure(a);
+	var bTome = Tome.conjure(b);
+	var cTome = Tome.conjure(c);
+	var dTome = Tome.conjure(d);
+
+	aTome.syncTo(bTome);
+	bTome.syncTo(cTome);
+	cTome.syncTo(dTome);
+
+	aTome.push( { y: 1 } );
+	aTome.push( { k: 1 } );
+
+	test.strictEqual(JSON.stringify(aTome), JSON.stringify(bTome));
+	test.strictEqual(JSON.stringify(bTome), JSON.stringify(cTome));
+	test.strictEqual(JSON.stringify(cTome), JSON.stringify(dTome));
 
 	test.done();
 };
