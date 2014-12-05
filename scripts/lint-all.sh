@@ -9,7 +9,7 @@
 path=`pwd`
 cd `git rev-parse --show-toplevel`
 
-files=`find . ! -wholename '*/node_modules/*' -name '*.js'`
+files=`find . -type f -name '*.js' ! -path '*node_modules*'`
 
 if [[ -z "$files" ]]
 then

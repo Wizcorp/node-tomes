@@ -40,6 +40,9 @@ function inherits(Child, Parent) {
 var exports = exports || {};
 var isArray = Array.isArray;
 
+// conjure function declared at this level to avoid linting issues due to
+// interdependence between different functions.
+var conjure;
 
 //  ________
 // |        \
@@ -393,7 +396,6 @@ function objectInit(tome, val, seen) {
 
 			seen.push(kv);
 		}
-
 
 		tome[key] = kv === undefined ? undefined : conjure(kv, tome, key, seen);
 	}

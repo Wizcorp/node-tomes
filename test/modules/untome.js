@@ -71,7 +71,7 @@ exports.unTomeRepeated = function (test) {
 	test.expect(1);
 	var a = [ undefined, undefined, undefined, undefined ];
 	test.doesNotThrow(function () {
-		var b = Tome.unTome(a);
+		Tome.unTome(a);
 	});
 	test.done();
 };
@@ -86,7 +86,7 @@ exports.unTomeCircularReference = function (test) {
 	var circRefs = new CircularReference();
 
 	test.throws(function () {
-		var b = Tome.unTome(circRefs);
+		Tome.unTome(circRefs);
 	}, TypeError, 'expected a TypeError');
 
 	test.done();
