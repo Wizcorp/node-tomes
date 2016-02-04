@@ -87,6 +87,7 @@ function Tome(parent, key) {
 		__dirty__: { writable: true, value: 1 },
 		__root__: { writable: true, value: hasParentTome ? parent.__root__ : this },
 		_events: { configurable: true, writable: true },
+		_eventsCount: { configurable: true, writable: true },
 		_callbacks: { configurable: true, writable: true }
 	};
 
