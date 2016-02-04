@@ -1,7 +1,8 @@
 {
     "name": "tomes",
     "description": "Evented Storage Agnostic Data API",
-    "version": "0.1.0",
+    "keywords": ["observe", "proxy", "evented", "data"],
+    "version": "0.1.1",
     "author": "Wizcorp, Inc. <info@wizcorp.jp>",
     "maintainers": [
         { "name": "Bjorn Stromberg", "email": "bstromberg@wizcorp.jp" }
