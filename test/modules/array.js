@@ -1210,14 +1210,16 @@ exports.moveRootIntoItself = function (test) {
 };
 
 exports.rewriteRootOnRemove = function (test) {
-	test.expect(3);
+	test.expect(4);
 
-	var a = Tome.conjure([{}, {}, {}, {}, {}, {}]);
+	var a = Tome.conjure([{ bar: {} }, {}, {}, {}, {}, {}]);
 	var b = a.shift(); a.readAll();
 
 	b.set('foo', 'bar');
+	b.bar.set('foo', 'bar');
 
 	test.strictEqual(a.readAll().length, 0);
+	test.strictEqual(b.readAll().length, 2);
 
 	var c = a.splice(2, 2); a.readAll();
 	c[0].set('foo', 'bar');
