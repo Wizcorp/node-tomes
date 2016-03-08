@@ -182,6 +182,45 @@ function reset(tome) {
 	}
 }
 
+function setRoot(tome, root) {
+	// When an ObjectTome is removed from his parent (like when using ArrayTome.shift)
+	// we need to update his root/parent as well as all the childs so that changes
+	// made to that item do not propagate to the ArrayTome anymore
+	if (!tome) {
+		return;
+	}
+
+	tome.__root__ = root;
+
+	if (tome === root) {
+		delete(tome.__key__);
+		delete(tome.__parent__);
+
+		// if we are the root, also update us to have a diff
+		Object.defineProperties(tome, {
+			__diff__: { writable: true, value: [] },
+			__version__: { writable: true, value: 1 }
+		});
+	}
+
+	// recursively update values
+	if (ObjectTome.isObjectTome(tome)) {
+		var keys = Object.keys(tome);
+		var len = keys.length;
+		var key;
+
+		for (var i = 0; i < len; i += 1) {
+			key = keys[i];
+
+			var kv = tome[key];
+
+			if (Tome.isTome(kv)) {
+				setRoot(kv, root);
+			}
+		}
+	}
+}
+
 Tome.resolveChain = function (tome, chain) {
 	var len = chain.length;
 	var target = tome.__root__;
@@ -1276,6 +1315,9 @@ ArrayTome.prototype.shift = function () {
 		diff(this, 'shift');
 	}
 
+	// update root
+	setRoot(out, out);
+
 	return out ? out.valueOf() : out;
 };
 
@@ -1299,6 +1341,8 @@ ArrayTome.prototype.pop = function () {
 		emitDel(this, len);
 		diff(this, 'pop');
 	}
+
+	setRoot(out, out);
 
 	return out ? out.valueOf() : out;
 };
@@ -1381,6 +1425,7 @@ ArrayTome.prototype.splice = function (spliceIndex, toRemove) {
 		for (i = 0, len = out.length; i < len; i += 1) {
 			key = this._arr.length + i;
 			delete this[key];
+			setRoot(out[i], out[i]);
 		}
 	}
 
