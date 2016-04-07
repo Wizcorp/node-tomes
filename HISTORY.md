@@ -1,5 +1,8 @@
 # Tomes Release Notes
 
+## 0.2.0
+ * Snapshot support
+
 ## 0.1.1
  * Suppressed the `_eventsCount` property of Node's EventEmitter
 
