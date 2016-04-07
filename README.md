@@ -117,6 +117,16 @@ Returns a boolean value indicating whether or not the Tome is observably indisti
 ###isDirty( )
 Returns whether a Tome has been changed, but the change has not been read.
 
+###takeSnapshot( )
+Returns a snapshot object of the root Tome.
+
+###restoreSnapshot( *snapshot* )
+
+You can pass a snapshot object back to the root Tome from which you took it. This brings the Tome back to that state,
+including the state of the diff. This can be useful for scenarios where you want to be able to rollback changes.
+If the version (see `getVersion()`) of the snapshot is the same as tome you are restoring the snapshot to,
+this operation won't do anything. This makes it unsafe to apply snapshots to tomes from which they weren't taken.
+
 ##Events
 
 ###add( *key* )

@@ -72,6 +72,9 @@ function Tome(parent, key) {
 	// __version__ is a number that increments whenever a Tome or any of its
 	// child Tomes changes. It only exists on the root Tome.
 
+	// __dirty__ is a number that increments whenever a Tome changes. It exists
+	// on all Tomes.
+
 	// __parent__ holds a reference to the Tome's parent object so we can
 	// signal up the Tome chain. It only exists on Tomes with parents.
 
@@ -84,7 +87,7 @@ function Tome(parent, key) {
 	var hasParentTome = Tome.isTome(parent);
 
 	var properties = {
-		__dirty__: { writable: true, value: 1 },
+		__dirty__: { writable: true, value: hasParentTome ? parent.__root__.__version__ : 1 },
 		__root__: { writable: true, value: hasParentTome ? parent.__root__ : this },
 		_events: { configurable: true, writable: true },
 		_eventsCount: { configurable: true, writable: true },
@@ -96,6 +99,7 @@ function Tome(parent, key) {
 		properties.__key__ = { writable: true, value: key };
 	} else {
 		properties.__diff__ = { writable: true, value: [] };
+		properties.__diffEnabled__ = { writable: true, value: true };
 		properties.__version__ = { writable: true, value: 1 };
 	}
 
@@ -262,18 +266,21 @@ function markDirty(tome, dirtyAt, was) {
 
 function diff(tome, op, val, chain, pair, was) {
 	var root = tome.__root__;
-	tome.__root__.__version__ += 1;
 
-	if (!chain) {
-		chain = Tome.buildChain(tome);
+	if (root.__diffEnabled__) {
+		root.__version__ += 1;
+
+		if (!chain) {
+			chain = Tome.buildChain(tome);
+		}
+
+		var newOp = { chain: chain, op: op };
+		if (val !== undefined) {
+			newOp.val = val;
+		}
+
+		root.__diff__.push(newOp);
 	}
-
-	var newOp = { chain: chain, op: op };
-	if (val !== undefined) {
-		newOp.val = val;
-	}
-
-	root.__diff__.push(newOp);
 
 	markDirty(tome, root.__version__, was);
 
@@ -613,7 +620,7 @@ Tome.prototype.is = function (val) {
 Tome.prototype.isDirty = function () {
 	// When we mark a Tome as dirty, we set dirty to the new version from the
 	// root tome. This way, we can know when the diff for that operation has
-	// been read by comparing the root Tome's version minus the the number of
+	// been read by comparing the root Tome's version minus the number of
 	// unread diffs against this tome's version.
 
 	return this.__dirty__ > this.__root__.__version__ - this.__root__.__diff__.length;
@@ -629,6 +636,40 @@ Tome.prototype.getKey = function () {
 
 Tome.prototype.getParent = function () {
 	return this.__parent__;
+};
+
+Tome.prototype.takeSnapshot = function () {
+	if (this.__root__ !== this) {
+		throw new Error('Only root tomes can take snapshots');
+	}
+
+	return {
+		content: Tome.unTome(this),
+		diff: this.__diff__.slice(),
+		version: this.__version__
+	};
+};
+
+Tome.prototype.restoreSnapshot = function (snapshot) {
+	if (this.__root__ !== this) {
+		throw new Error('Only root tomes can restore snapshots');
+	}
+
+	if (this.__version__ === snapshot.version) {
+		// nothing would change from restoring
+		return;
+	}
+
+	this.__version__ = snapshot.version;
+	this.__diff__ = snapshot.diff.slice();
+
+	this.__diffEnabled__ = false;
+
+	try {
+		this.assign(snapshot.content);
+	} finally {
+		this.__diffEnabled__ = true;
+	}
 };
 
 Tome.prototype.set = function (key, val) {
