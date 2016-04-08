@@ -1,5 +1,8 @@
 # Tomes Release Notes
 
+## 0.2.1
+ * Allow old snapshots to be passed to `takeSnapshot` as a high-performance shortcut.
+
 ## 0.2.0
  * Snapshot support
 
