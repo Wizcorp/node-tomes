@@ -15,6 +15,11 @@ exports.testSnapshot = function (test) {
 
 	test.deepEqual(snapshot2, snapshot);
 
+	// passing an old snapshot to an unchanged tome should return that snapshot
+
+	var snapshot3 = b.takeSnapshot(snapshot2);
+	test.strictEqual(snapshot3, snapshot2);
+
 	// check the state of the snapshot
 
 	test.deepEqual(snapshot.content, c);

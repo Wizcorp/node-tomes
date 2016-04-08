@@ -638,9 +638,13 @@ Tome.prototype.getParent = function () {
 	return this.__parent__;
 };
 
-Tome.prototype.takeSnapshot = function () {
+Tome.prototype.takeSnapshot = function (existingSnapshot) {
 	if (this.__root__ !== this) {
 		throw new Error('Only root tomes can take snapshots');
+	}
+
+	if (existingSnapshot && existingSnapshot.version === this.__version__) {
+		return existingSnapshot;
 	}
 
 	return {

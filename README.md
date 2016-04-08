@@ -117,8 +117,9 @@ Returns a boolean value indicating whether or not the Tome is observably indisti
 ###isDirty( )
 Returns whether a Tome has been changed, but the change has not been read.
 
-###takeSnapshot( )
-Returns a snapshot object of the root Tome.
+###takeSnapshot( [ *snapshot* ] )
+Returns a snapshot object of the root Tome. If you pass a previously made snapshot, it may be returned instead of a
+fresh snapshot, if the Tome has not changed in the mean time.
 
 ###restoreSnapshot( *snapshot* )
 
