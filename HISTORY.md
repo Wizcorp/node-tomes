@@ -1,5 +1,8 @@
 # Tomes Release Notes
 
+## 0.2.2
+ * Adds a workaround to a V8 bug exposing itself in JSON.stringify (issue #44)
+
 ## 0.2.1
  * Allow old snapshots to be passed to `takeSnapshot` as a high-performance shortcut.
 
