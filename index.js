@@ -89,8 +89,10 @@ function Tome(parent, key) {
 	var properties = {
 		__dirty__: { writable: true, value: hasParentTome ? parent.__root__.__version__ : 1 },
 		__root__: { writable: true, value: hasParentTome ? parent.__root__ : this },
+		domain: { configurable: true, writable: true },
 		_events: { configurable: true, writable: true },
 		_eventsCount: { configurable: true, writable: true },
+		_maxListeners: { configurable: true, writable: true },
 		_callbacks: { configurable: true, writable: true }
 	};
 
@@ -104,6 +106,8 @@ function Tome(parent, key) {
 	}
 
 	Object.defineProperties(this, properties);
+
+	EventEmitter.call(this);
 }
 
 function emitAdd(tome, key) {
@@ -1763,6 +1767,20 @@ ObjectTome.isObjectTome = function (o) {
 
 ObjectTome.prototype.typeOf = function () {
 	return 'object';
+};
+
+ObjectTome.prototype.toJSON = function () {
+	// because of a bug in V8, prettified JSON can expose even non-enumerable properties, like those found in Node.js'
+	// EventEmitter. See: https://bugs.chromium.org/p/v8/issues/detail?id=4903
+	// For this sole reason, we must rely on Object.keys to filter out these properties.
+
+	var out = {};
+	var keys = Object.keys(this);
+	for (var i = 0; i < keys.length; i += 1) {
+		out[keys[i]] = this[keys[i]];
+	}
+
+	return out;
 };
 
 ObjectTome.prototype.rename = function () {
