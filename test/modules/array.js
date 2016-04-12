@@ -43,9 +43,15 @@ exports.testArrayCreation = function (test) {
 };
 
 exports.testArrayCreation2 = function (test) {
-	test.expect(5);
 	var a = [];
 	var b = Tome.conjure(a);
+
+	for (var key in b) {
+		if (b.hasOwnProperty(key)) {
+			test.ok(false, 'No enumerable own properties expected, but found: ' + key);
+		}
+	}
+
 	test.ok(JSON.stringify(a) === JSON.stringify(b), 'JSON.stringify failure: ' + JSON.stringify(a) + '!==' + JSON.stringify(b));
 	a[0] = 0;
 	b.set(0, 0);
