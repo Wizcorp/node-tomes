@@ -22,9 +22,15 @@ var notInstanceOf = function (actual, expected) {
 };
 
 exports.testArrayCreation = function (test) {
-	test.expect(14);
 	var a = [1, 2, 3, 4];
 	var b = Tome.conjure(a);
+
+	for (var key in b) {
+		if (b.hasOwnProperty(key)) {
+			test.ok(key === '0' || key === '1' || key === '2' || key === '3', 'Expected own property "0", "1", "2" or "3", but found: ' + key);
+		}
+	}
+
 	test.ok(instanceOf(b, Tome), 'expected Tome');
 	test.ok(instanceOf(b, ArrayTome), 'expected ArrayTome');
 	test.ok(notInstanceOf(b, BooleanTome), 'expected not BooleanTome');
