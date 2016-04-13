@@ -779,36 +779,34 @@ Tome.prototype.assign = function (val) {
 		throw new TypeError('Tome.assign - You can only assign undefined to ArrayTome elements');
 	}
 
+	var isTypeChange = vType !== pType;
+
 	// The simplest cases are boolean, number, and string. If we already have
 	// the correct Tome type we assign the value, signal, and return our new
 	// value.
 
-	if (vType === pType) {
+	if (!isTypeChange) {
 		if (pType === 'boolean' || pType === 'number' || pType === 'string') {
 
-			// If we already have the value then just return the value.
+			// If we already have the value, just return
 
-			if (this._val === val.valueOf()) {
+			if (this._val === val) {
 				return this;
 			}
 
 			var oldVal = this._val;
-			this._val = val.valueOf();
+			this._val = val;
 
-			diff(this, 'assign', val.valueOf(), null, null, oldVal);
+			diff(this, 'assign', val, null, null, oldVal);
 			return this;
 		}
 
-		if (vType === 'null') {
+		if (pType === 'null' || pType === 'undefined') {
 			return this;
 		}
-
-		if (vType === 'undefined') {
-			return;
-		}
+	} else {
+		this.__root__.emit('typeChange', this, pType, vType);
 	}
-
-	this.__root__.emit('typeChange', this, pType, vType);
 
 	// If we're dealing with an array or object we need to reset the Tome.
 
@@ -818,8 +816,11 @@ Tome.prototype.assign = function (val) {
 
 	// Now we need to apply a new Tome type based on the value type.
 
-	this.__proto__ = vClass.prototype;
-	vInit(this, val ? val.valueOf() : val);
+	if (isTypeChange) {
+		this.__proto__ = vClass.prototype;
+	}
+
+	vInit(this, val);
 
 	diff(this, 'assign', val);
 
