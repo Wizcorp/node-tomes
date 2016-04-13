@@ -35,7 +35,22 @@ exports.testObjectCreation = function (test) {
 	test.ok(notInstanceOf(b, StringTome)); // 8
 	test.ok(notInstanceOf(b, NullTome)); // 9
 	test.ok(notInstanceOf(b, UndefinedTome)); // 10
-	
+
+	test.done();
+};
+
+exports.testEnumeration = function (test) {
+	var a = { a: 0, b: 1, c: 2 };
+	var b = Tome.conjure(a);
+
+	test.deepEqual(Object.keys(b).sort(), Object.keys(a).sort());
+
+	for (var key in b) {
+		if (b.hasOwnProperty(key)) {
+			test.ok(key === 'a' || key === 'b' || key === 'c', 'Expected own property "a", "b" or "c", but found: ' + key);
+		}
+	}
+
 	test.done();
 };
 

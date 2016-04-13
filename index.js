@@ -44,6 +44,12 @@ var isArray = Array.isArray;
 // interdependence between different functions.
 var conjure;
 
+// a special hasOwnProperty function so we can override the built-in one
+
+function hasOwnProperty(obj, propName) {
+	return Object.prototype.hasOwnProperty.call(obj, propName);
+}
+
 //  ________
 // |        \
 //  \$$$$$$$$______   ______ ____    ______    _______
@@ -182,7 +188,7 @@ Tome.resolveChain = function (tome, chain) {
 
 	for (var i = 0; i < len; i += 1) {
 		var link = chain[i];
-		if (!target.hasOwnProperty(link)) {
+		if (!hasOwnProperty(target, link)) {
 			throw new ReferenceError('resolveChain - Error resolving chain: ' + chain);
 		}
 		target = target[link];
@@ -194,7 +200,7 @@ Tome.resolveChain = function (tome, chain) {
 Tome.buildChain = function (tome) {
 	var chain = [];
 
-	while (tome.hasOwnProperty('__key__')) {
+	while (hasOwnProperty(tome, '__key__')) {
 		chain.push(tome.__key__);
 		tome = tome.__parent__;
 	}
@@ -263,7 +269,7 @@ function markDirty(tome, dirtyAt, was) {
 
 	tome.emit('readable', was);
 
-	if (tome.hasOwnProperty('__parent__')) {
+	if (hasOwnProperty(tome, '__parent__')) {
 		markDirty(tome.__parent__, dirtyAt);
 	}
 }
@@ -299,11 +305,11 @@ function arrayInit(tome, val, seen) {
 	//  -   _arr: Holds the actual array that we reference.
 	//  - length: Holds the length of the array in _arr.
 
-	if (!tome.hasOwnProperty('_arr')) {
+	if (!hasOwnProperty(tome, '_arr')) {
 		Object.defineProperty(tome, '_arr', { configurable: true, writable: true });
 	}
 
-	if (!tome.hasOwnProperty('length')) {
+	if (!hasOwnProperty(tome, 'length')) {
 		Object.defineProperty(tome, 'length', { configurable: true, writable: true });
 	}
 
@@ -346,7 +352,7 @@ function arrayInit(tome, val, seen) {
 		// have elements, but no keys ie. new Array(1) is different from
 		// [undefined].
 
-		if (val.hasOwnProperty(i)) {
+		if (hasOwnProperty(val, i)) {
 			tome[i] = tome._arr[i];
 		}
 	}
@@ -425,7 +431,7 @@ function objectInit(tome, val, seen) {
 }
 
 function primitiveInit(tome, val) {
-	if (!tome.hasOwnProperty('_val')) {
+	if (!hasOwnProperty(tome, '_val')) {
 		Object.defineProperty(tome, '_val', { configurable: true, writable: true });
 	}
 
@@ -525,7 +531,7 @@ Tome.isTome = function (o) {
 	var proto;
 	// Getting the prototype's prototype's of the object
 	// Recent browsers use the folowing method instead of the getter `__proto__`
-	if (Object.hasOwnProperty('getPrototypeOf')) {
+	if (Object.getPrototypeOf) {
 		proto = Object.getPrototypeOf(Object.getPrototypeOf(o));
 	} else {
 		proto = o.__proto__ && o.__proto__.__proto__;
@@ -714,7 +720,7 @@ Tome.prototype.set = function (key, val) {
 		this.__proto__ = ObjectTome.prototype;
 	}
 
-	if (!this.hasOwnProperty(key)) {
+	if (!hasOwnProperty(this, key)) {
 
 		// This is a new property, we conjure a new Tome with a type based on
 		// the type of the value and assign it to the property. Then we emit an
@@ -775,7 +781,7 @@ Tome.prototype.assign = function (val) {
 		throw new TypeError('Tome.assign - Invalid value type: ' + vType);
 	}
 
-	if (vType === 'undefined' && (!this.hasOwnProperty('__parent__') || this.__parent__.typeOf() !== 'array')) {
+	if (vType === 'undefined' && (!this.__parent__ || this.__parent__.typeOf() !== 'array')) {
 		throw new TypeError('Tome.assign - You can only assign undefined to ArrayTome elements');
 	}
 
@@ -836,7 +842,7 @@ Tome.prototype.del = function (key) {
 	// also signal that it was changed which also signals all the way up the
 	// Tome chain.
 
-	if (!this.hasOwnProperty(key)) {
+	if (!hasOwnProperty(this, key)) {
 		throw new ReferenceError('Tome.del - Key is not defined: ' + key);
 	}
 
@@ -857,7 +863,7 @@ Tome.prototype.del = function (key) {
 };
 
 Tome.prototype.move = function (key, newParent, onewKey) {
-	if (!this.hasOwnProperty(key)) {
+	if (!hasOwnProperty(this, key)) {
 		throw new ReferenceError('Tome.move - Key is not defined: ' + key);
 	}
 
@@ -1056,7 +1062,7 @@ Tome.prototype.merge = function (diff) {
 };
 
 Tome.prototype.swap = function (key, target) {
-	if (!this.hasOwnProperty(key)) {
+	if (!hasOwnProperty(this, key)) {
 		throw new ReferenceError('Tome.swap - Key is not defined: ' + key);
 	}
 
@@ -1064,7 +1070,7 @@ Tome.prototype.swap = function (key, target) {
 		throw new TypeError('Tome.swap - Target must be a Tome');
 	}
 
-	if (!target.hasOwnProperty('__parent__')) {
+	if (!hasOwnProperty(target, '__parent__')) {
 		throw new ReferenceError('Tome.swap - Cannot swap to a root Tome');
 	}
 
@@ -1143,6 +1149,19 @@ ArrayTome.prototype.typeOf = function () {
 	return 'array';
 };
 
+ArrayTome.prototype.hasOwnProperty = function (key) {
+	// because of issues in V8 with enumerable non-enumerables, we use this workaround to allow the
+	// "for-in with hasOwnProperty" loop to work.
+	// See: https://bugs.chromium.org/p/v8/issues/detail?id=4905
+
+	key = String(key);
+	if (!key.match(/^[0-9]+$/)) {
+		return false;
+	}
+
+	return hasOwnProperty(this, key);
+};
+
 ArrayTome.prototype.join = function (separator) {
 	var out = '';
 	var len = this._arr.length;
@@ -1208,7 +1227,7 @@ ArrayTome.prototype.set = function (okey, val) {
 };
 
 ArrayTome.prototype.del = function (key) {
-	if (!this.hasOwnProperty(key)) {
+	if (!hasOwnProperty(this, key)) {
 		throw new ReferenceError('ArrayTome.del - Key is not defined: ' + key);
 	}
 
@@ -1395,7 +1414,7 @@ ArrayTome.prototype.rename = function () {
 
 	for (oldKey in rO) {
 		newKey = rO[oldKey];
-		if (!this.hasOwnProperty(oldKey)) {
+		if (!hasOwnProperty(this, oldKey)) {
 			throw new ReferenceError('ObjectTome.rename - Key is not defined: ' + oldKey);
 		}
 
@@ -1784,6 +1803,14 @@ ObjectTome.prototype.toJSON = function () {
 	return out;
 };
 
+ObjectTome.prototype.hasOwnProperty = function (key) {
+	// because of issues in V8 with enumerable non-enumerables, we use this workaround to allow the
+	// "for-in with hasOwnProperty" loop to work.
+	// See: https://bugs.chromium.org/p/v8/issues/detail?id=4905
+
+	return Object.keys(this).indexOf(key) !== -1;
+};
+
 ObjectTome.prototype.rename = function () {
 
 	// ObjectTome.rename can take a few different styles of arguments:
@@ -1811,7 +1838,7 @@ ObjectTome.prototype.rename = function () {
 	for (var oldKey in rO) {
 		var newKey = rO[oldKey];
 
-		if (!this.hasOwnProperty(oldKey)) {
+		if (!hasOwnProperty(this, oldKey)) {
 			throw new ReferenceError('ObjectTome.rename - Key is not defined: ' + oldKey);
 		}
 
@@ -1926,11 +1953,10 @@ function inheritClassMethods() {
 		var t = tomeMap[ck]; // tome
 
 		var methods = Object.getOwnPropertyNames(c.prototype);
-		var len = methods.length;
 
-		for (var i = 0; i < len; i += 1) {
+		for (var i = 0; i < methods.length; i += 1) {
 			var k = methods[i];
-			if (!t.prototype.hasOwnProperty(k)) {
+			if (!hasOwnProperty(t.prototype, k)) {
 				t.prototype[k] = c.prototype[k];
 			}
 		}
