@@ -1,5 +1,10 @@
 # Tomes Release Notes
 
+## 0.2.3
+ * Fixed: "typeChange" was always emitted when assigning objects or arrays (issue #48)
+ * Fixed: another bug in V8 regarding enumerables was causing for-in loops to show too much (issue #43)
+ * Minor performance improvements
+
 ## 0.2.2
  * Adds a workaround to a V8 bug exposing itself in JSON.stringify (issue #44)
 
