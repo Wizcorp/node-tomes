@@ -46,10 +46,8 @@ var conjure;
 
 // a special hasOwnProperty function so we can override the built-in one
 
-var hasOwnProperty = Object.prototype.hasOwnProperty;
-
-function hop(obj, propName) {
-	return hasOwnProperty.call(obj, propName);
+function hasOwnProperty(obj, propName) {
+	return Object.prototype.hasOwnProperty.call(obj, propName);
 }
 
 //  ________
@@ -190,7 +188,7 @@ Tome.resolveChain = function (tome, chain) {
 
 	for (var i = 0; i < len; i += 1) {
 		var link = chain[i];
-		if (!hop(target, link)) {
+		if (!hasOwnProperty(target, link)) {
 			throw new ReferenceError('resolveChain - Error resolving chain: ' + chain);
 		}
 		target = target[link];
@@ -202,7 +200,7 @@ Tome.resolveChain = function (tome, chain) {
 Tome.buildChain = function (tome) {
 	var chain = [];
 
-	while (hop(tome, '__key__')) {
+	while (hasOwnProperty(tome, '__key__')) {
 		chain.push(tome.__key__);
 		tome = tome.__parent__;
 	}
@@ -271,7 +269,7 @@ function markDirty(tome, dirtyAt, was) {
 
 	tome.emit('readable', was);
 
-	if (hop(tome, '__parent__')) {
+	if (hasOwnProperty(tome, '__parent__')) {
 		markDirty(tome.__parent__, dirtyAt);
 	}
 }
@@ -307,11 +305,11 @@ function arrayInit(tome, val, seen) {
 	//  -   _arr: Holds the actual array that we reference.
 	//  - length: Holds the length of the array in _arr.
 
-	if (!hop(tome, '_arr')) {
+	if (!hasOwnProperty(tome, '_arr')) {
 		Object.defineProperty(tome, '_arr', { configurable: true, writable: true });
 	}
 
-	if (!hop(tome, 'length')) {
+	if (!hasOwnProperty(tome, 'length')) {
 		Object.defineProperty(tome, 'length', { configurable: true, writable: true });
 	}
 
@@ -354,7 +352,7 @@ function arrayInit(tome, val, seen) {
 		// have elements, but no keys ie. new Array(1) is different from
 		// [undefined].
 
-		if (hop(val, i)) {
+		if (hasOwnProperty(val, i)) {
 			tome[i] = tome._arr[i];
 		}
 	}
@@ -433,7 +431,7 @@ function objectInit(tome, val, seen) {
 }
 
 function primitiveInit(tome, val) {
-	if (!hop(tome, '_val')) {
+	if (!hasOwnProperty(tome, '_val')) {
 		Object.defineProperty(tome, '_val', { configurable: true, writable: true });
 	}
 
@@ -722,7 +720,7 @@ Tome.prototype.set = function (key, val) {
 		this.__proto__ = ObjectTome.prototype;
 	}
 
-	if (!hop(this, key)) {
+	if (!hasOwnProperty(this, key)) {
 
 		// This is a new property, we conjure a new Tome with a type based on
 		// the type of the value and assign it to the property. Then we emit an
@@ -843,7 +841,7 @@ Tome.prototype.del = function (key) {
 	// also signal that it was changed which also signals all the way up the
 	// Tome chain.
 
-	if (!hop(this, key)) {
+	if (!hasOwnProperty(this, key)) {
 		throw new ReferenceError('Tome.del - Key is not defined: ' + key);
 	}
 
@@ -864,7 +862,7 @@ Tome.prototype.del = function (key) {
 };
 
 Tome.prototype.move = function (key, newParent, onewKey) {
-	if (!hop(this, key)) {
+	if (!hasOwnProperty(this, key)) {
 		throw new ReferenceError('Tome.move - Key is not defined: ' + key);
 	}
 
@@ -1063,7 +1061,7 @@ Tome.prototype.merge = function (diff) {
 };
 
 Tome.prototype.swap = function (key, target) {
-	if (!hop(this, key)) {
+	if (!hasOwnProperty(this, key)) {
 		throw new ReferenceError('Tome.swap - Key is not defined: ' + key);
 	}
 
@@ -1071,7 +1069,7 @@ Tome.prototype.swap = function (key, target) {
 		throw new TypeError('Tome.swap - Target must be a Tome');
 	}
 
-	if (!hop(target, '__parent__')) {
+	if (!hasOwnProperty(target, '__parent__')) {
 		throw new ReferenceError('Tome.swap - Cannot swap to a root Tome');
 	}
 
@@ -1160,7 +1158,7 @@ ArrayTome.prototype.hasOwnProperty = function (key) {
 		return false;
 	}
 
-	return hop(this, key);
+	return hasOwnProperty(this, key);
 };
 
 ArrayTome.prototype.join = function (separator) {
@@ -1228,7 +1226,7 @@ ArrayTome.prototype.set = function (okey, val) {
 };
 
 ArrayTome.prototype.del = function (key) {
-	if (!hop(this, key)) {
+	if (!hasOwnProperty(this, key)) {
 		throw new ReferenceError('ArrayTome.del - Key is not defined: ' + key);
 	}
 
@@ -1415,7 +1413,7 @@ ArrayTome.prototype.rename = function () {
 
 	for (oldKey in rO) {
 		newKey = rO[oldKey];
-		if (!hop(this, oldKey)) {
+		if (!hasOwnProperty(this, oldKey)) {
 			throw new ReferenceError('ObjectTome.rename - Key is not defined: ' + oldKey);
 		}
 
@@ -1839,7 +1837,7 @@ ObjectTome.prototype.rename = function () {
 	for (var oldKey in rO) {
 		var newKey = rO[oldKey];
 
-		if (!hop(this, oldKey)) {
+		if (!hasOwnProperty(this, oldKey)) {
 			throw new ReferenceError('ObjectTome.rename - Key is not defined: ' + oldKey);
 		}
 
@@ -1957,7 +1955,7 @@ function inheritClassMethods() {
 
 		for (var i = 0; i < methods.length; i += 1) {
 			var k = methods[i];
-			if (!hop(t.prototype, k)) {
+			if (!hasOwnProperty(t.prototype, k)) {
 				t.prototype[k] = c.prototype[k];
 			}
 		}
