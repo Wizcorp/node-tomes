@@ -1415,7 +1415,7 @@ ArrayTome.prototype.rename = function () {
 	for (oldKey in rO) {
 		newKey = rO[oldKey];
 		if (!hasOwnProperty(this, oldKey)) {
-			throw new ReferenceError('ObjectTome.rename - Key is not defined: ' + oldKey);
+			throw new ReferenceError('ArrayTome.rename - Key is not defined: ' + oldKey);
 		}
 
 		this._arr[oldKey].__key__ = newKey;
