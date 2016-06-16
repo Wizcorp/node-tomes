@@ -1451,6 +1451,22 @@ ArrayTome.prototype.rename = function () {
 	return this;
 };
 
+ArrayTome.prototype.move = function (key, newKey) {
+	var changes = {}, i;
+	changes[key] = newKey;
+
+	if (newKey > key) {
+		for (i = key; i < newKey; i++) {
+			changes[i + 1] = i.toString();
+		}
+	} else if (newKey < key) {
+		for (i = newKey; i < key; i++) {
+			changes[i] = (i + 1).toString();
+		}
+	}
+
+	return this.rename(changes);
+};
 
 ArrayTome.prototype.sort = function () {
 	this._arr.sort.apply(this._arr, arguments);
