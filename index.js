@@ -19,7 +19,7 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-var EventEmitter = require('events');
+var EventEmitter = require('events').EventEmitter;
 
 function inherits(Child, Parent) {
 	Child.prototype = Object.create(Parent.prototype, {
