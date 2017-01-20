@@ -19,17 +19,7 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-var EventEmitter;
-
-try {
-	EventEmitter = require('emitter');
-} catch (e) {
-	EventEmitter = require('events').EventEmitter;
-}
-
-if (!EventEmitter) {
-	throw new Error('Could not find EventEmitter, Tomes cannot start.');
-}
+var EventEmitter = require('events');
 
 function inherits(Child, Parent) {
 	Child.prototype = Object.create(Parent.prototype, {
