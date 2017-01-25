@@ -1,31 +1,45 @@
 {
-    "name": "tomes",
-    "description": "Evented Storage Agnostic Data API",
-    "keywords": ["observe", "proxy", "evented", "data"],
-    "version": "0.2.3",
-    "author": "Wizcorp, Inc. <info@wizcorp.jp>",
-    "maintainers": [
-        { "name": "Bjorn Stromberg", "email": "bstromberg@wizcorp.jp" },
-        { "name": "Ron Korving", "email": "rkorving@wizcorp.jp" }
-    ],
-    "scripts": {
-        "test": "node test"
+  "name": "tomes",
+  "description": "Evented Storage Agnostic Data API",
+  "keywords": [
+    "observe",
+    "proxy",
+    "evented",
+    "data"
+  ],
+  "version": "0.2.3",
+  "author": "Wizcorp, Inc. <info@wizcorp.jp>",
+  "maintainers": [
+    {
+      "name": "Bjorn Stromberg",
+      "email": "bstromberg@wizcorp.jp"
     },
-    "main": "index.js",
-    "devDependencies": {
-        "jshint": "*",
-        "nodeunit": "*",
-        "rumplestiltskin": "*"
-    },
-    "license": {
-        "type": "MIT",
-        "url": "https://github.com/Wizcorp/node-tomes/raw/master/LICENSE"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/Wizcorp/node-tomes.git"
-    },
-    "bugs" : {
-        "url" : "http://github.com/Wizcorp/node-tomes/issues"
+    {
+      "name": "Ron Korving",
+      "email": "rkorving@wizcorp.jp"
     }
+  ],
+  "scripts": {
+    "test": "node test"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "events": "1.1.1"
+  },
+  "devDependencies": {
+    "jshint": "*",
+    "nodeunit": "*",
+    "rumplestiltskin": "*"
+  },
+  "license": {
+    "type": "MIT",
+    "url": "https://github.com/Wizcorp/node-tomes/raw/master/LICENSE"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Wizcorp/node-tomes.git"
+  },
+  "bugs": {
+    "url": "http://github.com/Wizcorp/node-tomes/issues"
+  }
 }
