@@ -1,5 +1,9 @@
 # Tomes Release Notes
 
+## 0.3.0
+ * Dropped Component.io support
+ * Fixed reference to ObjectTome in ArrayTome.prototype.rename
+
 ## 0.2.3
  * Fixed: "typeChange" was always emitted when assigning objects or arrays (issue #48)
  * Fixed: another bug in V8 regarding enumerables was causing for-in loops to show too much (issue #43)
