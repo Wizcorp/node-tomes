@@ -1208,3 +1208,29 @@ exports.moveRootIntoItself = function (test) {
 
 	test.done();
 };
+
+exports.rewriteRootOnRemove = function (test) {
+	test.expect(4);
+
+	var a = Tome.conjure([{ bar: {} }, {}, {}, {}, {}, {}]);
+	var b = a.shift(); a.readAll();
+
+	b.set('foo', 'bar');
+	b.bar.set('foo', 'bar');
+
+	test.strictEqual(a.readAll().length, 0);
+	test.strictEqual(b.readAll().length, 2);
+
+	var c = a.splice(2, 2); a.readAll();
+	c[0].set('foo', 'bar');
+	c[1].set('foo', 'bar');
+
+	test.strictEqual(a.readAll().length, 0);
+
+	var d = a.pop(); a.readAll();
+	d.set('foo', 'bar');
+
+	test.strictEqual(a.readAll().length, 0);
+
+	test.done();
+};

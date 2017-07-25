@@ -118,16 +118,27 @@ function emitDestroy(tome) {
 	tome.emit('destroy');
 }
 
-function destroy(tome) {
+function destroy(tome, root) {
 	// When a Tome is deleted we emit a destroy event on it and all of its child
 	// Tomes since they will no longer exist. We go down the Tome chain first and
 	// then emit our way up.
+
+	// rewrite root
+	tome.__root__ = root || tome;
+	if (!root) {
+		// on the new root set/reset the diff system to zero
+		Object.defineProperties(tome, {
+			__diff__: { writable: true, value: [] },
+			__diffEnabled__: { writable: true, value: true },
+			__version__: { writable: true, value: 1 }
+		});
+	}
 
 	var keys = Object.keys(tome);
 	for (var i = 0, len = keys.length; i < len; i += 1) {
 		var k = keys[i];
 		if (Tome.isTome(tome[k])) {
-			destroy(tome[k]);
+			destroy(tome[k], tome.__root__);
 		}
 	}
 
